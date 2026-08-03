@@ -1,7 +1,11 @@
 package com.sp.api.auth.controller;
 
+import com.sp.api.auth.dto.LoginRequest;
+import com.sp.api.auth.dto.LoginResponse;
 import com.sp.api.auth.dto.SignupRequest;
 import com.sp.api.auth.service.AuthService;
+import com.sp.api.common.response.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,9 +20,17 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("signup")
-    public ResponseEntity<Void> signup(@RequestBody SignupRequest request) {
+    public ResponseEntity<ApiResponse<Void>> signup(@Valid @RequestBody SignupRequest request) {
         authService.signup(request);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.status(201).body(new ApiResponse<>(true, null));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
+
+        LoginResponse response = authService.login(request);
+
+        return ResponseEntity.ok(new ApiResponse<>(true, response));
     }
 }

@@ -19,7 +19,7 @@ public class User {
     private  Long id;
 
     // 로그인 이메일
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 100)
     private String email;
 
     // 암호화된 비밀번호
@@ -27,7 +27,7 @@ public class User {
     private String password;
 
     // 사용자 닉네임
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 20)
     private String nickname;
 
     // 프로필 이미지
@@ -49,6 +49,7 @@ public class User {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(nullable = false)
     private LocalDateTime updatedAt;
 
     public User(String email, String password, String nickname) {
@@ -69,11 +70,11 @@ public class User {
         }
 
         if (this.provider == null) {
-            this.provider = provider.LOCAL;
+            this.provider = Provider.LOCAL;
         }
     }
 
-    @PrePersist
+    @PreUpdate
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
