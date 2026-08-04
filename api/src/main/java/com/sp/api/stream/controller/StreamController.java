@@ -85,4 +85,32 @@ public class StreamController {
                 new ApiResponse<>(true, null)
         );
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<StreamResponse>>> search(
+            @RequestParam String keyword
+    ) {
+
+        List<StreamResponse> responses = streamService.search(keyword);
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, responses)
+        );
+    }
+
+    @GetMapping("/popular")
+    public ResponseEntity<ApiResponse<List<StreamResponse>>> popular() {
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, streamService.popular())
+        );
+    }
+
+    @GetMapping("/latest")
+    public ResponseEntity<ApiResponse<List<StreamResponse>>> latest() {
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, streamService.latest())
+        );
+    }
 }
