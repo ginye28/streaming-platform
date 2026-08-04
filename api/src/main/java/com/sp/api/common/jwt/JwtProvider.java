@@ -55,6 +55,7 @@ public class JwtProvider {
 
             return true;
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
     }
