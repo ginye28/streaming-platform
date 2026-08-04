@@ -49,6 +49,9 @@ public class StreamService {
         Stream stream = streamRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("영상을 찾을 수 없습니다."));
 
+        stream.increaseViewCount();
+        streamRepository.save(stream);
+
         return new StreamResponse(stream);
     }
 
@@ -85,5 +88,29 @@ public class StreamService {
         }
 
         streamRepository.delete(stream);
+    }
+
+    public List<StreamResponse> search(String keyword) {
+
+        return streamRepository.findByTitleContainingIgnoreCase(keyword)
+                .stream()
+                .map(StreamResponse::new)
+                .toList();
+    }
+
+    public List<StreamResponse> popular() {
+
+        return streamRepository.findTop10ByOrderByViewCountDesc()
+                .stream()
+                .map(StreamResponse::new)
+                .toList();
+    }
+
+    public List<StreamResponse> latest() {
+
+        return streamRepository.findTop10ByOrderByCreatedAtDesc()
+                .stream()
+                .map(StreamResponse::new)
+                .toList();
     }
 }

@@ -3,6 +3,8 @@ package com.sp.api.stream.dto;
 import com.sp.api.stream.entity.Stream;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
+
 @Getter
 public class StreamResponse {
 
@@ -13,6 +15,7 @@ public class StreamResponse {
     private String videoUrl;
     private Long viewCount;
     private String nickname;
+    private LocalDateTime createdAt;
 
     public StreamResponse(Stream stream) {
         this.id = stream.getId();
@@ -22,5 +25,6 @@ public class StreamResponse {
         this.videoUrl = stream.getVideoUrl();
         this.viewCount = stream.getViewCount();
         this.nickname = stream.getUser().getNickname();
+        this.createdAt = stream.getCreatedAt();
     }
 }
