@@ -4,9 +4,17 @@ spring:
       - secret
       - db
 
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
 server:
   port: 8080
 
 springdoc:
   swagger-ui:
     path: /swagger
+
+file:
+  upload-dir: uploads
