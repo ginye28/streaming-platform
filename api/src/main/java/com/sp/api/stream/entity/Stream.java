@@ -57,4 +57,8 @@ public class Stream {
     public void preUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+    public void increaseViewCount() {
+        this.viewCount++;
+    }
 }
