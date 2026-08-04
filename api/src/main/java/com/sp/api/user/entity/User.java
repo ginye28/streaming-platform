@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -46,6 +47,9 @@ public class User {
     // OAuth 사용자 ID
     private String providerId;
 
+    @Column(unique = true, length = 100)
+    private String streamKey;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -58,6 +62,7 @@ public class User {
         this.nickname = nickname;
         this.role = Role.USER;
         this.provider = Provider.LOCAL;
+        this.streamKey = UUID.randomUUID().toString();
     }
 
     @PrePersist
@@ -71,6 +76,10 @@ public class User {
 
         if (this.provider == null) {
             this.provider = Provider.LOCAL;
+        }
+
+        if (this.streamKey == null) {
+            this.streamKey = UUID.randomUUID().toString();
         }
     }
 
