@@ -4,13 +4,16 @@ import com.sp.api.stream.dto.CreateStreamRequest;
 import com.sp.api.stream.dto.StreamResponse;
 import com.sp.api.stream.dto.UpdateStreamRequest;
 import com.sp.api.stream.entity.Stream;
+import com.sp.api.stream.entity.StreamStatus;
 import com.sp.api.stream.repository.StreamRepository;
 import com.sp.api.user.entity.User;
 import com.sp.api.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -18,6 +21,9 @@ public class StreamService {
 
     private final StreamRepository streamRepository;
     private final UserRepository userRepository;
+
+    @Value("${streaming.hls-url}")
+    private String hlsUrl;
 
     public StreamResponse create(CreateStreamRequest request, String email) {
 
@@ -29,8 +35,9 @@ public class StreamService {
         stream.setTitle(request.getTitle());
         stream.setDescription(request.getDescription());
         stream.setThumbnailUrl(request.getThumbnailUrl());
-        stream.setVideoUrl(request.getVideoUrl());
         stream.setUser(user);
+        stream.setStreamKey(UUID.randomUUID().toString());
+        stream.setVideoUrl(hlsUrl + "/" + stream.getStreamKey() + ".m3u8");
 
         Stream saved = streamRepository.save(stream);
 
@@ -71,7 +78,6 @@ public class StreamService {
         stream.setTitle(request.getTitle());
         stream.setDescription(request.getDescription());
         stream.setThumbnailUrl(request.getThumbnailUrl());
-        stream.setVideoUrl(request.getVideoUrl());
 
         Stream updated = streamRepository.save(stream);
 
@@ -112,5 +118,45 @@ public class StreamService {
                 .stream()
                 .map(StreamResponse::new)
                 .toList();
+    }
+
+    public StreamResponse start(Long id, String email) {
+
+        Stream stream = streamRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("방송을 찾을 수 없습니다."));
+
+        if (!stream.getUser().getEmail().equals(email)) {
+            throw new IllegalArgumentException("방송 시작 권한이 없습니다.");
+        }
+
+        if (stream.getStatus() != StreamStatus.READY) {
+            throw new IllegalArgumentException("방송을 시작할 수 없는 상태입니다.");
+        }
+
+        stream.setStatus(StreamStatus.LIVE);
+
+        Stream saved = streamRepository.save(stream);
+
+        return new StreamResponse(saved);
+    }
+
+    public StreamResponse stop(Long id, String email) {
+
+        Stream stream = streamRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("방송을 찾을 수 없습니다."));
+
+        if (!stream.getUser().getEmail().equals(email)) {
+            throw new IllegalArgumentException("방송 종료 권한이 없습니다.");
+        }
+
+        if (stream.getStatus() != StreamStatus.LIVE) {
+            throw new IllegalArgumentException("현재 방송 중이 아닙니다.");
+        }
+
+        stream.setStatus(StreamStatus.ENDED);
+
+        Stream saved = streamRepository.save(stream);
+
+        return new StreamResponse(saved);
     }
 }

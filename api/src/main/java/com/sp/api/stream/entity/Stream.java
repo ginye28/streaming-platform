@@ -27,7 +27,6 @@ public class Stream {
 
     private String thumbnailUrl;
 
-    @Column(nullable = false)
     private String videoUrl;
 
     @Column(nullable = false)
@@ -51,6 +50,10 @@ public class Stream {
         if (viewCount == null) {
             viewCount = 0L;
         }
+
+        if (status == null) {
+            status = StreamStatus.READY;
+        }
     }
 
     @PreUpdate
@@ -61,4 +64,11 @@ public class Stream {
     public void increaseViewCount() {
         this.viewCount++;
     }
+
+    @Column(nullable = false, unique = true, length = 100)
+    private String streamKey;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private StreamStatus status;
 }

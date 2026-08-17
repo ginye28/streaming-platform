@@ -14,7 +14,4 @@ public class UpdateStreamRequest {
     private String description;
 
     private String thumbnailUrl;
-
-    @NotBlank
-    private String videoUrl;
 }

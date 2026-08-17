@@ -113,4 +113,36 @@ public class StreamController {
                 new ApiResponse<>(true, streamService.latest())
         );
     }
+
+    @PostMapping("/{id}/start")
+    public ResponseEntity<ApiResponse<StreamResponse>> start(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+
+        StreamResponse response = streamService.start(
+                id,
+                authentication.getName()
+        );
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, response)
+        );
+    }
+
+    @PostMapping("/{id}/stop")
+    public ResponseEntity<ApiResponse<StreamResponse>> stop(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+
+        StreamResponse response = streamService.stop(
+                id,
+                authentication.getName()
+        );
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, response)
+        );
+    }
 }

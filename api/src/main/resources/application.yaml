@@ -18,3 +18,8 @@ springdoc:
 
 file:
   upload-dir: uploads
+
+streaming:
+  rtmp-url: rtmp://localhost:1935/live
+  hls-url: http://localhost:8081/hls
+  server-url: http://localhost:8081

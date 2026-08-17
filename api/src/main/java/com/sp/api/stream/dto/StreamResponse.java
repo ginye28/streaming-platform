@@ -1,6 +1,7 @@
 package com.sp.api.stream.dto;
 
 import com.sp.api.stream.entity.Stream;
+import com.sp.api.stream.entity.StreamStatus;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
@@ -14,6 +15,8 @@ public class StreamResponse {
     private String thumbnailUrl;
     private String videoUrl;
     private Long viewCount;
+    private String streamKey;
+    private StreamStatus status;
     private String nickname;
     private LocalDateTime createdAt;
 
@@ -24,6 +27,8 @@ public class StreamResponse {
         this.thumbnailUrl = stream.getThumbnailUrl();
         this.videoUrl = stream.getVideoUrl();
         this.viewCount = stream.getViewCount();
+        this.streamKey = stream.getStreamKey();
+        this.status = stream.getStatus();
         this.nickname = stream.getUser().getNickname();
         this.createdAt = stream.getCreatedAt();
     }
