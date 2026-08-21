@@ -316,6 +316,20 @@ API 상세는 [docs/03-api-spec.md](docs/03-api-spec.md) 참고.
 
 ## 자주 겪는 문제
 
+**`bootRun` 이 80% EXECUTING 에서 안 끝난다**
+
+**정상입니다.** `bootRun` 은 서버를 계속 켜 두는 명령이라 끝나지 않습니다.
+빌드처럼 완료되고 프롬프트가 돌아오는 게 아니라, 서버가 살아 있는 동안
+계속 `EXECUTING` 으로 표시됩니다. 17분이든 5시간이든 그대로입니다.
+
+위로 스크롤해 `Started ApiApplication in ...` 이 보이면 이미 떠 있는 것입니다.
+확인은 브라우저로: http://localhost:8080/swagger
+
+- **그 터미널 창은 그대로 두세요.** 닫으면 서버가 꺼집니다.
+- 다른 명령은 **새 터미널 창**에서 실행하세요.
+- 서버를 끄려면 그 창에서 `Ctrl + C`
+
+
 **`Please set the JAVA_HOME variable in your environment` (Windows)**
 **`ERROR: JAVA_HOME is set to an invalid directory` (Windows)**
 
