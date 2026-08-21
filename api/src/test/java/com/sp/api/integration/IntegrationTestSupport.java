@@ -86,6 +86,39 @@ abstract class IntegrationTestSupport {
         return json(result).path("data").path("id").asLong();
     }
 
+    protected String streamKeyOf(String token) throws Exception {
+
+        MvcResult result = mockMvc.perform(
+                        org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                .get("/api/users/stream-key")
+                                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        return json(result).path("data").path("streamKey").asString();
+    }
+
+    /** nginx-rtmp 의 on_publish 콜백을 흉내 내 방송을 시작시킨다. @return 공개 이름 */
+    protected String startBroadcast(String token) throws Exception {
+
+        MvcResult result = mockMvc.perform(post("/api/internal/rtmp/publish")
+                        .param("name", streamKeyOf(token)))
+                .andExpect(status().isFound())
+                .andReturn();
+
+        String location = result.getResponse().getHeader("Location");
+
+        assertThat(location).isNotNull();
+
+        return location.substring(location.lastIndexOf('/') + 1);
+    }
+
+    protected void endBroadcast(String publicName) throws Exception {
+
+        mockMvc.perform(post("/api/internal/rtmp/publish-done").param("name", publicName))
+                .andExpect(status().isOk());
+    }
+
     protected JsonNode json(MvcResult result) throws Exception {
         return objectMapper.readTree(result.getResponse().getContentAsString());
     }

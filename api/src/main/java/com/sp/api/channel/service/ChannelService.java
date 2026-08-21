@@ -3,6 +3,8 @@ package com.sp.api.channel.service;
 import com.sp.api.channel.dto.ChannelResponse;
 import com.sp.api.common.exception.NotFoundException;
 import com.sp.api.common.response.PageResponse;
+import com.sp.api.live.entity.LiveStream;
+import com.sp.api.live.repository.LiveStreamRepository;
 import com.sp.api.stream.repository.StreamRepository;
 import com.sp.api.subscribe.repository.SubscribeRepository;
 import com.sp.api.user.entity.User;
@@ -20,6 +22,7 @@ public class ChannelService {
     private final UserRepository userRepository;
     private final SubscribeRepository subscribeRepository;
     private final StreamRepository streamRepository;
+    private final LiveStreamRepository liveStreamRepository;
 
     public ChannelResponse findChannel(Long channelId, String viewerEmail) {
 
@@ -30,6 +33,7 @@ public class ChannelService {
                 channel,
                 subscribeRepository.countByChannelId(channelId),
                 streamRepository.countByUserId(channelId),
+                liveStreamRepository.existsByUserIdAndStatus(channelId, LiveStream.Status.LIVE),
                 isSubscribedBy(viewerEmail, channelId)
         );
     }
@@ -48,6 +52,8 @@ public class ChannelService {
                                     channel,
                                     subscribeRepository.countByChannelId(channel.getId()),
                                     streamRepository.countByUserId(channel.getId()),
+                                    liveStreamRepository.existsByUserIdAndStatus(
+                                            channel.getId(), LiveStream.Status.LIVE),
                                     true
                             );
                         })

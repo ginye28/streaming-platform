@@ -19,6 +19,13 @@ app:
   cors:
     allowed-origins: http://localhost:5173
 
+  hls:
+    base-url: http://localhost:8081/hls
+
+  rtmp:
+    rename-on-publish: true
+    redirect-base: rtmp://127.0.0.1:1935/live
+
 jwt:
   secret: test-secret-key-for-unit-tests-only-32bytes+
   expiration: 3600000
