@@ -5,6 +5,8 @@ import com.sp.api.channel.service.ChannelService;
 import com.sp.api.common.response.ApiResponse;
 import com.sp.api.common.response.PageResponse;
 import com.sp.api.common.security.AuthUtils;
+import com.sp.api.live.dto.LiveStreamResponse;
+import com.sp.api.live.service.LiveStreamService;
 import com.sp.api.stream.dto.StreamResponse;
 import com.sp.api.stream.service.StreamService;
 import com.sp.api.subscribe.dto.SubscribeResponse;
@@ -32,6 +34,7 @@ public class ChannelController {
     private final ChannelService channelService;
     private final StreamService streamService;
     private final SubscribeService subscribeService;
+    private final LiveStreamService liveStreamService;
 
     @GetMapping("/{channelId}")
     public ResponseEntity<ApiResponse<ChannelResponse>> findChannel(
@@ -54,6 +57,24 @@ public class ChannelController {
 
         return ResponseEntity.ok(ApiResponse.ok(
                 streamService.findByChannel(channelId, pageable, AuthUtils.emailOrNull(authentication))
+        ));
+    }
+
+    /** 채널이 방송 중이면 그 방송. 아니면 404. */
+    @GetMapping("/{channelId}/live")
+    public ResponseEntity<ApiResponse<LiveStreamResponse>> findChannelLive(@PathVariable Long channelId) {
+        return ResponseEntity.ok(ApiResponse.ok(liveStreamService.findLiveByChannel(channelId)));
+    }
+
+    /** 채널의 지난 방송 기록. */
+    @GetMapping("/{channelId}/live-history")
+    public ResponseEntity<ApiResponse<PageResponse<LiveStreamResponse>>> findChannelLiveHistory(
+            @PathVariable Long channelId,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+
+        return ResponseEntity.ok(ApiResponse.ok(
+                liveStreamService.findChannelHistory(channelId, pageable)
         ));
     }
 

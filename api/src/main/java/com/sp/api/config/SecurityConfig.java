@@ -71,6 +71,15 @@ public class SecurityConfig {
                         // nginx-rtmp 가 호출하는 내부 콜백. 반드시 내부망에서만 접근 가능해야 한다.
                         .requestMatchers("/api/internal/**").permitAll()
 
+                        // WebSocket 핸드셰이크. 인증은 STOMP CONNECT 프레임에서 따로 처리한다.
+                        .requestMatchers("/ws/**").permitAll()
+
+                        // 방송 설정은 본인만. 아래 공개 규칙보다 먼저 선언한다.
+                        .requestMatchers("/api/lives/settings").authenticated()
+
+                        // 라이브 목록·상세·채팅 내역은 비로그인도 볼 수 있어야 한다.
+                        .requestMatchers(HttpMethod.GET, "/api/lives/**").permitAll()
+
                         // 구독 피드는 내가 누구인지 알아야 하므로 공개 규칙보다 먼저 선언한다.
                         .requestMatchers(HttpMethod.GET, "/api/streams/subscribed").authenticated()
 

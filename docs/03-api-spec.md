@@ -214,6 +214,99 @@ Authorization: Bearer <accessToken>
 
 ---
 
+## 라이브 방송 (`/api/lives`)
+
+업로드 영상(`/api/streams`)과는 **별개의 자원**입니다.
+VOD 는 `videoUrl` 로 재생하고, 라이브는 `hlsUrl` 로 재생합니다.
+
+| 메서드 | 경로 | 인증 | 설명 |
+|---|---|---|---|
+| GET | `/api/lives` | 공개 | 지금 방송 중인 목록 (페이지) |
+| GET | `/api/lives/{liveId}` | 공개 | 방송 상세 |
+| GET | `/api/lives/{liveId}/chats` | 공개 | 채팅 내역 (페이지, 최신순) |
+| GET | `/api/lives/settings` | 필요 | 다음 방송에 쓸 설정 |
+| PUT | `/api/lives/settings` | 필요 | 방송 제목·설명·썸네일 저장 |
+| GET | `/api/channels/{channelId}/live` | 공개 | 그 채널의 현재 방송 (아니면 404) |
+| GET | `/api/channels/{channelId}/live-history` | 공개 | 그 채널의 지난 방송 (페이지) |
+
+방송 응답
+```json
+{
+  "id": 1,
+  "channelId": 5,
+  "nickname": "채널명",
+  "title": "오늘의 방송",
+  "description": "설명",
+  "thumbnailUrl": null,
+  "hlsUrl": "http://localhost:8081/hls/{공개이름}.m3u8",
+  "status": "LIVE",
+  "viewerCount": 3,
+  "peakViewerCount": 12,
+  "startedAt": "2026-08-21T09:00:00",
+  "endedAt": null
+}
+```
+
+`status` 는 `LIVE` 또는 `ENDED`. 방송이 끝나면 지난 방송 목록으로 넘어갑니다.
+
+> OBS 는 방송 제목을 보내주지 않으므로, 송출 전에 `PUT /api/lives/settings` 로
+> 제목을 저장해 두면 송출 시작 시 그 값이 쓰입니다. 저장하지 않으면
+> "{닉네임} 님의 방송" 이 기본 제목이 됩니다.
+
+---
+
+## 채팅 (WebSocket)
+
+STOMP over WebSocket 을 씁니다.
+
+| 항목 | 값 |
+|---|---|
+| 접속 주소 | `ws://localhost:8080/ws` |
+| 인증 | CONNECT 프레임에 `Authorization: Bearer {토큰}` |
+| 보내기 | `/app/lives/{liveId}/chat` — `{ "content": "안녕하세요" }` |
+| 받기 | `/topic/lives/{liveId}` 구독 |
+| 시청자 수 | `/topic/lives/{liveId}/viewers` 구독 |
+
+- 토큰 없이도 **연결과 구독은 가능**합니다(읽기 전용). 채팅 전송은 무시됩니다.
+- 종료된 방송에는 채팅을 보낼 수 없습니다.
+- 채팅방 구독 수가 곧 시청자 수로 집계됩니다. 서버를 여러 대로 늘리면
+  인스턴스별로 따로 세어지므로 Redis 등으로 옮겨야 합니다.
+- 접속 직후 채팅창은 `GET /api/lives/{liveId}/chats` 로 채웁니다.
+
+받는 메시지
+```json
+{
+  "id": 10, "liveId": 1, "userId": 5,
+  "nickname": "채팅유저", "content": "안녕하세요",
+  "createdAt": "2026-08-21T09:01:00"
+}
+```
+
+---
+
+## 알림 (`/api/notifications`)
+
+모두 인증이 필요합니다. 구독한 채널이 방송을 시작하면 알림이 쌓입니다.
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| GET | `/api/notifications` | 알림 목록 (페이지, 최신순) |
+| GET | `/api/notifications/unread-count` | 안 읽은 개수 → `{ "unreadCount": 3 }` |
+| PATCH | `/api/notifications/{id}/read` | 하나 읽음 처리 |
+| POST | `/api/notifications/read-all` | 전부 읽음 처리 → `{ "updated": 3 }` |
+
+알림 응답
+```json
+{
+  "id": 1, "type": "LIVE_START",
+  "message": "홍길동 님이 방송을 시작했습니다.",
+  "channelId": 5, "targetId": 1,
+  "read": false, "createdAt": "2026-08-21T09:00:00"
+}
+```
+
+---
+
 ## 내부 API (외부 노출 금지)
 
 nginx-rtmp 가 호출하는 콜백. JWT 가 아니라 스트림 키로 인증하므로
@@ -221,8 +314,10 @@ nginx-rtmp 가 호출하는 콜백. JWT 가 아니라 스트림 키로 인증하
 
 | 메서드 | 경로 | 설명 |
 |---|---|---|
-| POST | `/api/internal/rtmp/publish` | `name`=스트림 키. 2xx면 송출 허용, 403이면 거부 |
-| POST | `/api/internal/rtmp/publish-done` | 송출 종료 알림 |
+| POST | `/api/internal/rtmp/publish` | `name`=스트림 키. 검증 후 방송을 열고 공개 이름으로 **302 리다이렉트**. 키가 틀리면 403 |
+| POST | `/api/internal/rtmp/publish-done` | 송출 종료. 방송을 ENDED 로 바꾼다 |
+
+송출이 시작되면 구독자 전원에게 `LIVE_START` 알림이 생성됩니다.
 
 ---
 
@@ -230,8 +325,11 @@ nginx-rtmp 가 호출하는 콜백. JWT 가 아니라 스트림 키로 인증하
 
 - OBS 서버: `rtmp://localhost:1935/live`
 - OBS 스트림 키: `GET /api/users/stream-key` 로 받은 값
-- 재생(HLS): `http://localhost:8081/hls/{스트림키}.m3u8`
+- 재생(HLS): `GET /api/lives` 또는 `GET /api/channels/{id}/live` 가 돌려주는 `hlsUrl`
 
-> ⚠️ 현재는 송출 이름이 곧 스트림 키라서 재생 URL 에 키가 노출된다.
-> 다음 단계로 `on_publish` 응답에서 공개 채널명으로 rename(3xx 리다이렉트)하도록
-> 바꿔야 키가 감춰진다.
+**스트림 키는 재생 URL 에 노출되지 않습니다.** `on_publish` 가 302 리다이렉트로
+송출 이름을 공개 이름(계정마다 다른 UUID)으로 바꾸기 때문입니다.
+
+> ⚠️ 이 리다이렉트 동작은 실제 OBS·nginx 환경에서 확인이 필요합니다.
+> 송출이 거부되면 `app.rtmp.rename-on-publish: false` 로 두고 확인하세요.
+> 끄면 송출은 되지만 재생 URL 에 스트림 키가 그대로 드러납니다.
