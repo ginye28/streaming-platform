@@ -4,10 +4,12 @@ import com.sp.api.common.response.ApiResponse;
 import com.sp.api.like.dto.LikeResponse;
 import com.sp.api.like.service.LikeService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/streams/{streamId}/like")
@@ -17,13 +19,13 @@ public class LikeController {
     private final LikeService likeService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<LikeResponse>> toggle(@PathVariable long streamId, Authentication authentication) {
+    public ResponseEntity<ApiResponse<LikeResponse>> toggle(
+            @PathVariable Long streamId,
+            Authentication authentication
+    ) {
 
-        boolean liked = likeService.toggle(streamId, authentication.getName());
-        long count = likeService.count(streamId);
+        LikeResponse response = likeService.toggle(streamId, authentication.getName());
 
-        LikeResponse response = new LikeResponse(liked, count);
-
-        return ResponseEntity.ok(new ApiResponse<>(true, response));
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 }

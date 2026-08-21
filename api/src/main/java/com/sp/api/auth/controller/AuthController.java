@@ -7,6 +7,7 @@ import com.sp.api.auth.service.AuthService;
 import com.sp.api.common.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,20 +18,20 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
+
     private final AuthService authService;
 
-    @PostMapping("signup")
+    @PostMapping("/signup")
     public ResponseEntity<ApiResponse<Void>> signup(@Valid @RequestBody SignupRequest request) {
+
         authService.signup(request);
 
-        return ResponseEntity.status(201).body(new ApiResponse<>(true, null));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok());
     }
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
 
-        LoginResponse response = authService.login(request);
-
-        return ResponseEntity.ok(new ApiResponse<>(true, response));
+        return ResponseEntity.ok(ApiResponse.ok(authService.login(request)));
     }
 }
