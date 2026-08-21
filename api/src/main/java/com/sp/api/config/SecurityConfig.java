@@ -71,8 +71,14 @@ public class SecurityConfig {
                         // nginx-rtmp 가 호출하는 내부 콜백. 반드시 내부망에서만 접근 가능해야 한다.
                         .requestMatchers("/api/internal/**").permitAll()
 
+                        // 구독 피드는 내가 누구인지 알아야 하므로 공개 규칙보다 먼저 선언한다.
+                        .requestMatchers(HttpMethod.GET, "/api/streams/subscribed").authenticated()
+
                         // 영상 목록/상세/검색/댓글 조회는 비로그인도 볼 수 있어야 한다.
                         .requestMatchers(HttpMethod.GET, "/api/streams/**").permitAll()
+
+                        // 채널 페이지 조회도 공개 (구독 토글은 아래 anyRequest 규칙으로 인증 필요)
+                        .requestMatchers(HttpMethod.GET, "/api/channels/**").permitAll()
 
                         // 업로드는 로그인 사용자만
                         .requestMatchers("/api/files/**").authenticated()

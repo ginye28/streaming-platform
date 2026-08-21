@@ -1,16 +1,20 @@
 package com.sp.api.stream.service;
 
+import com.sp.api.comment.repository.CommentRepository;
 import com.sp.api.common.exception.ForbiddenException;
 import com.sp.api.common.exception.NotFoundException;
 import com.sp.api.common.response.PageResponse;
+import com.sp.api.like.repository.LikeRepository;
 import com.sp.api.stream.dto.CreateStreamRequest;
 import com.sp.api.stream.dto.StreamResponse;
 import com.sp.api.stream.dto.UpdateStreamRequest;
 import com.sp.api.stream.entity.Stream;
 import com.sp.api.stream.repository.StreamRepository;
+import com.sp.api.subscribe.repository.SubscribeRepository;
 import com.sp.api.user.entity.User;
 import com.sp.api.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +28,10 @@ public class StreamService {
 
     private final StreamRepository streamRepository;
     private final UserRepository userRepository;
+    private final SubscribeRepository subscribeRepository;
+    private final CommentRepository commentRepository;
+    private final LikeRepository likeRepository;
+    private final StreamResponseAssembler assembler;
 
     @Transactional
     public StreamResponse create(CreateStreamRequest request, String email) {
@@ -39,17 +47,15 @@ public class StreamService {
                 user
         );
 
-        return new StreamResponse(streamRepository.save(stream));
+        return StreamResponse.ofNew(streamRepository.save(stream));
     }
 
-    public PageResponse<StreamResponse> findAll(Pageable pageable) {
-        return PageResponse.from(
-                streamRepository.findAll(pageable).map(StreamResponse::new)
-        );
+    public PageResponse<StreamResponse> findAll(Pageable pageable, String viewerEmail) {
+        return toPageResponse(streamRepository.findAll(pageable), viewerEmail);
     }
 
     @Transactional
-    public StreamResponse findById(Long id) {
+    public StreamResponse findById(Long id, String viewerEmail) {
 
         if (streamRepository.increaseViewCount(id) == 0) {
             throw new NotFoundException("영상을 찾을 수 없습니다.");
@@ -58,7 +64,26 @@ public class StreamService {
         Stream stream = streamRepository.findWithUserById(id)
                 .orElseThrow(() -> new NotFoundException("영상을 찾을 수 없습니다."));
 
-        return new StreamResponse(stream);
+        return assembler.assembleOne(stream, viewerEmail);
+    }
+
+    public PageResponse<StreamResponse> findByChannel(Long channelId, Pageable pageable, String viewerEmail) {
+        return toPageResponse(streamRepository.findByUserId(channelId, pageable), viewerEmail);
+    }
+
+    /** 구독 중인 채널들의 영상 피드. */
+    public PageResponse<StreamResponse> findSubscribedFeed(String email, Pageable pageable) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다."));
+
+        List<Long> channelIds = subscribeRepository.findChannelIdsBySubscriberId(user.getId());
+
+        if (channelIds.isEmpty()) {
+            return PageResponse.empty(pageable);
+        }
+
+        return toPageResponse(streamRepository.findByUserIdIn(channelIds, pageable), email);
     }
 
     @Transactional
@@ -73,33 +98,35 @@ public class StreamService {
                 request.getVideoUrl()
         );
 
-        return new StreamResponse(stream);
+        return assembler.assembleOne(stream, email);
     }
 
     @Transactional
     public void delete(Long id, String email) {
-        streamRepository.delete(findOwned(id, email, "삭제 권한이 없습니다."));
+
+        Stream stream = findOwned(id, email, "삭제 권한이 없습니다.");
+
+        // 댓글·좋아요가 FK 로 영상을 참조하므로 먼저 정리해야 한다.
+        commentRepository.deleteByStreamId(id);
+        likeRepository.deleteByStreamId(id);
+
+        streamRepository.delete(stream);
     }
 
-    public PageResponse<StreamResponse> search(String keyword, Pageable pageable) {
-        return PageResponse.from(
-                streamRepository.findByTitleContainingIgnoreCase(keyword, pageable)
-                        .map(StreamResponse::new)
-        );
+    public PageResponse<StreamResponse> search(String keyword, Pageable pageable, String viewerEmail) {
+        return toPageResponse(streamRepository.search(keyword, pageable), viewerEmail);
     }
 
-    public List<StreamResponse> popular() {
-        return streamRepository.findTop10ByOrderByViewCountDesc()
-                .stream()
-                .map(StreamResponse::new)
-                .toList();
+    public List<StreamResponse> popular(String viewerEmail) {
+        return assembler.assemble(streamRepository.findTop10ByOrderByViewCountDesc(), viewerEmail);
     }
 
-    public List<StreamResponse> latest() {
-        return streamRepository.findTop10ByOrderByCreatedAtDesc()
-                .stream()
-                .map(StreamResponse::new)
-                .toList();
+    public List<StreamResponse> latest(String viewerEmail) {
+        return assembler.assemble(streamRepository.findTop10ByOrderByCreatedAtDesc(), viewerEmail);
+    }
+
+    private PageResponse<StreamResponse> toPageResponse(Page<Stream> page, String viewerEmail) {
+        return PageResponse.of(page, assembler.assemble(page.getContent(), viewerEmail));
     }
 
     private Stream findOwned(Long id, String email, String forbiddenMessage) {
