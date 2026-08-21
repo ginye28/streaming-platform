@@ -38,3 +38,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# 로컬 업로드 파일 (저장소에 커밋하지 않는다)
+uploads/
