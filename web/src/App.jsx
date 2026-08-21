@@ -1,42 +1,84 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Hls from 'hls.js'
+
+const HLS_BASE_URL =
+  import.meta.env.VITE_HLS_BASE_URL ?? 'http://localhost:8081/hls'
+
+/** ?stream=<이름> 으로 재생할 방송을 고른다. */
+function useStreamName() {
+  const [name, setName] = useState(
+    () => new URLSearchParams(window.location.search).get('stream') ?? 'test'
+  )
+
+  useEffect(() => {
+    const onPopState = () =>
+      setName(new URLSearchParams(window.location.search).get('stream') ?? 'test')
+
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
+
+  return name
+}
 
 function App() {
   const videoRef = useRef(null)
+  const streamName = useStreamName()
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     const video = videoRef.current
-    const videoSrc = 'http://localhost:8081/hls/test.m3u8'
-
     if (!video) return
+
+    const videoSrc = `${HLS_BASE_URL}/${encodeURIComponent(streamName)}.m3u8`
+
+    setError(null)
+
+    const play = () => {
+      video.play().catch(() => {
+        // 브라우저 자동 재생 정책상 막힐 수 있다. 사용자가 직접 재생하면 된다.
+      })
+    }
 
     if (Hls.isSupported()) {
       const hls = new Hls()
 
       hls.loadSource(videoSrc)
       hls.attachMedia(video)
+      hls.on(Hls.Events.MANIFEST_PARSED, play)
 
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        video.play().catch(() => {
-          console.log('자동 재생이 차단되었습니다.')
-        })
+      hls.on(Hls.Events.ERROR, (_event, data) => {
+        if (!data.fatal) return
+
+        // 네트워크/미디어 오류는 한 번 복구를 시도하고, 그 외에는 포기한다.
+        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+          setError('방송을 불러오지 못했습니다. 송출 중인지 확인해 주세요.')
+          hls.startLoad()
+        } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+          hls.recoverMediaError()
+        } else {
+          setError('재생 중 오류가 발생했습니다.')
+          hls.destroy()
+        }
       })
 
+      return () => hls.destroy()
+    }
+
+    // Safari 등 HLS 를 기본 지원하는 브라우저
+    if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = videoSrc
+      video.addEventListener('loadedmetadata', play)
+
       return () => {
-        hls.destroy()
+        video.removeEventListener('loadedmetadata', play)
+        video.removeAttribute('src')
+        video.load()
       }
     }
 
-    if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = videoSrc
-
-      video.addEventListener('loadedmetadata', () => {
-        video.play().catch(() => {
-          console.log('자동 재생이 차단되었습니다.')
-        })
-      })
-    }
-  }, [])
+    setError('이 브라우저는 HLS 재생을 지원하지 않습니다.')
+  }, [streamName])
 
   return (
     <div>
@@ -47,8 +89,11 @@ function App() {
         controls
         autoPlay
         muted
-        style={{ width: '800px', maxWidth: '100%' }}
+        playsInline
+        style={{ width: '800px', maxWidth: '100%', background: '#000' }}
       />
+
+      {error && <p role="alert">{error}</p>}
     </div>
   )
 }
