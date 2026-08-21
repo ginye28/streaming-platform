@@ -26,19 +26,48 @@ docs/        요구사항 · ERD · API 명세 · 컨벤션
 
 - JDK 21
 - Node.js 20 이상
-- Docker (스트리밍 서버용)
-- MySQL 8 — **B 방법으로 실행할 때만 필요**
+- Docker Desktop
+- Git
+
+> **Windows 사용자**: 아래 명령은 **CMD 기준**입니다.
+> PowerShell 이라면 `gradlew.bat` 앞에 `.\` 를 붙이세요 (`.\gradlew.bat`).
+> Git Bash 를 쓴다면 macOS/Linux 명령을 그대로 쓰면 됩니다 (`./gradlew`).
+
+---
+
+## 내려받기
+
+```bash
+git clone https://github.com/ginye28/streaming-platform.git
+cd streaming-platform
+```
+
+이미 받아 뒀다면 그 폴더로 이동하면 됩니다.
+**`api` 폴더가 보이는 위치**에서 아래 명령들을 실행하세요.
 
 ---
 
 ## 실행하기
 
-DB 설치 여부에 따라 두 가지 방법이 있습니다.
+DB 를 어떻게 준비하느냐에 따라 세 가지 방법이 있습니다. **A 가 가장 간단합니다.**
 
-### A. DB 없이 바로 켜기 (권장 — 처음이거나 OBS 만 확인할 때)
+| 방법 | 필요한 것 | 설정 파일 |
+|---|---|---|
+| A. H2 | 없음 | 필요 없음 |
+| B. Docker MySQL | Docker | 필요 없음 |
+| C. 직접 설치한 MySQL | MySQL | 2개 만들어야 함 |
 
-MySQL 을 설치하지 않고 H2(파일 기반)로 돕니다. 설정 파일도 만들 필요가 없습니다.
+### A. DB 없이 바로 켜기
 
+MySQL 없이 H2(파일 기반)로 돕니다. 처음이거나 OBS 만 확인할 때 권장합니다.
+
+**Windows (CMD)**
+```bat
+cd api
+gradlew.bat bootRun --args="--spring.profiles.active=local"
+```
+
+**macOS / Linux / Git Bash**
 ```bash
 cd api
 ./gradlew bootRun --args='--spring.profiles.active=local'
@@ -49,9 +78,45 @@ cd api
   (JDBC URL `jdbc:h2:file:./data/streaming`, 사용자 `sa`, 비밀번호 없음)
 - 처음부터 다시 시작하려면 `api/data/` 폴더를 지우면 됩니다.
 
-> 이 프로필의 JWT 시크릿은 개발 전용 고정값입니다. 배포에는 쓰지 마세요.
+### B. Docker 로 MySQL 띄우기
 
-### B. MySQL 로 실행
+프로젝트 루트에서 MySQL 컨테이너를 띄웁니다. DB 를 직접 설치하지 않아도 됩니다.
+
+```bash
+docker compose up -d mysql
+```
+
+`healthy` 가 될 때까지 기다린 뒤(처음엔 30초쯤 걸립니다) 실행합니다.
+
+```bash
+docker compose ps          # STATUS 가 healthy 인지 확인
+```
+
+**Windows (CMD)**
+```bat
+cd api
+gradlew.bat bootRun --args="--spring.profiles.active=mysql"
+```
+
+**macOS / Linux / Git Bash**
+```bash
+cd api
+./gradlew bootRun --args='--spring.profiles.active=mysql'
+```
+
+접속 정보 (컨테이너 기본값, `docker-compose.yml` 에 정의):
+
+| 항목 | 값 |
+|---|---|
+| host / port | `localhost:3306` |
+| database | `streaming` |
+| user / password | `streaming` / `streaming` |
+| root password | `root` |
+
+- DB 데이터는 도커 볼륨에 남습니다. `docker compose down` 해도 유지됩니다.
+- 완전히 초기화하려면 `docker compose down -v`
+
+### C. 직접 설치한 MySQL 로 실행
 
 **1. 데이터베이스 생성**
 
@@ -75,12 +140,14 @@ cp application-db.yaml.example    application-db.yaml
   짧으면 애플리케이션이 기동되지 않습니다.
 - `application-db.yaml` → DB 계정과 비밀번호
 
-**3. 실행**
+**3. 실행** — 프로필 없이 그냥 실행합니다.
 
 ```bash
 cd api
 ./gradlew bootRun
 ```
+
+> A · B 프로필의 JWT 시크릿은 개발 전용 고정값입니다. 배포에는 쓰지 마세요.
 
 ### 공통
 
@@ -93,18 +160,17 @@ cd api
 
 ```bash
 cd web
-cp .env.example .env   # 최초 1회
+cp .env.example .env   # 최초 1회 (Windows CMD: copy .env.example .env)
 npm install            # 최초 1회
 npm run dev
 ```
 
 http://localhost:5173
 
-**스트리밍 서버**
+**스트리밍 서버** — 프로젝트 루트에서 실행합니다.
 
 ```bash
-cd streaming
-docker compose up -d --build
+docker compose up -d streaming
 ```
 
 - RTMP 수신: `rtmp://localhost:1935/live`
@@ -114,13 +180,25 @@ docker compose up -d --build
 > 스트리밍 서버는 송출 시작 시 백엔드(`8080`)로 스트림 키 검증 요청을 보냅니다.
 > **백엔드가 떠 있지 않으면 송출이 거부됩니다.**
 
+MySQL 과 스트리밍 서버를 한 번에 띄우려면:
+
+```bash
+docker compose up -d
+```
+
 ---
 
 ## OBS로 방송 송출하기
 
 백엔드와 스트리밍 서버를 켠 뒤, 아래 스크립트를 실행하면 계정 준비부터
-결과 확인까지 알아서 해 줍니다.
+결과 확인까지 알아서 해 줍니다. **프로젝트 루트에서** 실행하세요.
 
+**Windows (PowerShell)**
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\verify-live.ps1
+```
+
+**macOS / Linux / Git Bash**
 ```bash
 ./scripts/verify-live.sh
 ```
