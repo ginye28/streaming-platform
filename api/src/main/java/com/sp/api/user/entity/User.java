@@ -1,23 +1,22 @@
 package com.sp.api.user.entity;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Getter
-@Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "users")
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private  Long id;
+    private Long id;
 
     // 로그인 이메일
     @Column(nullable = false, unique = true, length = 100)
@@ -86,6 +85,11 @@ public class User {
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    /** 스트림 키가 노출됐을 때 재발급한다. */
+    public void regenerateStreamKey() {
+        this.streamKey = UUID.randomUUID().toString();
     }
 
     public enum Role {

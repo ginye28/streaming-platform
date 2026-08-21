@@ -6,7 +6,10 @@ import com.sp.api.subscribe.service.SubscribeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/users/{channelId}/subscribe")
@@ -21,20 +24,9 @@ public class SubscribeController {
             Authentication authentication
     ) {
 
-        boolean subscribed = subscribeService.toggle(
-                channelId,
-                authentication.getName()
-        );
+        SubscribeResponse response =
+                subscribeService.toggle(channelId, authentication.getName());
 
-        long subscriberCount = subscribeService.count(channelId);
-
-        SubscribeResponse response = new SubscribeResponse(
-                subscribed,
-                subscriberCount
-        );
-
-        return ResponseEntity.ok(
-                new ApiResponse<>(true, response)
-        );
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 }
