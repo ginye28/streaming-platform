@@ -124,7 +124,9 @@ Write-Host "  [HLS 재생 파일]"
 $hlsOk = $false
 for ($i = 0; $i -lt 10; $i++) {
     try {
-        Invoke-WebRequest -Uri $live.hlsUrl -Method Get -TimeoutSec 5 | Out-Null
+        # -UseBasicParsing 이 없으면 Windows PowerShell 5.1 에서
+        # 'IE 구문 분석' 보안 경고가 떠서 스크립트가 멈춘다.
+        Invoke-WebRequest -Uri $live.hlsUrl -Method Get -TimeoutSec 5 -UseBasicParsing | Out-Null
         $hlsOk = $true
         break
     } catch {

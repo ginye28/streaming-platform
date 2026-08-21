@@ -316,6 +316,23 @@ API 상세는 [docs/03-api-spec.md](docs/03-api-spec.md) 참고.
 
 ## 자주 겪는 문제
 
+**PowerShell 에서 `curl` 이 보안 경고를 띄우며 멈춘다**
+
+Windows PowerShell 5.1 에서 `curl` 은 진짜 curl 이 아니라
+`Invoke-WebRequest` 의 별칭입니다. 응답을 IE 엔진으로 파싱하려다 경고가 뜹니다.
+
+셋 중 아무거나 쓰면 됩니다.
+
+```powershell
+curl.exe http://localhost:8081/health          # Windows 10+ 에 내장된 진짜 curl
+Invoke-RestMethod http://localhost:8081/health # PowerShell 방식
+curl http://localhost:8081/health -UseBasicParsing
+```
+
+이 README 의 `curl` 예시는 macOS/Linux/Git Bash 기준입니다.
+PowerShell 에서는 `curl.exe` 로 바꿔 쓰세요.
+
+
 **`bootRun` 이 80% EXECUTING 에서 안 끝난다**
 
 **정상입니다.** `bootRun` 은 서버를 계속 켜 두는 명령이라 끝나지 않습니다.
