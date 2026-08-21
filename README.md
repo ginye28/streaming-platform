@@ -317,36 +317,61 @@ API 상세는 [docs/03-api-spec.md](docs/03-api-spec.md) 참고.
 ## 자주 겪는 문제
 
 **`Please set the JAVA_HOME variable in your environment` (Windows)**
+**`ERROR: JAVA_HOME is set to an invalid directory` (Windows)**
 
-JDK 21 이 없거나 `JAVA_HOME` 이 설정되지 않은 경우입니다.
+JDK 21 이 없거나 `JAVA_HOME` 이 **실제로 존재하지 않는 경로**를 가리키는 경우입니다.
 `'""'은(는) 내부 또는 외부 명령...` 이 함께 뜨는 것도 같은 원인입니다.
 
-**1) 이미 설치돼 있는지 확인**
+> ⚠️ 아래 경로의 버전 번호(`21.0.x.y`)는 설치할 때마다 다릅니다.
+> **그대로 복사하지 말고 반드시 본인 PC 의 실제 경로를 확인하세요.**
+
+**1) 설치된 JDK 경로 찾기**
 
 ```bat
-java -version
+dir /b "C:\Program Files\Eclipse Adoptium"
+dir /b "C:\Program Files\Java"
+dir /b "C:\Program Files\Microsoft"
+```
+
+`jdk-21...` 로 시작하는 폴더 이름이 보이면 그게 실제 경로입니다.
+예를 들어 `jdk-21.0.8.9-hotspot` 이 나왔다면 전체 경로는
+`C:\Program Files\Eclipse Adoptium\jdk-21.0.8.9-hotspot` 입니다.
+
+이미 PATH 에 잡혀 있다면 이렇게도 찾을 수 있습니다.
+
+```bat
 where java
 ```
 
-`21` 로 시작하는 버전이 보이면 설치는 돼 있는 것입니다.
-`where java` 가 알려준 경로에서 `\bin\java.exe` 를 뺀 부분이 `JAVA_HOME` 입니다.
+나온 경로에서 `\bin\java.exe` 를 뺀 부분이 `JAVA_HOME` 입니다.
 
-**2) 없다면 설치**
+**2) 아무것도 안 나오면 설치**
 
 ```bat
 winget install EclipseAdoptium.Temurin.21.JDK
 ```
 
-**3) JAVA_HOME 설정** (경로는 실제 설치 위치로 바꾸세요)
+설치 후 **1) 을 다시 실행**해 실제 폴더 이름을 확인하세요.
+
+**3) JAVA_HOME 설정** — 1) 에서 확인한 **실제 경로**를 넣습니다.
 
 ```bat
-setx JAVA_HOME "C:\Program Files\Eclipse Adoptium\jdk-21.0.5.11-hotspot"
+setx JAVA_HOME "C:\Program Files\Eclipse Adoptium\<1번에서_확인한_폴더명>"
 ```
 
 > `setx` 는 **새로 여는 터미널부터** 적용됩니다. 지금 창을 닫고 새로 여세요.
-> 확인: `echo %JAVA_HOME%`
 
-**4) 확인 후 실행**
+**4) 제대로 잡혔는지 확인** — 이 단계를 건너뛰지 마세요.
+
+```bat
+echo %JAVA_HOME%
+dir "%JAVA_HOME%\bin\java.exe"
+```
+
+`java.exe` 가 목록에 보이면 성공입니다.
+`파일을 찾을 수 없습니다` 가 나오면 경로가 여전히 틀린 것이니 1) 로 돌아가세요.
+
+**5) 실행**
 
 ```bat
 cd api
