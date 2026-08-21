@@ -26,14 +26,34 @@ docs/        요구사항 · ERD · API 명세 · 컨벤션
 
 - JDK 21
 - Node.js 20 이상
-- MySQL 8
 - Docker (스트리밍 서버용)
+- MySQL 8 — **B 방법으로 실행할 때만 필요**
 
 ---
 
-## 처음 실행하기
+## 실행하기
 
-### 1. 데이터베이스 생성
+DB 설치 여부에 따라 두 가지 방법이 있습니다.
+
+### A. DB 없이 바로 켜기 (권장 — 처음이거나 OBS 만 확인할 때)
+
+MySQL 을 설치하지 않고 H2(파일 기반)로 돕니다. 설정 파일도 만들 필요가 없습니다.
+
+```bash
+cd api
+./gradlew bootRun --args='--spring.profiles.active=local'
+```
+
+- 데이터는 `api/data/` 에 저장되어 서버를 껐다 켜도 남습니다.
+- 데이터를 눈으로 보려면: http://localhost:8080/h2-console
+  (JDBC URL `jdbc:h2:file:./data/streaming`, 사용자 `sa`, 비밀번호 없음)
+- 처음부터 다시 시작하려면 `api/data/` 폴더를 지우면 됩니다.
+
+> 이 프로필의 JWT 시크릿은 개발 전용 고정값입니다. 배포에는 쓰지 마세요.
+
+### B. MySQL 로 실행
+
+**1. 데이터베이스 생성**
 
 ```sql
 CREATE DATABASE streaming
@@ -41,10 +61,9 @@ CREATE DATABASE streaming
   DEFAULT COLLATE utf8mb4_unicode_ci;
 ```
 
-### 2. 로컬 설정 파일 만들기
+**2. 로컬 설정 파일 만들기**
 
 두 파일은 `.gitignore` 처리되어 있어 직접 만들어야 합니다.
-예시 파일을 복사한 뒤 값을 채우세요.
 
 ```bash
 cd api/src/main/resources
@@ -56,17 +75,21 @@ cp application-db.yaml.example    application-db.yaml
   짧으면 애플리케이션이 기동되지 않습니다.
 - `application-db.yaml` → DB 계정과 비밀번호
 
-### 3. 백엔드 실행
+**3. 실행**
 
 ```bash
 cd api
 ./gradlew bootRun
 ```
 
+### 공통
+
+실행 후:
+
 - API: http://localhost:8080
 - Swagger: http://localhost:8080/swagger
 
-### 4. 프론트엔드 실행
+**프론트엔드**
 
 ```bash
 cd web
@@ -77,7 +100,7 @@ npm run dev
 
 http://localhost:5173
 
-### 5. 스트리밍 서버 실행
+**스트리밍 서버**
 
 ```bash
 cd streaming
@@ -85,7 +108,7 @@ docker compose up -d --build
 ```
 
 - RTMP 수신: `rtmp://localhost:1935/live`
-- HLS 재생: `http://localhost:8081/hls/{스트림키}.m3u8`
+- HLS 재생: 백엔드가 알려주는 `hlsUrl`
 - 상태 확인: `curl http://localhost:8081/health`
 
 > 스트리밍 서버는 송출 시작 시 백엔드(`8080`)로 스트림 키 검증 요청을 보냅니다.
@@ -95,18 +118,42 @@ docker compose up -d --build
 
 ## OBS로 방송 송출하기
 
+백엔드와 스트리밍 서버를 켠 뒤, 아래 스크립트를 실행하면 계정 준비부터
+결과 확인까지 알아서 해 줍니다.
+
+```bash
+./scripts/verify-live.sh
+```
+
+스크립트가 OBS 에 넣을 값을 알려주고, [방송 시작] 을 누르면
+방송이 잡히는지 · 재생 URL 이 만들어지는지 · 스트림 키가 노출되지 않는지까지 확인합니다.
+
+**직접 해보려면**
+
 1. 회원가입 후 로그인해 토큰을 받습니다.
 2. `GET /api/users/stream-key` 로 본인의 스트림 키를 조회합니다.
 3. OBS → 설정 → 방송
-   - 서비스: **사용자 지정**
+   - 서비스: **사용자 지정...**
    - 서버: `rtmp://localhost:1935/live`
    - 스트림 키: 2번에서 받은 값
-4. 방송 시작 후 `http://localhost:5173/?stream={스트림키}` 에서 재생을 확인합니다.
+4. 방송 시작 후 `GET /api/lives` 에 방송이 뜨는지 확인합니다.
+5. 응답의 `hlsUrl` 끝부분(공개 이름)으로 재생합니다.
+   `http://localhost:5173/?stream={공개이름}`
 
-키가 노출됐다면 `POST /api/users/stream-key/regenerate` 로 재발급하세요.
+스트림 키가 노출됐다면 `POST /api/users/stream-key/regenerate` 로 재발급하세요.
 
-> ⚠️ 현재는 송출 이름이 곧 스트림 키라서 재생 URL에 키가 그대로 드러납니다.
-> `on_publish` 응답에서 공개 채널명으로 rename 하도록 바꾸는 것이 다음 과제입니다.
+### 스트림 키가 재생 URL 에 안 보이는 이유
+
+`on_publish` 가 302 리다이렉트로 송출 이름을 **공개 이름**(계정마다 다른 UUID)으로
+바꾸기 때문입니다. 덕분에 시청자에게 주는 재생 URL 에 송출 키가 들어가지 않습니다.
+
+> ⚠️ 이 리다이렉트는 실제 OBS·nginx 조합에서 확인이 필요합니다.
+> API 쪽 동작은 테스트로 검증했지만, nginx 가 302 를 받아 실제로 이름을 바꾸는지는
+> 송출을 해봐야 압니다.
+>
+> **송출이 거부되면** `api/src/main/resources/application.yaml` 에서
+> `app.rtmp.rename-on-publish: false` 로 바꾸고 다시 시도하세요.
+> 송출은 되지만 재생 URL 에 스트림 키가 그대로 드러납니다.
 
 ---
 
@@ -165,8 +212,8 @@ API 상세는 [docs/03-api-spec.md](docs/03-api-spec.md) 참고.
 
 ## 다음 할 일
 
-1. **실제 OBS 로 송출 확인** — `on_publish` 302 리다이렉트가 기대대로 동작하는지.
-   거부되면 `app.rtmp.rename-on-publish: false` (자세한 내용은 아래 참고)
+1. **실제 OBS 로 송출 확인** — `./scripts/verify-live.sh` 로 확인.
+   `on_publish` 302 리다이렉트가 기대대로 동작하는지가 핵심입니다.
 2. **프론트 화면** — 현재는 재생 확인용 최소 화면만 있습니다.
    라이브 목록 · 채널 페이지 · 채팅창 · 알림함이 API 는 준비돼 있습니다
 3. **리프레시 토큰 + 로그아웃** — 지금은 액세스 토큰만 있어 만료 시 재로그인해야 하고,
@@ -180,6 +227,10 @@ API 상세는 [docs/03-api-spec.md](docs/03-api-spec.md) 참고.
 
 **애플리케이션이 기동되지 않고 `jwt.secret 은 최소 32바이트여야 합니다` 가 뜬다**
 → `application-secret.yaml` 의 `jwt.secret` 을 32자 이상으로 늘리세요.
+설정 파일을 만들기 귀찮다면 A 방법(`--spring.profiles.active=local`)으로 실행하세요.
+
+**MySQL 이 없어서 서버가 안 뜬다**
+→ A 방법으로 실행하면 DB 설치 없이 H2 로 돕니다.
 
 **업로드한 영상이 404 로 안 나온다**
 → 파일은 `api/uploads/` 에 저장되고 `/uploads/{파일명}` 으로 서빙됩니다.
