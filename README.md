@@ -45,6 +45,19 @@ cd streaming-platform
 이미 받아 뒀다면 그 폴더로 이동하면 됩니다.
 **`api` 폴더가 보이는 위치**에서 아래 명령들을 실행하세요.
 
+작업 브랜치로 이동합니다. `git fetch` 를 먼저 해야 로컬이 브랜치를 인식합니다.
+
+```bash
+git fetch origin
+git checkout claude/code-review-26k8iw
+```
+
+> `error: pathspec ... did not match any file(s) known to git` 가 뜨면
+> `git fetch origin` 을 빠뜨린 것입니다. 그래도 안 되면 아래처럼 명시적으로:
+> ```bash
+> git checkout -b claude/code-review-26k8iw origin/claude/code-review-26k8iw
+> ```
+
 ---
 
 ## 실행하기
@@ -302,6 +315,59 @@ API 상세는 [docs/03-api-spec.md](docs/03-api-spec.md) 참고.
 ---
 
 ## 자주 겪는 문제
+
+**`Please set the JAVA_HOME variable in your environment` (Windows)**
+
+JDK 21 이 없거나 `JAVA_HOME` 이 설정되지 않은 경우입니다.
+`'""'은(는) 내부 또는 외부 명령...` 이 함께 뜨는 것도 같은 원인입니다.
+
+**1) 이미 설치돼 있는지 확인**
+
+```bat
+java -version
+where java
+```
+
+`21` 로 시작하는 버전이 보이면 설치는 돼 있는 것입니다.
+`where java` 가 알려준 경로에서 `\bin\java.exe` 를 뺀 부분이 `JAVA_HOME` 입니다.
+
+**2) 없다면 설치**
+
+```bat
+winget install EclipseAdoptium.Temurin.21.JDK
+```
+
+**3) JAVA_HOME 설정** (경로는 실제 설치 위치로 바꾸세요)
+
+```bat
+setx JAVA_HOME "C:\Program Files\Eclipse Adoptium\jdk-21.0.5.11-hotspot"
+```
+
+> `setx` 는 **새로 여는 터미널부터** 적용됩니다. 지금 창을 닫고 새로 여세요.
+> 확인: `echo %JAVA_HOME%`
+
+**4) 확인 후 실행**
+
+```bat
+cd api
+gradlew.bat bootRun --args="--spring.profiles.active=local"
+```
+
+**`error: pathspec 'claude/...' did not match any file(s) known to git`**
+
+로컬이 아직 원격 브랜치를 모르는 상태입니다. 먼저 가져오세요.
+
+```bash
+git fetch origin
+git checkout claude/code-review-26k8iw
+```
+
+**CMD 에서 `./gradlew` 가 실행되지 않는다**
+
+`./` 는 macOS/Linux 문법입니다. CMD 에서는 `gradlew.bat`,
+PowerShell 에서는 `.\gradlew.bat` 을 쓰세요.
+`--args` 값도 CMD 에서는 작은따옴표가 아니라 큰따옴표여야 합니다.
+
 
 **애플리케이션이 기동되지 않고 `jwt.secret 은 최소 32바이트여야 합니다` 가 뜬다**
 → `application-secret.yaml` 의 `jwt.secret` 을 32자 이상으로 늘리세요.
