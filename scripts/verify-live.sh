@@ -40,7 +40,7 @@ if curl -sf -o /dev/null "${HLS_BASE_URL:-http://localhost:8081}/health"; then
   ok "스트리밍 서버 응답 정상"
 else
   bad "스트리밍 서버에 연결할 수 없습니다 (8081)"
-  say "    streaming 디렉터리에서 실행하세요: docker compose up -d --build"
+  say "    프로젝트 루트에서 실행하세요: docker compose up -d streaming"
   exit 1
 fi
 
@@ -101,7 +101,7 @@ if [ "${TOTAL:-0}" -eq 0 ]; then
   say ""
   say "  확인해 볼 것:"
   say "   - OBS 가 '연결 중' 에서 멈춰 있나요? → 스트림 키를 다시 확인하세요."
-  say "   - streaming 로그: docker compose -f streaming/docker-compose.yml logs -f"
+  say "   - streaming 로그: docker compose logs -f streaming"
   say "   - nginx 가 백엔드에 닿지 못하면 송출이 거부됩니다."
   say "     (nginx.conf 의 host.docker.internal 주소)"
   exit 1
@@ -148,7 +148,7 @@ if [ -n "$HLS_OK" ]; then
 else
   bad "재생 목록을 가져오지 못했습니다: $HLS_URL"
   say "      → nginx 가 HLS 를 만들고 있는지 확인하세요."
-  say "         docker compose -f streaming/docker-compose.yml exec streaming ls /tmp/hls"
+  say "         docker compose exec streaming ls /tmp/hls"
 fi
 
 say ""
