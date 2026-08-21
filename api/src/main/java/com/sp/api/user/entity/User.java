@@ -1,23 +1,22 @@
 package com.sp.api.user.entity;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Getter
-@Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "users")
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private  Long id;
+    private Long id;
 
     // 로그인 이메일
     @Column(nullable = false, unique = true, length = 100)
@@ -47,8 +46,13 @@ public class User {
     // OAuth 사용자 ID
     private String providerId;
 
+    /** OBS 에 입력하는 송출 비밀 키. 절대 외부에 노출되면 안 된다. */
     @Column(unique = true, length = 100)
     private String streamKey;
+
+    /** HLS 재생 URL 에 쓰이는 공개 이름. streamKey 와 분리해 키가 새지 않게 한다. */
+    @Column(unique = true, length = 100)
+    private String publicName;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -63,6 +67,7 @@ public class User {
         this.role = Role.USER;
         this.provider = Provider.LOCAL;
         this.streamKey = UUID.randomUUID().toString();
+        this.publicName = UUID.randomUUID().toString();
     }
 
     @PrePersist
@@ -81,11 +86,36 @@ public class User {
         if (this.streamKey == null) {
             this.streamKey = UUID.randomUUID().toString();
         }
+
+        if (this.publicName == null) {
+            this.publicName = UUID.randomUUID().toString();
+        }
     }
 
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void updateProfile(String nickname, String profileImage) {
+        this.nickname = nickname;
+        this.profileImage = profileImage;
+    }
+
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
+
+    /** 스트림 키가 노출됐을 때 재발급한다. */
+    public void regenerateStreamKey() {
+        this.streamKey = UUID.randomUUID().toString();
+    }
+
+    /** 이 앱 이전에 만들어진 계정처럼 공개 이름이 비어 있는 경우를 메운다. */
+    public void assignPublicNameIfMissing() {
+        if (this.publicName == null) {
+            this.publicName = UUID.randomUUID().toString();
+        }
     }
 
     public enum Role {

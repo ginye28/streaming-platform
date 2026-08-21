@@ -1,0 +1,49 @@
+# 로컬 개발용 인프라. 프로젝트 루트에서 실행한다.
+#
+#   docker compose up -d           # MySQL + 스트리밍 서버 전부
+#   docker compose up -d mysql     # MySQL 만
+#   docker compose up -d streaming # 스트리밍 서버만
+#   docker compose down            # 중지 (데이터는 남음)
+#   docker compose down -v         # 중지 + DB 데이터까지 삭제
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: sp-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: streaming
+      MYSQL_USER: streaming
+      MYSQL_PASSWORD: streaming
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      # 여기가 healthy 가 되어야 백엔드를 띄울 수 있다.
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    restart: unless-stopped
+
+  streaming:
+    build:
+      context: ./streaming
+      dockerfile: Dockerfile
+    container_name: sp-streaming
+    ports:
+      - "1935:1935"   # RTMP 송출
+      - "8081:8081"   # HLS 재생
+    # nginx 가 호스트에서 도는 API(8080)로 on_publish 콜백을 보낼 수 있게 한다.
+    # Linux 에서는 host-gateway 매핑이 필요하다.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+volumes:
+  mysql-data:

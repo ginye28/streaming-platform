@@ -1,0 +1,31 @@
+# 테스트 클래스패스가 우선하므로 이 파일이 main 의 application.yaml 을 대체한다.
+# 덕분에 로컬 전용 application-secret/db.yaml 없이도 테스트가 돈다.
+spring:
+  datasource:
+    url: jdbc:h2:mem:test;MODE=MySQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+
+file:
+  upload-dir: build/tmp/test-uploads
+
+app:
+  cors:
+    allowed-origins: http://localhost:5173
+
+  hls:
+    base-url: http://localhost:8081/hls
+
+  rtmp:
+    rename-on-publish: true
+    redirect-base: rtmp://127.0.0.1:1935/live
+
+jwt:
+  secret: test-secret-key-for-unit-tests-only-32bytes+
+  expiration: 3600000

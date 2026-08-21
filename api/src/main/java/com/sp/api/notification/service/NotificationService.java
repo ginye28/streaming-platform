@@ -1,0 +1,90 @@
+package com.sp.api.notification.service;
+
+import com.sp.api.common.exception.NotFoundException;
+import com.sp.api.common.response.PageResponse;
+import com.sp.api.live.entity.LiveStream;
+import com.sp.api.notification.dto.NotificationResponse;
+import com.sp.api.notification.entity.Notification;
+import com.sp.api.notification.repository.NotificationRepository;
+import com.sp.api.subscribe.repository.SubscribeRepository;
+import com.sp.api.user.entity.User;
+import com.sp.api.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class NotificationService {
+
+    private final NotificationRepository notificationRepository;
+    private final SubscribeRepository subscribeRepository;
+    private final UserRepository userRepository;
+
+    /** 방송이 시작되면 구독자 전원에게 알림을 남긴다. */
+    @Transactional
+    public int notifyLiveStart(LiveStream live) {
+
+        List<User> subscribers =
+                subscribeRepository.findSubscribersOfChannel(live.getUser().getId());
+
+        if (subscribers.isEmpty()) {
+            return 0;
+        }
+
+        String message = live.getUser().getNickname() + " 님이 방송을 시작했습니다.";
+
+        List<Notification> notifications = subscribers.stream()
+                .map(subscriber -> new Notification(
+                        subscriber,
+                        Notification.Type.LIVE_START,
+                        message,
+                        live.getUser().getId(),
+                        live.getId()
+                ))
+                .toList();
+
+        notificationRepository.saveAll(notifications);
+
+        return notifications.size();
+    }
+
+    public PageResponse<NotificationResponse> findMine(String email, Pageable pageable) {
+
+        User user = findUser(email);
+
+        return PageResponse.from(
+                notificationRepository
+                        .findByRecipientIdOrderByCreatedAtDesc(user.getId(), pageable)
+                        .map(NotificationResponse::from)
+        );
+    }
+
+    public long unreadCount(String email) {
+        return notificationRepository.countByRecipientIdAndIsReadFalse(findUser(email).getId());
+    }
+
+    @Transactional
+    public void markAsRead(Long notificationId, String email) {
+
+        Notification notification = notificationRepository
+                .findByIdAndRecipientId(notificationId, findUser(email).getId())
+                .orElseThrow(() -> new NotFoundException("알림을 찾을 수 없습니다."));
+
+        notification.markAsRead();
+    }
+
+    @Transactional
+    public int markAllAsRead(String email) {
+        return notificationRepository.markAllAsRead(findUser(email).getId());
+    }
+
+    private User findUser(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다."));
+    }
+}

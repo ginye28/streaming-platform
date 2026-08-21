@@ -2,16 +2,15 @@ package com.sp.api.stream.entity;
 
 import com.sp.api.user.entity.User;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "streams")
 public class Stream {
 
@@ -33,7 +32,7 @@ public class Stream {
     @Column(nullable = false)
     private Long viewCount = 0L;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
@@ -42,6 +41,26 @@ public class Stream {
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    public Stream(String title, String description, String thumbnailUrl, String videoUrl, User user) {
+        this.title = title;
+        this.description = description;
+        this.thumbnailUrl = thumbnailUrl;
+        this.videoUrl = videoUrl;
+        this.user = user;
+        this.viewCount = 0L;
+    }
+
+    public void update(String title, String description, String thumbnailUrl, String videoUrl) {
+        this.title = title;
+        this.description = description;
+        this.thumbnailUrl = thumbnailUrl;
+        this.videoUrl = videoUrl;
+    }
+
+    public boolean isOwnedBy(String email) {
+        return user.getEmail().equals(email);
+    }
 
     @PrePersist
     public void prePersist() {
@@ -56,9 +75,5 @@ public class Stream {
     @PreUpdate
     public void preUpdate() {
         updatedAt = LocalDateTime.now();
-    }
-
-    public void increaseViewCount() {
-        this.viewCount++;
     }
 }

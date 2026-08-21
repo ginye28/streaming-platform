@@ -1,0 +1,30 @@
+# 루트의 docker-compose.yml 로 띄운 MySQL 에 그대로 붙는 개발용 프로필.
+#
+#   docker compose up -d mysql
+#   cd api && ./gradlew bootRun --args='--spring.profiles.active=mysql'
+#
+# 직접 설치한 MySQL 을 쓰려면 이 프로필 대신
+# application-db.yaml / application-secret.yaml 을 만들어 프로필 없이 실행하세요.
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/streaming?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: streaming
+    password: streaming
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+jwt:
+  # 개발 전용 값. 배포에는 절대 쓰지 말 것.
+  secret: local-development-only-secret-key-32bytes+
+  expiration: 86400000
+
+logging:
+  level:
+    com.sp.api: DEBUG
