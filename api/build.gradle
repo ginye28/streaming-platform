@@ -36,6 +36,8 @@ dependencies {
 	testCompileOnly 'org.projectlombok:lombok'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testRuntimeOnly 'com.h2database:h2'
+	// local 프로필로 DB 없이 띄우기 위한 용도. 배포 jar 에는 포함되지 않는다.
+	developmentOnly 'com.h2database:h2'
 	testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
