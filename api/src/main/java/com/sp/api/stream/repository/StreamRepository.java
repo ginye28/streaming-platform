@@ -9,12 +9,13 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 public interface StreamRepository extends JpaRepository<Stream, Long> {
 
-    // StreamResponse 가 user.nickname 을 읽으므로 함께 조회해 N+1 을 막는다.
+    // StreamResponse 가 user 를 읽으므로 함께 조회해 N+1 을 막는다.
     @Override
     @EntityGraph(attributePaths = "user")
     Page<Stream> findAll(Pageable pageable);
@@ -22,8 +23,24 @@ public interface StreamRepository extends JpaRepository<Stream, Long> {
     @EntityGraph(attributePaths = "user")
     Optional<Stream> findWithUserById(Long id);
 
+    /** 채널(특정 사용자)의 영상 목록. */
     @EntityGraph(attributePaths = "user")
-    Page<Stream> findByTitleContainingIgnoreCase(String keyword, Pageable pageable);
+    Page<Stream> findByUserId(Long userId, Pageable pageable);
+
+    /** 구독 중인 채널들의 영상 피드. */
+    @EntityGraph(attributePaths = "user")
+    Page<Stream> findByUserIdIn(Collection<Long> userIds, Pageable pageable);
+
+    long countByUserId(Long userId);
+
+    /** 제목뿐 아니라 설명도 검색 대상에 넣는다. */
+    @EntityGraph(attributePaths = "user")
+    @Query("""
+            select s from Stream s
+            where lower(s.title) like lower(concat('%', :keyword, '%'))
+               or lower(s.description) like lower(concat('%', :keyword, '%'))
+            """)
+    Page<Stream> search(@Param("keyword") String keyword, Pageable pageable);
 
     @EntityGraph(attributePaths = "user")
     List<Stream> findTop10ByOrderByViewCountDesc();

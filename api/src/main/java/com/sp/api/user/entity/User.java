@@ -87,6 +87,15 @@ public class User {
         this.updatedAt = LocalDateTime.now();
     }
 
+    public void updateProfile(String nickname, String profileImage) {
+        this.nickname = nickname;
+        this.profileImage = profileImage;
+    }
+
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
+
     /** 스트림 키가 노출됐을 때 재발급한다. */
     public void regenerateStreamKey() {
         this.streamKey = UUID.randomUUID().toString();

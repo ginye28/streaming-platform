@@ -2,6 +2,7 @@ package com.sp.api.stream.controller;
 
 import com.sp.api.common.response.ApiResponse;
 import com.sp.api.common.response.PageResponse;
+import com.sp.api.common.security.AuthUtils;
 import com.sp.api.stream.dto.CreateStreamRequest;
 import com.sp.api.stream.dto.StreamResponse;
 import com.sp.api.stream.dto.UpdateStreamRequest;
@@ -32,46 +33,74 @@ public class StreamController {
             Authentication authentication
     ) {
 
-        StreamResponse response =
-                streamService.create(request, authentication.getName());
+        StreamResponse response = streamService.create(request, authentication.getName());
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok(response));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(response));
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<StreamResponse>>> findAll(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
-            Pageable pageable
+            Pageable pageable,
+            Authentication authentication
     ) {
 
-        return ResponseEntity.ok(ApiResponse.ok(streamService.findAll(pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(
+                streamService.findAll(pageable, AuthUtils.emailOrNull(authentication))
+        ));
     }
 
-    // 리터럴 경로를 /{id} 보다 먼저 선언해 매핑 의도를 분명히 한다.
+    // 리터럴 경로들을 /{id} 보다 먼저 선언한다.
+
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<PageResponse<StreamResponse>>> search(
             @RequestParam @NotBlank String keyword,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
-            Pageable pageable
+            Pageable pageable,
+            Authentication authentication
     ) {
 
-        return ResponseEntity.ok(ApiResponse.ok(streamService.search(keyword, pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(
+                streamService.search(keyword, pageable, AuthUtils.emailOrNull(authentication))
+        ));
     }
 
     @GetMapping("/popular")
-    public ResponseEntity<ApiResponse<List<StreamResponse>>> popular() {
-        return ResponseEntity.ok(ApiResponse.ok(streamService.popular()));
+    public ResponseEntity<ApiResponse<List<StreamResponse>>> popular(Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                streamService.popular(AuthUtils.emailOrNull(authentication))
+        ));
     }
 
     @GetMapping("/latest")
-    public ResponseEntity<ApiResponse<List<StreamResponse>>> latest() {
-        return ResponseEntity.ok(ApiResponse.ok(streamService.latest()));
+    public ResponseEntity<ApiResponse<List<StreamResponse>>> latest(Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                streamService.latest(AuthUtils.emailOrNull(authentication))
+        ));
+    }
+
+    /** 구독 중인 채널들의 영상 피드. 로그인 필요. */
+    @GetMapping("/subscribed")
+    public ResponseEntity<ApiResponse<PageResponse<StreamResponse>>> subscribedFeed(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
+            Pageable pageable,
+            Authentication authentication
+    ) {
+
+        return ResponseEntity.ok(ApiResponse.ok(
+                streamService.findSubscribedFeed(authentication.getName(), pageable)
+        ));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<StreamResponse>> findById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.ok(streamService.findById(id)));
+    public ResponseEntity<ApiResponse<StreamResponse>> findById(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+
+        return ResponseEntity.ok(ApiResponse.ok(
+                streamService.findById(id, AuthUtils.emailOrNull(authentication))
+        ));
     }
 
     @PutMapping("/{id}")
@@ -81,9 +110,7 @@ public class StreamController {
             Authentication authentication
     ) {
 
-        StreamResponse response = streamService.update(
-                id, request, authentication.getName()
-        );
+        StreamResponse response = streamService.update(id, request, authentication.getName());
 
         return ResponseEntity.ok(ApiResponse.ok(response));
     }

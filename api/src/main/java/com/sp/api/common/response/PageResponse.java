@@ -1,6 +1,7 @@
 package com.sp.api.common.response;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -18,13 +19,29 @@ public record PageResponse<T>(
 ) {
 
     public static <T> PageResponse<T> from(Page<T> page) {
+        return of(page, page.getContent());
+    }
+
+    /** 페이징 정보는 원본 Page 에서, 내용은 따로 변환한 목록에서 가져온다. */
+    public static <T> PageResponse<T> of(Page<?> page, List<T> content) {
         return new PageResponse<>(
-                page.getContent(),
+                content,
                 page.getNumber(),
                 page.getSize(),
                 page.getTotalElements(),
                 page.getTotalPages(),
                 page.isLast()
+        );
+    }
+
+    public static <T> PageResponse<T> empty(Pageable pageable) {
+        return new PageResponse<>(
+                List.of(),
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                0L,
+                0,
+                true
         );
     }
 }

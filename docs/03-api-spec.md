@@ -79,14 +79,55 @@ Authorization: Bearer <accessToken>
 
 ---
 
-## 사용자
+## 내 계정 (`/api/users`)
+
+모두 인증이 필요합니다. 공개 채널 조회는 `/api/channels` 에 있습니다.
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| GET | `/api/users/me` | 내 정보 (`id`, `email`, `nickname`, `profileImage`) |
+| PATCH | `/api/users/me` | 닉네임·프로필 이미지 수정 (닉네임 중복 시 409) |
+| PUT | `/api/users/me/password` | 비밀번호 변경 |
+| GET | `/api/users/me/subscriptions` | 내가 구독 중인 채널 목록 (페이지) |
+| GET | `/api/users/stream-key` | OBS 송출용 스트림 키 조회 |
+| POST | `/api/users/stream-key/regenerate` | 스트림 키 재발급 |
+
+프로필 수정
+```json
+{ "nickname": "새닉네임", "profileImage": "/uploads/p.png" }
+```
+
+비밀번호 변경 — 현재 비밀번호가 틀리면 401, 기존과 같은 값이면 400
+```json
+{ "currentPassword": "password123", "newPassword": "newpassword456" }
+```
+
+---
+
+## 채널 (`/api/channels`)
 
 | 메서드 | 경로 | 인증 | 설명 |
 |---|---|---|---|
-| GET | `/api/users/me` | 필요 | 내 정보 (`id`, `email`, `nickname`, `profileImage`) |
-| GET | `/api/users/stream-key` | 필요 | OBS 송출용 스트림 키 조회 |
-| POST | `/api/users/stream-key/regenerate` | 필요 | 스트림 키 재발급 |
-| POST | `/api/users/{channelId}/subscribe` | 필요 | 구독 토글 → `{ "subscribed": true, "subscriberCount": 3 }` |
+| GET | `/api/channels/{channelId}` | 공개 | 채널 정보 |
+| GET | `/api/channels/{channelId}/streams` | 공개 | 채널의 영상 목록 (페이지) |
+| POST | `/api/channels/{channelId}/subscribe` | 필요 | 구독 토글 |
+
+채널 정보 응답
+```json
+{
+  "id": 1,
+  "nickname": "채널명",
+  "profileImage": null,
+  "subscriberCount": 12,
+  "streamCount": 4,
+  "subscribedByMe": true
+}
+```
+
+`subscribedByMe` 는 비로그인으로 조회하면 항상 `false` 입니다.
+
+구독 토글 응답: `{ "subscribed": true, "subscriberCount": 13 }`
+자기 자신을 구독하면 400.
 
 ---
 
@@ -96,9 +137,10 @@ Authorization: Bearer <accessToken>
 |---|---|---|---|
 | POST | `/api/streams` | 필요 | 등록 (201) |
 | GET | `/api/streams` | 공개 | 목록 (페이지) |
-| GET | `/api/streams/search?keyword=` | 공개 | 제목 검색 (페이지) |
+| GET | `/api/streams/search?keyword=` | 공개 | 제목·설명 검색 (페이지) |
 | GET | `/api/streams/popular` | 공개 | 조회수 상위 10 |
 | GET | `/api/streams/latest` | 공개 | 최신 10 |
+| GET | `/api/streams/subscribed` | **필요** | 구독 중인 채널들의 영상 피드 (페이지) |
 | GET | `/api/streams/{id}` | 공개 | 상세 (조회수 +1) |
 | PUT | `/api/streams/{id}` | 필요 | 수정 (본인만, 아니면 403) |
 | DELETE | `/api/streams/{id}` | 필요 | 삭제 (본인만, 아니면 403) |
@@ -114,7 +156,27 @@ Authorization: Bearer <accessToken>
 ```
 `title`, `videoUrl` 필수.
 
-응답 항목: `id`, `title`, `description`, `thumbnailUrl`, `videoUrl`, `viewCount`, `nickname`, `createdAt`
+영상 응답
+```json
+{
+  "id": 1,
+  "title": "제목",
+  "description": "설명",
+  "thumbnailUrl": "/uploads/t.png",
+  "videoUrl": "/uploads/v.mp4",
+  "viewCount": 42,
+  "likeCount": 7,
+  "commentCount": 3,
+  "likedByMe": false,
+  "userId": 5,
+  "nickname": "채널명",
+  "createdAt": "2026-08-21T09:00:00"
+}
+```
+
+- `likedByMe` 는 비로그인으로 조회하면 항상 `false` 입니다. 토큰을 함께 보내면 실제 값이 옵니다.
+- `userId` 로 `/api/channels/{userId}` 채널 페이지에 연결할 수 있습니다.
+- 영상을 삭제하면 달려 있던 댓글·좋아요도 함께 정리됩니다.
 
 ---
 

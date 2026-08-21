@@ -2,32 +2,16 @@ package com.sp.api.integration;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.transaction.annotation.Transactional;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@Transactional
-class ApiIntegrationTest {
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
+class ApiIntegrationTest extends IntegrationTestSupport {
 
     @Test
     @DisplayName("영상 목록은 비로그인도 조회할 수 있다")
@@ -114,26 +98,15 @@ class ApiIntegrationTest {
     @DisplayName("가입 → 로그인 → 영상 등록 → 좋아요 토글이 이어서 동작한다")
     void fullFlow() throws Exception {
 
-        signup("flow@test.com", "플로우");
-        String token = login("flow@test.com");
-
-        MvcResult created = mockMvc.perform(post("/api/streams")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"title":"내 영상","description":"설명","videoUrl":"/uploads/a.mp4"}"""))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.data.nickname").value("플로우"))
-                .andReturn();
-
-        long streamId = json(created).path("data").path("id").asLong();
+        String token = signupAndLogin("flow@test.com", "플로우");
+        long streamId = createStream(token, "내 영상");
 
         // 상세 조회 시 조회수가 올라간다
         mockMvc.perform(get("/api/streams/" + streamId))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.nickname").value("플로우"))
                 .andExpect(jsonPath("$.data.viewCount").value(1));
 
-        // 좋아요 → 취소
         mockMvc.perform(post("/api/streams/" + streamId + "/like")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
@@ -148,27 +121,93 @@ class ApiIntegrationTest {
     }
 
     @Test
-    @DisplayName("남의 영상은 수정할 수 없다")
-    void cannotUpdateOthersStream() throws Exception {
+    @DisplayName("영상 응답에 좋아요·댓글 수와 내 좋아요 여부가 함께 온다")
+    void streamResponseCarriesCounts() throws Exception {
 
-        signup("owner2@test.com", "주인");
-        signup("intruder@test.com", "침입자");
+        String ownerToken = signupAndLogin("counts@test.com", "집계주인");
+        long streamId = createStream(ownerToken, "집계 대상");
 
-        String ownerToken = login("owner2@test.com");
-        String intruderToken = login("intruder@test.com");
+        mockMvc.perform(post("/api/streams/" + streamId + "/like")
+                        .header("Authorization", "Bearer " + ownerToken))
+                .andExpect(status().isOk());
 
-        MvcResult created = mockMvc.perform(post("/api/streams")
+        mockMvc.perform(post("/api/streams/" + streamId + "/comments")
                         .header("Authorization", "Bearer " + ownerToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"title":"내 것","videoUrl":"/uploads/a.mp4"}"""))
-                .andExpect(status().isCreated())
-                .andReturn();
+                                {"content":"댓글"}"""))
+                .andExpect(status().isCreated());
 
-        long streamId = json(created).path("data").path("id").asLong();
+        // 좋아요를 누른 본인이 보면 likedByMe = true
+        mockMvc.perform(get("/api/streams/" + streamId)
+                        .header("Authorization", "Bearer " + ownerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.likeCount").value(1))
+                .andExpect(jsonPath("$.data.commentCount").value(1))
+                .andExpect(jsonPath("$.data.likedByMe").value(true));
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-                        .put("/api/streams/" + streamId)
+        // 비로그인으로 보면 개수는 같고 likedByMe 만 false
+        mockMvc.perform(get("/api/streams/" + streamId))
+                .andExpect(jsonPath("$.data.likeCount").value(1))
+                .andExpect(jsonPath("$.data.likedByMe").value(false));
+    }
+
+    @Test
+    @DisplayName("댓글·좋아요가 달린 영상도 삭제된다")
+    void deleteStreamWithCommentsAndLikes() throws Exception {
+
+        String token = signupAndLogin("del@test.com", "삭제자");
+        long streamId = createStream(token, "삭제될 영상");
+
+        mockMvc.perform(post("/api/streams/" + streamId + "/comments")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"content":"곧 사라질 댓글"}"""))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/streams/" + streamId + "/like")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/api/streams/" + streamId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/streams/" + streamId))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("검색은 제목뿐 아니라 설명도 대상으로 한다")
+    void searchMatchesDescription() throws Exception {
+
+        String token = signupAndLogin("search@test.com", "검색자");
+
+        mockMvc.perform(post("/api/streams")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"평범한 제목","description":"희귀한단어가들어간설명",
+                                 "videoUrl":"/uploads/a.mp4"}"""))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/streams/search").param("keyword", "희귀한단어"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalElements").value(1))
+                .andExpect(jsonPath("$.data.content[0].title").value("평범한 제목"));
+    }
+
+    @Test
+    @DisplayName("남의 영상은 수정할 수 없다")
+    void cannotUpdateOthersStream() throws Exception {
+
+        String ownerToken = signupAndLogin("owner2@test.com", "주인");
+        String intruderToken = signupAndLogin("intruder@test.com", "침입자");
+
+        long streamId = createStream(ownerToken, "내 것");
+
+        mockMvc.perform(put("/api/streams/" + streamId)
                         .header("Authorization", "Bearer " + intruderToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -184,35 +223,5 @@ class ApiIntegrationTest {
         mockMvc.perform(get("/api/users/me")
                         .header("Authorization", "Bearer not.a.real.token"))
                 .andExpect(status().isUnauthorized());
-    }
-
-    private void signup(String email, String nickname) throws Exception {
-
-        mockMvc.perform(post("/api/auth/signup")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"email":"%s","password":"password123","nickname":"%s"}"""
-                                .formatted(email, nickname)))
-                .andExpect(status().isCreated());
-    }
-
-    private String login(String email) throws Exception {
-
-        MvcResult result = mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"email":"%s","password":"password123"}""".formatted(email)))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        String token = json(result).path("data").path("accessToken").asString();
-
-        assertThat(token).isNotBlank();
-
-        return token;
-    }
-
-    private JsonNode json(MvcResult result) throws Exception {
-        return objectMapper.readTree(result.getResponse().getContentAsString());
     }
 }
