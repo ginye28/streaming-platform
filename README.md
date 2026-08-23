@@ -316,6 +316,22 @@ API 상세는 [docs/03-api-spec.md](docs/03-api-spec.md) 참고.
 
 ## 자주 겪는 문제
 
+**`verify-live.ps1` 실행 시 `예기치 않은 토큰` / `종결자가 없습니다` 오류**
+
+Windows PowerShell 5.1 은 BOM 이 없는 `.ps1` 파일을 UTF-8 이 아니라
+시스템 코드페이지(한국어 Windows 는 CP949)로 읽습니다. 파일 안의 한글이
+깨지면서 따옴표 짝이 어긋나 구문 오류가 납니다.
+
+저장소의 스크립트는 **UTF-8 BOM + CRLF** 로 관리되고 `.gitattributes` 가
+줄바꿈을 고정합니다. 오류가 난다면 최신 코드를 받으세요.
+
+```powershell
+git pull
+```
+
+직접 `.ps1` 을 수정할 때도 **UTF-8 with BOM** 으로 저장해야 합니다.
+
+
 **PowerShell 에서 `curl` 이 보안 경고를 띄우며 멈춘다**
 
 Windows PowerShell 5.1 에서 `curl` 은 진짜 curl 이 아니라
