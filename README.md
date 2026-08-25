@@ -248,6 +248,56 @@ powershell -ExecutionPolicy Bypass -File scripts\verify-live.ps1
 
 ---
 
+## 관리자 계정 만들기
+
+카테고리 생성과 신고 처리는 `ADMIN` 권한이 필요합니다.
+승격 API 자체도 관리자만 쓸 수 있으므로, **첫 관리자는 설정으로 만듭니다.**
+
+**1. 평범하게 회원가입합니다.**
+
+```bash
+curl -X POST http://localhost:8080/api/auth/signup ^
+  -H "Content-Type: application/json" ^
+  -d "{\"email\":\"me@example.com\",\"password\":\"password123\",\"nickname\":\"관리자\"}"
+```
+
+(PowerShell 에서는 `curl` 이 아니라 `curl.exe` 를 쓰세요.)
+
+**2. 그 이메일을 `app.admin.emails` 에 넣고 서버를 재시작합니다.**
+
+한 번만 쓸 거라면 실행 인자로:
+
+```bash
+gradlew.bat bootRun --args="--spring.profiles.active=local --app.admin.emails=me@example.com"
+```
+
+계속 쓸 거라면 `api/src/main/resources/application.yaml` 에 적어 둡니다:
+
+```yaml
+app:
+  admin:
+    emails: "me@example.com"     # 쉼표로 여러 개 가능
+```
+
+**3. 기동 로그를 확인합니다.**
+
+```
+INFO ... AdminBootstrap : 관리자로 승격: me@example.com
+```
+
+계정이 아직 없으면 경고만 남기고 넘어갑니다. 먼저 가입부터 하세요.
+
+**4. 이후로는 API 로 다른 사람을 승격시킬 수 있습니다.**
+
+```
+GET   /api/admin/users              # 사용자 목록에서 userId 확인
+PATCH /api/admin/users/{userId}/role   {"role":"ADMIN"}
+```
+
+자기 자신의 관리자 권한은 해제할 수 없습니다 (되돌릴 방법이 없어지므로).
+
+---
+
 ## 테스트
 
 ```bash
@@ -298,8 +348,8 @@ npm run build
 | 카테고리 (영상 분류, 관리자 생성) | 완료 |
 | 사용자 차단 (피드 필터링) | 완료 |
 | 신고 (접수 · 관리자 처리) | 완료 |
+| 관리자 계정 발급 (설정 부트스트랩 + 승격 API) | 완료 |
 | 소셜 로그인 | 엔티티만 준비 (`Provider`) |
-| 관리자 계정 발급 | 미착수 — 지금은 ADMIN 권한을 줄 API/절차가 없습니다 |
 
 API 상세는 [docs/03-api-spec.md](docs/03-api-spec.md) 참고.
 
@@ -314,11 +364,7 @@ API 상세는 [docs/03-api-spec.md](docs/03-api-spec.md) 참고.
    프론트에서 액세스 토큰이 만료되면 `POST /api/auth/refresh` 로 재발급받도록
    붙이는 작업이 아직 남아 있습니다 (API 자체는 완료).
 3. **Redis 도입** — 시청자 수 집계와 채팅 브로커를 서버 여러 대로 확장할 때 필요
-4. **관리자 계정 발급** — 카테고리 생성(`POST /api/categories`)과 신고 처리(`/api/admin/reports`)는
-   `ADMIN` 권한이 필요한데, 지금은 회원가입으로 `ADMIN` 계정을 만들 방법이 없습니다.
-   테스트는 리플렉션으로 우회하지만, 실제로 쓰려면 DB 에서 해당 사용자의
-   `role` 컬럼을 직접 `ADMIN` 으로 바꾸거나(H2 콘솔/`UPDATE users SET role='ADMIN' ...`),
-   시딩 스크립트를 만들어야 합니다.
+4. **관리자 화면** — 신고 처리·카테고리 관리 API 는 준비됐지만 화면이 없습니다.
 
 ---
 
