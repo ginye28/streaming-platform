@@ -470,6 +470,10 @@ docker compose up -d mysql streaming
 `npm install` 은 이번에 `index.html` 이 바뀌었으니 한 번 돌려 주세요.
 자세한 내용은 [실행하기](#실행하기) 참고.
 
+여기까지 되면 이런 화면이 뜹니다.
+
+![홈 화면](docs/screenshots/home-light.png)
+
 > `bootRun` 은 **끝나지 않는 게 정상**입니다. 서버가 계속 떠 있는 겁니다.
 > `docker compose` 는 반드시 프로젝트 루트에서 — 다른 곳에서 치면
 > `no configuration file provided` 가 납니다.
@@ -485,6 +489,8 @@ docker compose up -d mysql streaming
 가입이 먼저입니다. 계정이 없으면 경고만 뜨고 넘어갑니다.
 자세한 내용은 [관리자 계정 만들기](#관리자-계정-만들기) 참고.
 
+![관리자 화면 · 신고 탭](docs/screenshots/admin.png)
+
 ### 3. OBS 송출 — 아직 확인 안 된 부분
 
 **이것만 유일하게 검증이 남아 있습니다.**
@@ -497,6 +503,9 @@ powershell -ExecutionPolicy Bypass -File scripts\verify-live.ps1  # PowerShell
 또는 직접:
 
 - [ ] `/?view=me` → **송출 설정 (OBS)** → 스트림 키 `보기`
+
+  ![송출 설정 칸](docs/screenshots/stream-key.png)
+
 - [ ] OBS → 설정 → 방송 → 서비스 `사용자 지정`,
       서버 `rtmp://localhost:1935/live`, 스트림 키는 위에서 복사한 값
 - [ ] 방송 시작 → `/?view=lives` 에 뜨는지
@@ -517,6 +526,10 @@ powershell -ExecutionPolicy Bypass -File scripts\verify-live.ps1  # PowerShell
 - [ ] 영상 신고 → 관리자 화면에서 처리 / 반려
 - [ ] 사용자 차단 → 그 사람 영상이 홈에서 빠지는지
 - [ ] 영상 올리기 · 좋아요 · 댓글 · 검색 · 구독
+
+`어둡게` 를 누르면 위의 홈 화면이 이렇게 바뀝니다.
+
+![나이트 모드](docs/screenshots/home-dark.png)
 
 ### 막히면
 
