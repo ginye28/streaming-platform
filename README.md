@@ -20,6 +20,8 @@ streaming/   nginx-rtmp 도커 구성
 docs/        요구사항 · ERD · API 명세 · 컨벤션
 ```
 
+> 처음 켜신다면 [집에서 확인할 것](#집에서-확인할-것) 을 순서대로 따라가시면 됩니다.
+
 ---
 
 ## 사전 준비
@@ -440,11 +442,93 @@ API 상세는 [docs/03-api-spec.md](docs/03-api-spec.md) 참고.
 
 ## 다음 할 일
 
-1. **실제 OBS 로 송출 확인** — `./scripts/verify-live.sh` 로 확인.
-   `on_publish` 302 리다이렉트가 기대대로 동작하는지가 핵심입니다.
+1. **실제 OBS 로 송출 확인** — `on_publish` 302 리다이렉트가 기대대로 동작하는지가 핵심입니다.
+   순서는 [집에서 확인할 것](#집에서-확인할-것) 에 정리해 뒀습니다.
 2. **화면 배치 다시 잡기** — 색과 서체는 입혔지만, 무엇을 어디에 놓을지는 그대로입니다.
    `app.css` 는 색만 맡고 있어서 배치를 바꿔도 색이 깨지지 않습니다.
 3. **Redis 도입** — 시청자 수 집계와 채팅 브로커를 서버 여러 대로 확장할 때 필요
+
+---
+
+## 집에서 확인할 것
+
+작업 환경에 Docker 데몬과 OBS 가 없어서, **송출 관련은 실제 PC 에서만 확인할 수 있습니다.**
+아래 순서대로 하시면 됩니다. 각 줄의 링크에 자세한 설명이 있습니다.
+
+### 1. 켜기
+
+프로젝트 **루트**에서:
+
+```powershell
+docker compose up -d mysql streaming
+```
+
+- [ ] `docker compose ps` 로 **mysql 과 streaming 둘 다** `Up` 인지 확인
+- [ ] API 실행 — `cd api` 후 `.\gradlew.bat bootRun --args="--spring.profiles.active=mysql"`
+- [ ] 새 창에서 프론트 실행 — `cd web`, `npm install`, `npm run dev` → http://localhost:5173
+
+`npm install` 은 이번에 `index.html` 이 바뀌었으니 한 번 돌려 주세요.
+자세한 내용은 [실행하기](#실행하기) 참고.
+
+> `bootRun` 은 **끝나지 않는 게 정상**입니다. 서버가 계속 떠 있는 겁니다.
+> `docker compose` 는 반드시 프로젝트 루트에서 — 다른 곳에서 치면
+> `no configuration file provided` 가 납니다.
+
+### 2. 관리자 계정 만들기
+
+- [ ] 화면에서 **회원가입 먼저**
+- [ ] `api/src/main/resources/application.yaml` 의 `app.admin.emails` 에 그 이메일 넣기
+      (한 번만 쓸 거면 실행 인자로 `--app.admin.emails=가입한_이메일`)
+- [ ] API 재시작 → 로그에 `관리자로 승격: ...` 확인
+- [ ] 머리에 `관리자` 링크가 생기는지
+
+가입이 먼저입니다. 계정이 없으면 경고만 뜨고 넘어갑니다.
+자세한 내용은 [관리자 계정 만들기](#관리자-계정-만들기) 참고.
+
+### 3. OBS 송출 — 아직 확인 안 된 부분
+
+**이것만 유일하게 검증이 남아 있습니다.**
+
+```bash
+./scripts/verify-live.sh                                        # Git Bash
+powershell -ExecutionPolicy Bypass -File scripts\verify-live.ps1  # PowerShell
+```
+
+또는 직접:
+
+- [ ] `/?view=me` → **송출 설정 (OBS)** → 스트림 키 `보기`
+- [ ] OBS → 설정 → 방송 → 서비스 `사용자 지정`,
+      서버 `rtmp://localhost:1935/live`, 스트림 키는 위에서 복사한 값
+- [ ] 방송 시작 → `/?view=lives` 에 뜨는지
+- [ ] 눌러서 재생되는지, 채팅이 붙는지
+- [ ] 재생 URL 에 스트림 키가 **안 들어가는지** ← 이게 핵심
+
+`test` 같은 임의 문자열은 거부됩니다. 반드시 본인 키를 쓰세요.
+
+**송출이 거부되면** `api/src/main/resources/application.yaml` 에서
+`app.rtmp.rename-on-publish` 를 `false` 로 바꾸고 다시 시도하세요.
+우회로로 만들어 둔 설정이고, 대신 재생 URL 에 스트림 키가 드러납니다.
+자세한 내용은 [OBS로 방송 송출하기](#obs로-방송-송출하기) 참고.
+
+### 4. 화면 훑어보기
+
+- [ ] 머리의 **어둡게 / 밝게** 버튼 — 껐다 켜도 유지되는지 ([색과 서체](#색과-서체))
+- [ ] 서체가 Gothic A1 로 보이는지 (구글 폰트라 인터넷이 필요합니다)
+- [ ] 영상 신고 → 관리자 화면에서 처리 / 반려
+- [ ] 사용자 차단 → 그 사람 영상이 홈에서 빠지는지
+- [ ] 영상 올리기 · 좋아요 · 댓글 · 검색 · 구독
+
+### 막히면
+
+| 증상 | 원인 |
+|---|---|
+| `Communications link failure` | MySQL 컨테이너가 안 떠 있음 |
+| OBS `서버에 연결하지 못했습니다` | `streaming` 컨테이너가 안 떠 있음 |
+| OBS `채널 혹은 스트림 키에 접근할 수 없습니다` | 스트림 키가 틀림 |
+| `java` 를 못 찾음 | PATH 설정 후 **새 창**을 열어야 반영됨 |
+| `no configuration file provided` | 프로젝트 루트가 아닌 곳에서 `docker compose` 실행 |
+
+더 자세한 건 아래 [자주 겪는 문제](#자주-겪는-문제) 에 있습니다.
 
 ---
 
