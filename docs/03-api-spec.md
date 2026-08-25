@@ -109,6 +109,8 @@ Authorization: Bearer <accessToken>
 | GET | `/api/users/me/subscriptions` | 내가 구독 중인 채널 목록 (페이지) |
 | GET | `/api/users/stream-key` | OBS 송출용 스트림 키 조회 |
 | POST | `/api/users/stream-key/regenerate` | 스트림 키 재발급 |
+| POST | `/api/users/{userId}/block` | 차단 토글. 응답: `{ "blocked": true }` |
+| GET | `/api/users/me/blocks` | 내가 차단한 사용자 목록 (페이지) |
 
 프로필 수정
 ```json
@@ -119,6 +121,10 @@ Authorization: Bearer <accessToken>
 ```json
 { "currentPassword": "password123", "newPassword": "newpassword456" }
 ```
+
+차단 — 자기 자신을 차단하면 400. 차단한 채널의 영상·라이브는
+`GET /api/streams`, `GET /api/lives` 목록(로그인 상태로 조회 시)에서 빠집니다.
+채널 페이지를 직접 방문하거나 구독 피드를 보는 것까지 막지는 않습니다.
 
 ---
 
@@ -154,7 +160,7 @@ Authorization: Bearer <accessToken>
 | 메서드 | 경로 | 인증 | 설명 |
 |---|---|---|---|
 | POST | `/api/streams` | 필요 | 등록 (201) |
-| GET | `/api/streams` | 공개 | 목록 (페이지) |
+| GET | `/api/streams?categoryId=` | 공개 | 목록 (페이지). `categoryId` 로 좁힐 수 있다. 로그인 상태면 내가 차단한 채널의 영상은 빠진다. |
 | GET | `/api/streams/search?keyword=` | 공개 | 제목·설명 검색 (페이지) |
 | GET | `/api/streams/popular` | 공개 | 조회수 상위 10 |
 | GET | `/api/streams/latest` | 공개 | 최신 10 |
@@ -169,10 +175,11 @@ Authorization: Bearer <accessToken>
   "title": "제목",
   "description": "설명",
   "thumbnailUrl": "/uploads/xxx.png",
-  "videoUrl": "/uploads/xxx.mp4"
+  "videoUrl": "/uploads/xxx.mp4",
+  "categoryId": 1
 }
 ```
-`title`, `videoUrl` 필수.
+`title`, `videoUrl` 필수. `categoryId` 는 생략 가능(미분류). 존재하지 않는 id 면 404.
 
 영상 응답
 ```json
@@ -188,13 +195,31 @@ Authorization: Bearer <accessToken>
   "likedByMe": false,
   "userId": 5,
   "nickname": "채널명",
+  "categoryId": 1,
+  "categoryName": "저스트채팅",
   "createdAt": "2026-08-21T09:00:00"
 }
 ```
 
 - `likedByMe` 는 비로그인으로 조회하면 항상 `false` 입니다. 토큰을 함께 보내면 실제 값이 옵니다.
 - `userId` 로 `/api/channels/{userId}` 채널 페이지에 연결할 수 있습니다.
+- `categoryId`/`categoryName` 은 미분류면 둘 다 `null`.
 - 영상을 삭제하면 달려 있던 댓글·좋아요도 함께 정리됩니다.
+
+---
+
+## 카테고리 (`/api/categories`)
+
+| 메서드 | 경로 | 인증 | 설명 |
+|---|---|---|---|
+| GET | `/api/categories` | 공개 | 목록 (이름순) |
+| POST | `/api/categories` | **관리자만** | 생성 (201) |
+
+```json
+{ "name": "저스트채팅" }
+```
+- `name` 최대 30자, 중복이면 409.
+- 관리자가 아닌 사용자가 생성을 시도하면 403.
 
 ---
 
@@ -322,6 +347,43 @@ STOMP over WebSocket 을 씁니다.
   "read": false, "createdAt": "2026-08-21T09:00:00"
 }
 ```
+
+---
+
+## 신고 (`/api/reports`, `/api/admin/reports`)
+
+| 메서드 | 경로 | 인증 | 설명 |
+|---|---|---|---|
+| POST | `/api/reports` | 필요 | 신고 접수 (201) |
+| GET | `/api/admin/reports?status=` | **관리자만** | 신고 목록 (페이지, 최신순). `status` 생략 시 전체 |
+| PATCH | `/api/admin/reports/{id}` | **관리자만** | 처리 상태 변경 |
+
+신고 접수
+```json
+{ "targetType": "STREAM", "targetId": 1, "reason": "부적절한 내용입니다." }
+```
+- `targetType`: `STREAM` · `LIVE_STREAM` · `COMMENT` · `USER`
+- 대상이 존재하지 않으면 404. `reason` 최대 500자.
+
+신고 응답
+```json
+{
+  "id": 1,
+  "reporterId": 3,
+  "reporterNickname": "신고자",
+  "targetType": "STREAM",
+  "targetId": 1,
+  "reason": "부적절한 내용입니다.",
+  "status": "PENDING",
+  "createdAt": "2026-08-25T09:00:00"
+}
+```
+
+처리 상태 변경
+```json
+{ "status": "RESOLVED" }
+```
+- `status`: `PENDING` · `RESOLVED` · `REJECTED`
 
 ---
 

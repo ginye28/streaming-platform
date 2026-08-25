@@ -1,5 +1,6 @@
 package com.sp.api.live.service;
 
+import com.sp.api.block.service.BlockService;
 import com.sp.api.common.exception.ForbiddenException;
 import com.sp.api.common.exception.NotFoundException;
 import com.sp.api.common.response.PageResponse;
@@ -37,6 +38,7 @@ public class LiveStreamService {
     private final NotificationService notificationService;
     private final LiveViewerTracker viewerTracker;
     private final LiveProperties liveProperties;
+    private final BlockService blockService;
 
     /**
      * OBS 가 송출을 시작할 때 nginx-rtmp 가 넘겨준 스트림 키를 검증하고 방송을 연다.
@@ -120,10 +122,12 @@ public class LiveStreamService {
                 });
     }
 
-    public PageResponse<LiveStreamResponse> findLiveNow(Pageable pageable) {
+    /** 지금 방송 중인 목록. 로그인 상태면 내가 차단한 채널은 뺀다. */
+    public PageResponse<LiveStreamResponse> findLiveNow(Pageable pageable, String viewerEmail) {
         return PageResponse.from(
                 liveStreamRepository
-                        .findByStatusOrderByStartedAtDesc(LiveStream.Status.LIVE, pageable)
+                        .findByStatusExcludingUsers(
+                                LiveStream.Status.LIVE, blockService.excludedUserIds(viewerEmail), pageable)
                         .map(this::toResponse)
         );
     }

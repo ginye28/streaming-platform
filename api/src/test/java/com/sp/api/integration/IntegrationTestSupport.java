@@ -1,9 +1,14 @@
 package com.sp.api.integration;
 
+import com.sp.api.common.jwt.JwtProvider;
+import com.sp.api.user.entity.User;
+import com.sp.api.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +32,28 @@ abstract class IntegrationTestSupport {
 
     @Autowired
     protected ObjectMapper objectMapper;
+
+    @Autowired
+    protected UserRepository userRepository;
+
+    @Autowired
+    protected PasswordEncoder passwordEncoder;
+
+    @Autowired
+    protected JwtProvider jwtProvider;
+
+    /**
+     * ADMIN 권한 계정을 만들고 바로 쓸 수 있는 토큰을 돌려준다.
+     * 관리자 가입 API 가 따로 없으므로 테스트에서만 권한을 직접 부여한다.
+     */
+    protected String adminToken(String email, String nickname) throws Exception {
+
+        User admin = new User(email, passwordEncoder.encode("password123"), nickname);
+        ReflectionTestUtils.setField(admin, "role", User.Role.ADMIN);
+        userRepository.saveAndFlush(admin);
+
+        return jwtProvider.createToken(email);
+    }
 
     protected void signup(String email, String nickname) throws Exception {
 
