@@ -3,6 +3,7 @@ import { getUnreadCount } from '../api.js'
 import { useAuth } from '../useAuth.js'
 import { navigate } from '../router.js'
 import Link from '../components/Link.jsx'
+import ThemeToggle from '../components/ThemeToggle.jsx'
 import { useAsyncData } from '../useAsyncData.js'
 
 export default function Layout({ children }) {
@@ -40,6 +41,8 @@ export default function Layout({ children }) {
                 </form>
 
                 <div className="nav__account">
+                    <ThemeToggle className="nav__theme" />
+
                     {me ? (
                         <>
                             <Link to={{ view: 'upload' }}>올리기</Link>

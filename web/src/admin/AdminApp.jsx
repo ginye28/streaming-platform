@@ -4,6 +4,7 @@ import CategoriesTab from './CategoriesTab.jsx'
 import LoginForm from './LoginForm.jsx'
 import ReportsTab from './ReportsTab.jsx'
 import UsersTab from './UsersTab.jsx'
+import ThemeToggle from '../components/ThemeToggle.jsx'
 import './admin.css'
 
 const TABS = [
@@ -90,6 +91,7 @@ export default function AdminApp() {
 
                 <div className="admin__toolbar" style={{ margin: 0 }}>
                     <span className="admin__who">{me.nickname} 님</span>
+                    <ThemeToggle />
                     <button onClick={handleLogout}>로그아웃</button>
                 </div>
             </header>
