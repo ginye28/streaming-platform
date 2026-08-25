@@ -24,6 +24,8 @@ jwt:
   # 개발 전용 값. 배포에는 절대 쓰지 말 것.
   secret: local-development-only-secret-key-32bytes+
   expiration: 86400000
+  # 리프레시 토큰 만료 시간(ms). 14일.
+  refresh-expiration: 1209600000
 
 logging:
   level:
