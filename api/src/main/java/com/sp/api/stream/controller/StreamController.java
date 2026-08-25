@@ -40,13 +40,14 @@ public class StreamController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<StreamResponse>>> findAll(
+            @RequestParam(required = false) Long categoryId,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
             Pageable pageable,
             Authentication authentication
     ) {
 
         return ResponseEntity.ok(ApiResponse.ok(
-                streamService.findAll(pageable, AuthUtils.emailOrNull(authentication))
+                streamService.findAll(pageable, AuthUtils.emailOrNull(authentication), categoryId)
         ));
     }
 

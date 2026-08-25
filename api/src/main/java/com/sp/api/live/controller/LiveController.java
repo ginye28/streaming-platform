@@ -2,6 +2,7 @@ package com.sp.api.live.controller;
 
 import com.sp.api.common.response.ApiResponse;
 import com.sp.api.common.response.PageResponse;
+import com.sp.api.common.security.AuthUtils;
 import com.sp.api.live.dto.LiveSettingRequest;
 import com.sp.api.live.dto.LiveSettingResponse;
 import com.sp.api.live.dto.LiveStreamResponse;
@@ -24,10 +25,13 @@ public class LiveController {
     /** 지금 방송 중인 목록. 치지직·유튜브의 라이브 탭에 해당한다. */
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<LiveStreamResponse>>> liveNow(
-            @PageableDefault(size = 20) Pageable pageable
+            @PageableDefault(size = 20) Pageable pageable,
+            Authentication authentication
     ) {
 
-        return ResponseEntity.ok(ApiResponse.ok(liveStreamService.findLiveNow(pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(
+                liveStreamService.findLiveNow(pageable, AuthUtils.emailOrNull(authentication))
+        ));
     }
 
     /** 다음 방송에 쓸 제목·설명·썸네일. 리터럴 경로라 /{liveId} 보다 먼저 선언한다. */

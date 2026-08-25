@@ -1,5 +1,6 @@
 package com.sp.api.stream.entity;
 
+import com.sp.api.category.entity.Category;
 import com.sp.api.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -36,6 +37,10 @@ public class Stream {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -43,19 +48,26 @@ public class Stream {
     private LocalDateTime updatedAt;
 
     public Stream(String title, String description, String thumbnailUrl, String videoUrl, User user) {
+        this(title, description, thumbnailUrl, videoUrl, user, null);
+    }
+
+    public Stream(String title, String description, String thumbnailUrl, String videoUrl,
+                  User user, Category category) {
         this.title = title;
         this.description = description;
         this.thumbnailUrl = thumbnailUrl;
         this.videoUrl = videoUrl;
         this.user = user;
+        this.category = category;
         this.viewCount = 0L;
     }
 
-    public void update(String title, String description, String thumbnailUrl, String videoUrl) {
+    public void update(String title, String description, String thumbnailUrl, String videoUrl, Category category) {
         this.title = title;
         this.description = description;
         this.thumbnailUrl = thumbnailUrl;
         this.videoUrl = videoUrl;
+        this.category = category;
     }
 
     public boolean isOwnedBy(String email) {

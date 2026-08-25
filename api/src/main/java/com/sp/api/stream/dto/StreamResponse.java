@@ -17,6 +17,8 @@ public record StreamResponse(
         boolean likedByMe,
         Long userId,
         String nickname,
+        Long categoryId,
+        String categoryName,
         LocalDateTime createdAt
 ) {
 
@@ -33,6 +35,8 @@ public record StreamResponse(
                 likedByMe,
                 stream.getUser().getId(),
                 stream.getUser().getNickname(),
+                stream.getCategory() != null ? stream.getCategory().getId() : null,
+                stream.getCategory() != null ? stream.getCategory().getName() : null,
                 stream.getCreatedAt()
         );
     }

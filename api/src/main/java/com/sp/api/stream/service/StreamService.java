@@ -1,5 +1,8 @@
 package com.sp.api.stream.service;
 
+import com.sp.api.block.service.BlockService;
+import com.sp.api.category.entity.Category;
+import com.sp.api.category.repository.CategoryRepository;
 import com.sp.api.comment.repository.CommentRepository;
 import com.sp.api.common.exception.ForbiddenException;
 import com.sp.api.common.exception.NotFoundException;
@@ -31,6 +34,8 @@ public class StreamService {
     private final SubscribeRepository subscribeRepository;
     private final CommentRepository commentRepository;
     private final LikeRepository likeRepository;
+    private final CategoryRepository categoryRepository;
+    private final BlockService blockService;
     private final StreamResponseAssembler assembler;
 
     @Transactional
@@ -44,14 +49,19 @@ public class StreamService {
                 request.getDescription(),
                 request.getThumbnailUrl(),
                 request.getVideoUrl(),
-                user
+                user,
+                findCategoryOrNull(request.getCategoryId())
         );
 
         return StreamResponse.ofNew(streamRepository.save(stream));
     }
 
-    public PageResponse<StreamResponse> findAll(Pageable pageable, String viewerEmail) {
-        return toPageResponse(streamRepository.findAll(pageable), viewerEmail);
+    /** 전체 목록. categoryId 로 좁힐 수 있고, 로그인 상태면 내가 차단한 채널의 영상은 제외한다. */
+    public PageResponse<StreamResponse> findAll(Pageable pageable, String viewerEmail, Long categoryId) {
+        return toPageResponse(
+                streamRepository.findAllFiltered(categoryId, blockService.excludedUserIds(viewerEmail), pageable),
+                viewerEmail
+        );
     }
 
     @Transactional
@@ -95,7 +105,8 @@ public class StreamService {
                 request.getTitle(),
                 request.getDescription(),
                 request.getThumbnailUrl(),
-                request.getVideoUrl()
+                request.getVideoUrl(),
+                findCategoryOrNull(request.getCategoryId())
         );
 
         return assembler.assembleOne(stream, email);
@@ -127,6 +138,16 @@ public class StreamService {
 
     private PageResponse<StreamResponse> toPageResponse(Page<Stream> page, String viewerEmail) {
         return PageResponse.of(page, assembler.assemble(page.getContent(), viewerEmail));
+    }
+
+    private Category findCategoryOrNull(Long categoryId) {
+
+        if (categoryId == null) {
+            return null;
+        }
+
+        return categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new NotFoundException("카테고리를 찾을 수 없습니다."));
     }
 
     private Stream findOwned(Long id, String email, String forbiddenMessage) {
