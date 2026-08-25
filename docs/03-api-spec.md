@@ -74,8 +74,26 @@ Authorization: Bearer <accessToken>
 ```json
 { "email": "test@test.com", "password": "password123" }
 ```
-응답: `{ "success": true, "data": { "accessToken": "eyJ..." } }`
+응답: `{ "success": true, "data": { "accessToken": "eyJ...", "refreshToken": "..." } }`
 - 401(이메일 또는 비밀번호 불일치)
+
+### 토큰 재발급 — `POST /api/auth/refresh` (공개)
+
+```json
+{ "refreshToken": "..." }
+```
+응답: 로그인과 동일한 형태로 새 `accessToken`/`refreshToken` 쌍을 돌려준다.
+- 전달한 리프레시 토큰은 이 호출로 즉시 폐기된다(1회용, 회전 방식). 재사용하면 401.
+- 401(유효하지 않거나 만료된 리프레시 토큰)
+
+### 로그아웃 — `POST /api/auth/logout` (공개)
+
+```json
+{ "refreshToken": "..." }
+```
+- 전달한 리프레시 토큰을 무효화한다. 이미 없는 토큰이어도 200(멱등).
+- 액세스 토큰 자체는 무상태(stateless) JWT라 즉시 무효화되지 않고 남은 만료 시간까지는 유효하다.
+  액세스 토큰 만료 시간을 짧게 잡는 것으로 이 창을 줄인다.
 
 ---
 
