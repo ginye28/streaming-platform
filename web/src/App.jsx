@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Hls from 'hls.js'
+import AdminApp from './admin/AdminApp.jsx'
 
 const HLS_BASE_URL =
   import.meta.env.VITE_HLS_BASE_URL ?? 'http://localhost:8081/hls'
@@ -21,7 +22,22 @@ function useStreamName() {
   return name
 }
 
-function App() {
+/** ?view=admin 이면 관리자 화면. 라우터를 들이지 않고 ?stream= 과 같은 방식으로 맞춘다. */
+function useView() {
+  const read = () => new URLSearchParams(window.location.search).get('view')
+  const [view, setView] = useState(read)
+
+  useEffect(() => {
+    const onPopState = () => setView(read())
+
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
+
+  return view
+}
+
+function Player() {
   const videoRef = useRef(null)
   const streamName = useStreamName()
   const [error, setError] = useState(null)
@@ -94,8 +110,16 @@ function App() {
       />
 
       {error && <p role="alert">{error}</p>}
+
+      <p>
+        <a href="?view=admin">관리자</a>
+      </p>
     </div>
   )
+}
+
+function App() {
+  return useView() === 'admin' ? <AdminApp /> : <Player />
 }
 
 export default App

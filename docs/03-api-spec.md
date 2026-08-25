@@ -103,7 +103,7 @@ Authorization: Bearer <accessToken>
 
 | 메서드 | 경로 | 설명 |
 |---|---|---|
-| GET | `/api/users/me` | 내 정보 (`id`, `email`, `nickname`, `profileImage`) |
+| GET | `/api/users/me` | 내 정보 (`id`, `email`, `nickname`, `profileImage`, `role`) |
 | PATCH | `/api/users/me` | 닉네임·프로필 이미지 수정 (닉네임 중복 시 409) |
 | PUT | `/api/users/me/password` | 비밀번호 변경 |
 | GET | `/api/users/me/subscriptions` | 내가 구독 중인 채널 목록 (페이지) |
