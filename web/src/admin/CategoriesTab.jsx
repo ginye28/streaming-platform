@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { createCategory, getCategories } from '../api.js'
-import { useAsyncData } from './useAsyncData.js'
+import { useAsyncData } from '../useAsyncData.js'
 
 export default function CategoriesTab() {
     const [name, setName] = useState('')

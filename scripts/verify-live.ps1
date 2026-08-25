@@ -158,9 +158,7 @@ if ($hlsOk) {
     Write-Host '       docker compose exec streaming ls /tmp/hls'
 }
 
-$publicName = [System.IO.Path]::GetFileNameWithoutExtension($live.hlsUrl)
-
 Write-Host ''
 Write-Host '=== 6. 브라우저에서 보기 ==='
-Write-Host "  $Web/?stream=$publicName" -ForegroundColor Cyan
+Write-Host "  $Web/?view=live&id=$($live.id)" -ForegroundColor Cyan
 Write-Host ''
