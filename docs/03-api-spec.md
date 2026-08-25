@@ -350,6 +350,41 @@ STOMP over WebSocket 을 씁니다.
 
 ---
 
+## 관리자 — 사용자 권한 (`/api/admin/users`)
+
+모두 **관리자만** 접근할 수 있습니다.
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| GET | `/api/admin/users?role=` | 사용자 목록 (페이지). `role` 생략 시 전체 |
+| PATCH | `/api/admin/users/{userId}/role` | 권한 변경 |
+
+권한 변경
+```json
+{ "role": "ADMIN" }
+```
+- `role`: `USER` · `ADMIN`
+- 자기 자신을 `USER` 로 내리면 400. 되돌릴 수단이 없어지는 것을 막습니다.
+  (요청자가 관리자여야 하므로, 이 규칙만으로 마지막 관리자도 함께 보호됩니다.)
+- 없는 사용자면 404.
+
+### 최초 관리자 만들기
+
+관리자 승격 API 자체가 `ADMIN` 을 요구하므로, 첫 관리자는 설정으로만 만들 수 있습니다.
+
+1. 평범하게 회원가입합니다.
+2. `app.admin.emails` 에 그 이메일을 넣고 서버를 재시작합니다. (쉼표로 여러 개 가능)
+   ```bash
+   ./gradlew bootRun --args='--spring.profiles.active=local --app.admin.emails=me@example.com'
+   ```
+   또는 `application-*.yaml` 의 `app.admin.emails` 에 적어 둡니다.
+3. 기동 로그에 `관리자로 승격: me@example.com` 이 찍히면 완료입니다.
+   계정이 없으면 경고만 남기고 넘어갑니다.
+
+이후로는 `PATCH /api/admin/users/{userId}/role` 로 다른 사람을 승격시킬 수 있습니다.
+
+---
+
 ## 신고 (`/api/reports`, `/api/admin/reports`)
 
 | 메서드 | 경로 | 인증 | 설명 |
