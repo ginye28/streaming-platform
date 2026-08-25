@@ -228,8 +228,9 @@ powershell -ExecutionPolicy Bypass -File scripts\verify-live.ps1
    - 서버: `rtmp://localhost:1935/live`
    - 스트림 키: 2번에서 받은 값
 4. 방송 시작 후 `GET /api/lives` 에 방송이 뜨는지 확인합니다.
-5. 응답의 `hlsUrl` 끝부분(공개 이름)으로 재생합니다.
-   `http://localhost:5173/?stream={공개이름}`
+5. 프론트의 라이브 목록(`http://localhost:5173/?view=lives`)에서 방송을 열면
+   재생과 채팅이 함께 보입니다. 응답의 `id` 를 알면 바로 열어도 됩니다.
+   `http://localhost:5173/?view=live&id={liveId}`
 
 스트림 키가 노출됐다면 `POST /api/users/stream-key/regenerate` 로 재발급하세요.
 
@@ -245,6 +246,43 @@ powershell -ExecutionPolicy Bypass -File scripts\verify-live.ps1
 > **송출이 거부되면** `api/src/main/resources/application.yaml` 에서
 > `app.rtmp.rename-on-publish: false` 로 바꾸고 다시 시도하세요.
 > 송출은 되지만 재생 URL 에 스트림 키가 그대로 드러납니다.
+
+---
+
+## 화면 둘러보기
+
+```bash
+cd web
+npm install     # 처음 한 번만
+npm run dev
+```
+
+→ http://localhost:5173
+
+라우터 라이브러리 없이 **쿼리스트링으로 화면을 고릅니다.**
+
+| 주소 | 화면 |
+|---|---|
+| `/` | 홈 — 영상 목록, 카테고리 필터 |
+| `/?view=lives` | 라이브 목록 |
+| `/?view=live&id=1` | 라이브 시청 + 실시간 채팅 |
+| `/?view=stream&id=1` | 영상 재생 · 좋아요 · 댓글 · 신고 |
+| `/?view=channel&id=1` | 채널 — 구독 / 차단, 영상, 지난 방송 |
+| `/?view=search&keyword=…` | 검색 결과 |
+| `/?view=subscribed` | 구독 피드 |
+| `/?view=notifications` | 알림함 |
+| `/?view=upload` | 영상 올리기 (`&id=1` 이면 수정) |
+| `/?view=me` | 내 계정 — 프로필 · 비밀번호 · 스트림 키 · 방송 정보 · 구독 · 차단 |
+| `/?view=auth` | 로그인 / 회원가입 |
+| `/?view=admin` | 관리자 (아래 참고) |
+
+- 로그인 상태는 브라우저에 저장되어 새로고침해도 유지됩니다.
+  액세스 토큰이 만료되면 리프레시 토큰으로 자동 재발급합니다.
+- 채팅은 WebSocket(STOMP)으로 붙습니다. **비로그인도 읽을 수는 있고**, 쓰려면 로그인해야 합니다.
+  시청자 수는 채팅방 접속자를 세므로 라이브 화면을 열어 둔 사람만 집계됩니다.
+- 백엔드 주소는 `web/.env` 의 `VITE_API_BASE_URL` 로 바꿉니다. (기본값 `http://localhost:8080`)
+
+> 지금 화면은 **기능 확인용 최소 스타일**입니다. 디자인은 아직 잡지 않았습니다.
 
 ---
 
@@ -301,13 +339,7 @@ PATCH /api/admin/users/{userId}/role   {"role":"ADMIN"}
 ## 관리자 화면
 
 프론트를 띄우고 **`?view=admin`** 을 붙이면 관리자 화면이 열립니다.
-재생 화면 아래의 "관리자" 링크로도 갈 수 있습니다.
-
-```bash
-cd web
-npm install     # 처음 한 번만
-npm run dev
-```
+관리자로 로그인하면 상단 메뉴에 "관리자" 링크가 나타납니다.
 
 → http://localhost:5173/?view=admin
 
@@ -380,6 +412,7 @@ npm run build
 | 신고 (접수 · 관리자 처리) | 완료 |
 | 관리자 계정 발급 (설정 부트스트랩 + 승격 API) | 완료 |
 | 관리자 화면 (신고 · 카테고리 · 사용자) | 완료 |
+| 시청자 화면 (목록 · 재생 · 댓글 · 채널 · 라이브 · 채팅 · 알림 · 업로드) | 완료 (기능만, 디자인 미정) |
 | 소셜 로그인 | 엔티티만 준비 (`Provider`) |
 
 API 상세는 [docs/03-api-spec.md](docs/03-api-spec.md) 참고.
@@ -390,8 +423,8 @@ API 상세는 [docs/03-api-spec.md](docs/03-api-spec.md) 참고.
 
 1. **실제 OBS 로 송출 확인** — `./scripts/verify-live.sh` 로 확인.
    `on_publish` 302 리다이렉트가 기대대로 동작하는지가 핵심입니다.
-2. **시청자용 프론트 화면** — 재생 화면과 관리자 화면만 있습니다.
-   라이브 목록 · 채널 페이지 · 채팅창 · 알림함은 API 만 준비돼 있습니다.
+2. **프론트 디자인** — 지금 화면은 기능 확인용 최소 스타일입니다.
+   기능은 다 붙어 있으니 레이아웃·색·타이포만 다시 잡으면 됩니다.
 3. **Redis 도입** — 시청자 수 집계와 채팅 브로커를 서버 여러 대로 확장할 때 필요
 
 ---

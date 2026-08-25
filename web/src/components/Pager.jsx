@@ -5,7 +5,7 @@ export default function Pager({ page, onChange }) {
     }
 
     return (
-        <div className="admin__pager">
+        <div className="pager">
             <button disabled={page.page === 0} onClick={() => onChange(page.page - 1)}>
                 이전
             </button>

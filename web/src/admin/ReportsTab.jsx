@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { getReports, updateReportStatus } from '../api.js'
-import Pager from './Pager.jsx'
-import { useAsyncData } from './useAsyncData.js'
+import Pager from '../components/Pager.jsx'
+import { useAsyncData } from '../useAsyncData.js'
 
 const STATUS_LABEL = {
     PENDING: '접수됨',

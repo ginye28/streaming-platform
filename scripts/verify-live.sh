@@ -111,7 +111,8 @@ ok "방송 감지됨"
 
 TITLE=$(printf '%s' "$LIVE_JSON" | field title)
 HLS_URL=$(printf '%s' "$LIVE_JSON" | field hlsUrl)
-PUBLIC_NAME=$(printf '%s' "$HLS_URL" | sed 's#.*/##; s#\.m3u8$##')
+# 페이지 껍데기에는 id 가 없으므로 첫 "id" 가 content[0] 의 것이다.
+LIVE_ID=$(printf '%s' "$LIVE_JSON" | grep -o '"id":[0-9]*' | head -1 | sed 's/.*://')
 
 say ""
 say "=== 5. 결과 ==="
@@ -153,7 +154,7 @@ fi
 
 say ""
 say "=== 6. 브라우저에서 보기 ==="
-say "  $WEB/?stream=$PUBLIC_NAME"
+say "  $WEB/?view=live&id=$LIVE_ID"
 say ""
 say "  방송을 끄면 목록에서 사라지는지도 확인해 보세요:"
 say "    curl -s $API/api/lives"

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { changeUserRole, getUsers } from '../api.js'
-import Pager from './Pager.jsx'
-import { useAsyncData } from './useAsyncData.js'
+import Pager from '../components/Pager.jsx'
+import { useAsyncData } from '../useAsyncData.js'
 
 export default function UsersTab({ myId }) {
     const [role, setRole] = useState('')
