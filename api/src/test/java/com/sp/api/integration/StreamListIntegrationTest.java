@@ -109,6 +109,27 @@ class StreamListIntegrationTest extends IntegrationTestSupport {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    @DisplayName("검색어가 규칙에 맞지 않으면 500 이 아니라 400 이다")
+    void rejectsBadSearchKeyword() throws Exception {
+
+        // @Validated 가 붙은 컨트롤러의 파라미터 검증은 ConstraintViolationException 으로 오는데,
+        // 이걸 처리하지 않으면 잘못된 요청이 catch-all 로 떨어져 500 이 된다.
+        for (String keyword : new String[]{"", "   ", "짧"}) {
+            mockMvc.perform(get("/api/streams/search").param("keyword", keyword))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Test
+    @DisplayName("페이지 크기는 상한을 넘지 못한다")
+    void pageSizeIsCapped() throws Exception {
+
+        mockMvc.perform(get("/api/streams").param("size", "1000"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.size").value(100));
+    }
+
     private void view(long streamId, String ip) throws Exception {
         mockMvc.perform(get("/api/streams/" + streamId).with(remoteAddr(ip)))
                 .andExpect(status().isOk());
