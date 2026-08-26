@@ -50,6 +50,7 @@ public class CommentService {
         );
 
         if (parent == null) {
+            notificationService.notifyComment(saved);
             return CommentResponse.withReplies(saved, List.of());
         }
 
