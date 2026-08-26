@@ -1,4 +1,8 @@
 spring:
+  data:
+    web:
+      pageable:
+        max-page-size: 100
   profiles:
     include:
       - secret

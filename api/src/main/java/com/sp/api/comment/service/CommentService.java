@@ -65,7 +65,7 @@ public class CommentService {
      */
     public PageResponse<CommentResponse> findByStream(Long streamId, Pageable pageable) {
 
-        Page<Comment> roots = commentRepository.findByStreamIdAndParentIsNull(streamId, pageable);
+        Page<Comment> roots = commentRepository.findByStreamIdAndParentIsNullOrderByCreatedAtDescIdDesc(streamId, pageable);
 
         Map<Long, List<CommentResponse>> repliesByParent = findReplies(roots.getContent());
 

@@ -98,7 +98,7 @@ public class NotificationService {
 
         return PageResponse.from(
                 notificationRepository
-                        .findByRecipientIdOrderByCreatedAtDesc(user.getId(), pageable)
+                        .findByRecipientIdOrderByCreatedAtDescIdDesc(user.getId(), pageable)
                         .map(NotificationResponse::from)
         );
     }
