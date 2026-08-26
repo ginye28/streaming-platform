@@ -1,6 +1,13 @@
 # 테스트 클래스패스가 우선하므로 이 파일이 main 의 application.yaml 을 대체한다.
 # 덕분에 로컬 전용 application-secret/db.yaml 없이도 테스트가 돈다.
 spring:
+  # main 의 application.yaml 과 같이 맞춰 둔다. 이 파일이 그걸 통째로 대체하기 때문에,
+  # 여기 없으면 테스트에서는 설정이 아예 없는 것과 같다.
+  data:
+    web:
+      pageable:
+        max-page-size: 100
+
   datasource:
     url: jdbc:h2:mem:test;MODE=MySQL;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
