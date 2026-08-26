@@ -10,7 +10,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 
 public interface StreamRepository extends JpaRepository<Stream, Long> {
@@ -52,12 +51,6 @@ public interface StreamRepository extends JpaRepository<Stream, Long> {
                or lower(s.description) like lower(concat('%', :keyword, '%'))
             """)
     Page<Stream> search(@Param("keyword") String keyword, Pageable pageable);
-
-    @EntityGraph(attributePaths = {"user", "category"})
-    List<Stream> findTop10ByOrderByViewCountDesc();
-
-    @EntityGraph(attributePaths = {"user", "category"})
-    List<Stream> findTop10ByOrderByCreatedAtDesc();
 
     /**
      * 조회수를 DB 에서 직접 증가시킨다.
