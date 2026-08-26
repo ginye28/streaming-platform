@@ -10,43 +10,47 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 
 public interface StreamRepository extends JpaRepository<Stream, Long> {
 
-    // StreamResponse 가 user 를 읽으므로 함께 조회해 N+1 을 막는다.
-    @Override
-    @EntityGraph(attributePaths = "user")
-    Page<Stream> findAll(Pageable pageable);
-
-    @EntityGraph(attributePaths = "user")
+    @EntityGraph(attributePaths = {"user", "category"})
     Optional<Stream> findWithUserById(Long id);
 
     /** 채널(특정 사용자)의 영상 목록. */
-    @EntityGraph(attributePaths = "user")
+    @EntityGraph(attributePaths = {"user", "category"})
     Page<Stream> findByUserId(Long userId, Pageable pageable);
 
     /** 구독 중인 채널들의 영상 피드. */
-    @EntityGraph(attributePaths = "user")
+    @EntityGraph(attributePaths = {"user", "category"})
     Page<Stream> findByUserIdIn(Collection<Long> userIds, Pageable pageable);
 
     long countByUserId(Long userId);
 
+    /**
+     * 전체 목록. 카테고리로 좁힐 수 있고, 내가 차단한 사용자의 영상은 제외한다.
+     * excludedUserIds 는 비어 있으면 안 된다 — JPQL 의 NOT IN 은 빈 컬렉션을 받을 수 없어서,
+     * 차단한 사용자가 없을 때는 호출부가 절대 존재할 수 없는 id(-1L)를 채워 넣는다.
+     */
+    @EntityGraph(attributePaths = {"user", "category"})
+    @Query("""
+            select s from Stream s
+            where (:categoryId is null or s.category.id = :categoryId)
+              and s.user.id not in :excludedUserIds
+            """)
+    Page<Stream> findAllFiltered(
+            @Param("categoryId") Long categoryId,
+            @Param("excludedUserIds") Collection<Long> excludedUserIds,
+            Pageable pageable);
+
     /** 제목뿐 아니라 설명도 검색 대상에 넣는다. */
-    @EntityGraph(attributePaths = "user")
+    @EntityGraph(attributePaths = {"user", "category"})
     @Query("""
             select s from Stream s
             where lower(s.title) like lower(concat('%', :keyword, '%'))
                or lower(s.description) like lower(concat('%', :keyword, '%'))
             """)
     Page<Stream> search(@Param("keyword") String keyword, Pageable pageable);
-
-    @EntityGraph(attributePaths = "user")
-    List<Stream> findTop10ByOrderByViewCountDesc();
-
-    @EntityGraph(attributePaths = "user")
-    List<Stream> findTop10ByOrderByCreatedAtDesc();
 
     /**
      * 조회수를 DB 에서 직접 증가시킨다.

@@ -89,6 +89,13 @@ public class SecurityConfig {
                         // 채널 페이지 조회도 공개 (구독 토글은 아래 anyRequest 규칙으로 인증 필요)
                         .requestMatchers(HttpMethod.GET, "/api/channels/**").permitAll()
 
+                        // 카테고리 목록 조회는 공개. 생성은 관리자만(아래 /api/categories 규칙).
+                        .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+
+                        // 신고 처리·카테고리 생성은 관리자만
+                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/categories").hasAuthority("ADMIN")
+
                         // 업로드는 로그인 사용자만
                         .requestMatchers("/api/files/**").authenticated()
 

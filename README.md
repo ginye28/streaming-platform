@@ -20,6 +20,8 @@ streaming/   nginx-rtmp 도커 구성
 docs/        요구사항 · ERD · API 명세 · 컨벤션
 ```
 
+> 처음 켜신다면 [집에서 확인할 것](#집에서-확인할-것) 을 순서대로 따라가시면 됩니다.
+
 ---
 
 ## 사전 준비
@@ -228,8 +230,9 @@ powershell -ExecutionPolicy Bypass -File scripts\verify-live.ps1
    - 서버: `rtmp://localhost:1935/live`
    - 스트림 키: 2번에서 받은 값
 4. 방송 시작 후 `GET /api/lives` 에 방송이 뜨는지 확인합니다.
-5. 응답의 `hlsUrl` 끝부분(공개 이름)으로 재생합니다.
-   `http://localhost:5173/?stream={공개이름}`
+5. 프론트의 라이브 목록(`http://localhost:5173/?view=lives`)에서 방송을 열면
+   재생과 채팅이 함께 보입니다. 응답의 `id` 를 알면 바로 열어도 됩니다.
+   `http://localhost:5173/?view=live&id={liveId}`
 
 스트림 키가 노출됐다면 `POST /api/users/stream-key/regenerate` 로 재발급하세요.
 
@@ -245,6 +248,135 @@ powershell -ExecutionPolicy Bypass -File scripts\verify-live.ps1
 > **송출이 거부되면** `api/src/main/resources/application.yaml` 에서
 > `app.rtmp.rename-on-publish: false` 로 바꾸고 다시 시도하세요.
 > 송출은 되지만 재생 URL 에 스트림 키가 그대로 드러납니다.
+
+---
+
+## 화면 둘러보기
+
+```bash
+cd web
+npm install     # 처음 한 번만
+npm run dev
+```
+
+→ http://localhost:5173
+
+라우터 라이브러리 없이 **쿼리스트링으로 화면을 고릅니다.**
+
+| 주소 | 화면 |
+|---|---|
+| `/` | 홈 — 영상 목록, 카테고리 필터 |
+| `/?view=lives` | 라이브 목록 |
+| `/?view=live&id=1` | 라이브 시청 + 실시간 채팅 |
+| `/?view=stream&id=1` | 영상 재생 · 좋아요 · 댓글 · 신고 |
+| `/?view=channel&id=1` | 채널 — 구독 / 차단, 영상, 지난 방송 |
+| `/?view=search&keyword=…` | 검색 결과 |
+| `/?view=subscribed` | 구독 피드 |
+| `/?view=notifications` | 알림함 |
+| `/?view=upload` | 영상 올리기 (`&id=1` 이면 수정) |
+| `/?view=me` | 내 계정 — 프로필 · 비밀번호 · 스트림 키 · 방송 정보 · 구독 · 차단 |
+| `/?view=auth` | 로그인 / 회원가입 |
+| `/?view=admin` | 관리자 (아래 참고) |
+
+- 로그인 상태는 브라우저에 저장되어 새로고침해도 유지됩니다.
+  액세스 토큰이 만료되면 리프레시 토큰으로 자동 재발급합니다.
+- 채팅은 WebSocket(STOMP)으로 붙습니다. **비로그인도 읽을 수는 있고**, 쓰려면 로그인해야 합니다.
+  시청자 수는 채팅방 접속자를 세므로 라이브 화면을 열어 둔 사람만 집계됩니다.
+- 백엔드 주소는 `web/.env` 의 `VITE_API_BASE_URL` 로 바꿉니다. (기본값 `http://localhost:8080`)
+
+### 색과 서체
+
+밝은 화면이 기본이고, 머리의 **어둡게 / 밝게** 버튼으로 나이트 모드를 켭니다.
+고른 값은 이 브라우저에 저장되어 다음에 열 때도 유지됩니다.
+OS 의 다크 모드 설정은 일부러 따르지 않습니다 — 처음 열면 언제나 밝은 화면입니다.
+
+색·서체·모서리·간격은 전부 `web/src/app.css` 맨 위의 CSS 변수 한 벌로 모여 있고,
+관리자 화면(`web/src/admin/admin.css`)도 같은 변수를 씁니다. 여기만 고치면 전 화면이 따라옵니다.
+
+| | 밝은 화면 | 나이트 모드 |
+|---|---|---|
+| 바탕 | `#fbfcfb` | `#101413` |
+| 글자 | `#161a18` | `#e8ecea` |
+| 포인트 | `#17604f` (짙은 초록) | `#56c6a6` |
+
+서체는 **Gothic A1** 을 구글 폰트에서 받아 씁니다 (`web/index.html`).
+망이 막힌 환경에서는 시스템 고딕으로 떨어집니다.
+
+> 지금 배치(무엇을 어디에 놓을지)는 아직 확정이 아닙니다. 색과 서체만 먼저 입혀 둔 상태입니다.
+
+---
+
+## 관리자 계정 만들기
+
+카테고리 생성과 신고 처리는 `ADMIN` 권한이 필요합니다.
+승격 API 자체도 관리자만 쓸 수 있으므로, **첫 관리자는 설정으로 만듭니다.**
+
+**1. 평범하게 회원가입합니다.**
+
+```bash
+curl -X POST http://localhost:8080/api/auth/signup ^
+  -H "Content-Type: application/json" ^
+  -d "{\"email\":\"me@example.com\",\"password\":\"password123\",\"nickname\":\"관리자\"}"
+```
+
+(PowerShell 에서는 `curl` 이 아니라 `curl.exe` 를 쓰세요.)
+
+**2. 그 이메일을 `app.admin.emails` 에 넣고 서버를 재시작합니다.**
+
+한 번만 쓸 거라면 실행 인자로:
+
+```bash
+gradlew.bat bootRun --args="--spring.profiles.active=local --app.admin.emails=me@example.com"
+```
+
+계속 쓸 거라면 `api/src/main/resources/application.yaml` 에 적어 둡니다:
+
+```yaml
+app:
+  admin:
+    emails: "me@example.com"     # 쉼표로 여러 개 가능
+```
+
+**3. 기동 로그를 확인합니다.**
+
+```
+INFO ... AdminBootstrap : 관리자로 승격: me@example.com
+```
+
+계정이 아직 없으면 경고만 남기고 넘어갑니다. 먼저 가입부터 하세요.
+
+**4. 이후로는 API 로 다른 사람을 승격시킬 수 있습니다.**
+
+```
+GET   /api/admin/users              # 사용자 목록에서 userId 확인
+PATCH /api/admin/users/{userId}/role   {"role":"ADMIN"}
+```
+
+자기 자신의 관리자 권한은 해제할 수 없습니다 (되돌릴 방법이 없어지므로).
+
+---
+
+## 관리자 화면
+
+프론트를 띄우고 **`?view=admin`** 을 붙이면 관리자 화면이 열립니다.
+관리자로 로그인하면 상단 메뉴에 "관리자" 링크가 나타납니다.
+
+→ http://localhost:5173/?view=admin
+
+로그인하면 세 개의 탭이 나옵니다.
+
+| 탭 | 할 수 있는 일 |
+|---|---|
+| **신고** | 상태별(접수됨·처리됨·반려됨) 조회, 처리 / 반려 / 되돌리기 |
+| **카테고리** | 목록 조회, 새 카테고리 추가 |
+| **사용자** | 권한별 조회, 관리자 승격 / 해제 |
+
+- 관리자가 아닌 계정으로 로그인하면 "접근 권한이 없습니다" 안내가 나옵니다.
+  위의 **관리자 계정 만들기** 를 먼저 진행하세요.
+- 액세스 토큰이 만료되면 리프레시 토큰으로 자동 재발급받습니다.
+  재발급도 실패하면 로그인 화면으로 돌아갑니다.
+- 백엔드 주소는 `web/.env` 의 `VITE_API_BASE_URL` 로 바꿀 수 있습니다.
+  (기본값 `http://localhost:8080`)
 
 ---
 
@@ -283,8 +415,10 @@ npm run build
 |---|---|
 | 회원가입 · 로그인 (JWT) | 완료 |
 | 영상 등록 · 조회 · 수정 · 삭제 | 완료 |
-| 영상 검색 · 인기 · 최신 | 완료 |
+| 영상 검색 · 정렬 (최신순 · 인기순) | 완료 |
+| 조회수 중복 집계 방지 (같은 시청자 30분 1회) | 완료 (단일 서버 기준) |
 | 댓글 CRUD | 완료 |
+| 답글(대댓글) | 완료 (두 단계까지) |
 | 좋아요 · 구독 (상태·개수 조회 포함) | 완료 |
 | 채널 페이지 · 구독 피드 | 완료 |
 | 프로필 수정 · 비밀번호 변경 | 완료 |
@@ -294,7 +428,16 @@ npm run build
 | 실시간 채팅 (WebSocket) · 채팅 저장 | 완료 |
 | 동시 시청자 수 | 완료 (단일 서버 기준) |
 | 방송 시작 알림 | 완료 |
-| 로그아웃 (토큰 무효화) | 미착수 — 리프레시 토큰 설계 필요 |
+| 댓글 알림 (영상 주인에게) | 완료 |
+| 답글 알림 (원 댓글 작성자에게) | 완료 |
+| 리프레시 토큰 · 로그아웃 | 완료 |
+| 카테고리 (영상 분류, 관리자 생성) | 완료 |
+| 사용자 차단 (피드 필터링) | 완료 |
+| 신고 (접수 · 관리자 처리) | 완료 |
+| 관리자 계정 발급 (설정 부트스트랩 + 승격 API) | 완료 |
+| 관리자 화면 (신고 · 카테고리 · 사용자) | 완료 |
+| 시청자 화면 (목록 · 재생 · 댓글 · 채널 · 라이브 · 채팅 · 알림 · 업로드) | 완료 |
+| 화면 색·서체 (밝은 화면 + 나이트 모드) | 완료 (배치는 미확정) |
 | 소셜 로그인 | 엔티티만 준비 (`Provider`) |
 
 API 상세는 [docs/03-api-spec.md](docs/03-api-spec.md) 참고.
@@ -303,50 +446,261 @@ API 상세는 [docs/03-api-spec.md](docs/03-api-spec.md) 참고.
 
 ## 다음 할 일
 
-1. **실제 OBS 로 송출 확인** — `./scripts/verify-live.sh` 로 확인.
-   `on_publish` 302 리다이렉트가 기대대로 동작하는지가 핵심입니다.
-2. **프론트 화면** — 현재는 재생 확인용 최소 화면만 있습니다.
-   라이브 목록 · 채널 페이지 · 채팅창 · 알림함이 API 는 준비돼 있습니다
-3. **리프레시 토큰 + 로그아웃** — 지금은 액세스 토큰만 있어 만료 시 재로그인해야 하고,
-   서버가 토큰을 무효화할 수 없습니다
-4. **Redis 도입** — 시청자 수 집계와 채팅 브로커를 서버 여러 대로 확장할 때 필요
-5. **카테고리 · 신고/차단** 등 운영 기능
+1. **실제 OBS 로 송출 확인** — `on_publish` 302 리다이렉트가 기대대로 동작하는지가 핵심입니다.
+   순서는 [집에서 확인할 것](#집에서-확인할-것) 에 정리해 뒀습니다.
+2. **화면 배치 다시 잡기** — 색과 서체는 입혔지만, 무엇을 어디에 놓을지는 그대로입니다.
+   `app.css` 는 색만 맡고 있어서 배치를 바꿔도 색이 깨지지 않습니다.
+3. **Redis 도입** — 시청자 수 집계, 조회수 중복 판정, 채팅 브로커를 서버 여러 대로 확장할 때 필요.
+   지금은 셋 다 서버 메모리에 있어서 단일 서버에서만 맞습니다.
+4. **썸네일 자동 생성** — 지금은 경로를 직접 넣어야 합니다. 영상 첫 프레임을 뽑으려면 ffmpeg 가 필요합니다.
+5. **배포** — `api` · `web` 의 Dockerfile 이 없습니다. CI 는 있지만 CD 는 없습니다.
+6. **스키마 마이그레이션 (Flyway)** — 지금은 `ddl-auto: update` 라 열거형에 값을 하나 더할 때마다
+   이미 만들어진 DB 를 손으로 고쳐야 합니다
+   ([겪은 사례](#이미-쓰던-db-라면-알림-칸을-한-번-넓혀야-합니다)).
+
+---
+
+## 집에서 확인할 것
+
+작업 환경에 Docker 데몬과 OBS 가 없어서, **송출 관련은 실제 PC 에서만 확인할 수 있습니다.**
+아래 순서대로 하시면 됩니다. 각 줄의 링크에 자세한 설명이 있습니다.
+
+### 1. 켜기
+
+프로젝트 **루트**에서:
+
+```powershell
+docker compose up -d mysql streaming
+```
+
+- [ ] `docker compose ps` 로 **mysql 과 streaming 둘 다** `Up` 인지 확인
+- [ ] API 실행 — `cd api` 후 `.\gradlew.bat bootRun --args="--spring.profiles.active=mysql"`
+- [ ] 새 창에서 프론트 실행 — `cd web`, `npm install`, `npm run dev` → http://localhost:5173
+
+`npm install` 은 이번에 `index.html` 이 바뀌었으니 한 번 돌려 주세요.
+자세한 내용은 [실행하기](#실행하기) 참고.
+
+여기까지 되면 이런 화면이 뜹니다.
+
+![홈 화면](docs/screenshots/home-light.png)
+
+> `bootRun` 은 **끝나지 않는 게 정상**입니다. 서버가 계속 떠 있는 겁니다.
+> `docker compose` 는 반드시 프로젝트 루트에서 — 다른 곳에서 치면
+> `no configuration file provided` 가 납니다.
+
+### 2. 관리자 계정 만들기
+
+- [ ] 화면에서 **회원가입 먼저**
+- [ ] `api/src/main/resources/application.yaml` 의 `app.admin.emails` 에 그 이메일 넣기
+      (한 번만 쓸 거면 실행 인자로 `--app.admin.emails=가입한_이메일`)
+- [ ] API 재시작 → 로그에 `관리자로 승격: ...` 확인
+- [ ] 머리에 `관리자` 링크가 생기는지
+
+가입이 먼저입니다. 계정이 없으면 경고만 뜨고 넘어갑니다.
+자세한 내용은 [관리자 계정 만들기](#관리자-계정-만들기) 참고.
+
+![관리자 화면 · 신고 탭](docs/screenshots/admin.png)
+
+### 3. OBS 송출 — 아직 확인 안 된 부분
+
+**이것만 유일하게 검증이 남아 있습니다.**
+
+```bash
+./scripts/verify-live.sh                                        # Git Bash
+powershell -ExecutionPolicy Bypass -File scripts\verify-live.ps1  # PowerShell
+```
+
+또는 직접:
+
+- [ ] `/?view=me` → **송출 설정 (OBS)** → 스트림 키 `보기`
+
+  ![송출 설정 칸](docs/screenshots/stream-key.png)
+
+- [ ] OBS → 설정 → 방송 → 서비스 `사용자 지정`,
+      서버 `rtmp://localhost:1935/live`, 스트림 키는 위에서 복사한 값
+- [ ] 방송 시작 → `/?view=lives` 에 뜨는지
+- [ ] 눌러서 재생되는지, 채팅이 붙는지
+- [ ] 재생 URL 에 스트림 키가 **안 들어가는지** ← 이게 핵심
+
+`test` 같은 임의 문자열은 거부됩니다. 반드시 본인 키를 쓰세요.
+
+**송출이 거부되면** `api/src/main/resources/application.yaml` 에서
+`app.rtmp.rename-on-publish` 를 `false` 로 바꾸고 다시 시도하세요.
+우회로로 만들어 둔 설정이고, 대신 재생 URL 에 스트림 키가 드러납니다.
+자세한 내용은 [OBS로 방송 송출하기](#obs로-방송-송출하기) 참고.
+
+### 4. 화면 훑어보기
+
+- [ ] 머리의 **어둡게 / 밝게** 버튼 — 껐다 켜도 유지되는지 ([색과 서체](#색과-서체))
+- [ ] 서체가 Gothic A1 로 보이는지 (구글 폰트라 인터넷이 필요합니다)
+- [ ] 영상 신고 → 관리자 화면에서 처리 / 반려
+- [ ] 사용자 차단 → 그 사람 영상이 홈에서 빠지는지
+- [ ] 영상 올리기 · 좋아요 · 댓글 · 검색 · 구독
+- [ ] 남의 영상에 **댓글** → 영상 주인에게 알림이 가는지
+- [ ] 그 댓글에 **답글** → 원 댓글 쓴 사람에게 알림이 가는지
+      ([이미 쓰던 DB 라면 먼저 이걸](#이미-쓰던-db-라면-알림-칸을-한-번-넓혀야-합니다))
+
+`어둡게` 를 누르면 위의 홈 화면이 이렇게 바뀝니다.
+
+![나이트 모드](docs/screenshots/home-dark.png)
+
+### 막히면
+
+| 증상 | 원인 |
+|---|---|
+| `Communications link failure` | MySQL 컨테이너가 안 떠 있음 |
+| OBS `서버에 연결하지 못했습니다` | `streaming` 컨테이너가 안 떠 있음 |
+| OBS `채널 혹은 스트림 키에 접근할 수 없습니다` | 스트림 키가 틀림 |
+| `java` 를 못 찾음 | PATH 설정 후 **새 창**을 열어야 반영됨 |
+| `no configuration file provided` | 프로젝트 루트가 아닌 곳에서 `docker compose` 실행 |
+| 댓글·답글 달 때 `서버 오류가 발생했습니다` | 알림 칸이 아직 안 넓혀짐 — [바로 아래](#이미-쓰던-db-라면-알림-칸을-한-번-넓혀야-합니다) |
+
+더 자세한 건 아래 [자주 겪는 문제](#자주-겪는-문제) 에 있습니다.
+
+### 이미 쓰던 DB 라면 알림 칸을 한 번 넓혀야 합니다
+
+**DB 를 새로 만들어 쓴다면 이 절은 건너뛰어도 됩니다.**
+
+Hibernate 는 열거형을 DB 의 `ENUM` 칸으로 만듭니다. `ENUM('LIVE_START')` 처럼
+그때 있던 값만 적힌 칸이 되는데, `ddl-auto: update` 는 **이미 만들어진 칸을 넓혀 주지 않습니다.**
+그래서 알림 종류에 `STREAM_COMMENT` · `COMMENT_REPLY` 를 더한 지금,
+예전에 만든 DB 에 댓글이나 답글을 달면
+알림을 넣다가 `Value not permitted for column` 으로 500 이 납니다.
+알림과 댓글이 한 트랜잭션이라 **댓글도 함께 취소됩니다.**
+
+한 번만 이렇게 바꿔 주세요.
+
+```sql
+-- MySQL
+ALTER TABLE notifications MODIFY COLUMN type VARCHAR(30) NOT NULL;
+
+-- H2 (local 프로필, api/data/streaming.mv.db)
+ALTER TABLE notifications ALTER COLUMN type VARCHAR(30) NOT NULL;
+```
+
+H2 는 `http://localhost:8080/h2-console` 에서 바로 칠 수 있습니다.
+(JDBC URL `jdbc:h2:file:./data/streaming;MODE=MySQL`, 사용자 `sa`, 비밀번호 없음)
+
+한 번 바꿔 두면 **그 DB 는** 그 뒤로 알림 종류가 더 늘어도 손댈 게 없습니다.
+(`STREAM_COMMENT` 를 더할 때 이 방법으로 고친 DB 에서 그대로 동작하는 걸 확인했습니다.)
+
+새로 만드는 DB 는 `ENUM` 대신 문자열 칸이 되지만, Hibernate 가 대신
+`type IN ('LIVE_START', 'STREAM_COMMENT', 'COMMENT_REPLY')` 검사를 붙입니다.
+그래서 **나중에 알림 종류를 또 더하면 그 DB 도 한 번 손봐야 합니다** — 위 `ALTER` 를 그대로 쓰면 됩니다.
+
+> **이건 알림만의 문제가 아닙니다.** `users.role`, `reports.status`,
+> `reports.target_type`, `live_streams.status`, `users.provider` 도 같은 `ENUM` 칸이라,
+> 거기에 값을 새로 더할 때도 같은 작업이 필요합니다.
+> 근본적으로는 `ddl-auto: update` 대신 Flyway 같은 마이그레이션 도구를 쓰는 게 답입니다
+> ([다음 할 일](#다음-할-일)).
 
 ---
 
 ## 자주 겪는 문제
 
-**`Please set the JAVA_HOME variable in your environment` (Windows)**
+**`verify-live.ps1` 실행 시 `예기치 않은 토큰` / `종결자가 없습니다` 오류**
 
-JDK 21 이 없거나 `JAVA_HOME` 이 설정되지 않은 경우입니다.
+Windows PowerShell 5.1 은 BOM 이 없는 `.ps1` 파일을 UTF-8 이 아니라
+시스템 코드페이지(한국어 Windows 는 CP949)로 읽습니다. 파일 안의 한글이
+깨지면서 따옴표 짝이 어긋나 구문 오류가 납니다.
+
+저장소의 스크립트는 **UTF-8 BOM + CRLF** 로 관리되고 `.gitattributes` 가
+줄바꿈을 고정합니다. 오류가 난다면 최신 코드를 받으세요.
+
+```powershell
+git pull
+```
+
+직접 `.ps1` 을 수정할 때도 **UTF-8 with BOM** 으로 저장해야 합니다.
+
+
+**PowerShell 에서 `curl` 이 보안 경고를 띄우며 멈춘다**
+
+Windows PowerShell 5.1 에서 `curl` 은 진짜 curl 이 아니라
+`Invoke-WebRequest` 의 별칭입니다. 응답을 IE 엔진으로 파싱하려다 경고가 뜹니다.
+
+셋 중 아무거나 쓰면 됩니다.
+
+```powershell
+curl.exe http://localhost:8081/health          # Windows 10+ 에 내장된 진짜 curl
+Invoke-RestMethod http://localhost:8081/health # PowerShell 방식
+curl http://localhost:8081/health -UseBasicParsing
+```
+
+이 README 의 `curl` 예시는 macOS/Linux/Git Bash 기준입니다.
+PowerShell 에서는 `curl.exe` 로 바꿔 쓰세요.
+
+
+**`bootRun` 이 80% EXECUTING 에서 안 끝난다**
+
+**정상입니다.** `bootRun` 은 서버를 계속 켜 두는 명령이라 끝나지 않습니다.
+빌드처럼 완료되고 프롬프트가 돌아오는 게 아니라, 서버가 살아 있는 동안
+계속 `EXECUTING` 으로 표시됩니다. 17분이든 5시간이든 그대로입니다.
+
+위로 스크롤해 `Started ApiApplication in ...` 이 보이면 이미 떠 있는 것입니다.
+확인은 브라우저로: http://localhost:8080/swagger
+
+- **그 터미널 창은 그대로 두세요.** 닫으면 서버가 꺼집니다.
+- 다른 명령은 **새 터미널 창**에서 실행하세요.
+- 서버를 끄려면 그 창에서 `Ctrl + C`
+
+
+**`Please set the JAVA_HOME variable in your environment` (Windows)**
+**`ERROR: JAVA_HOME is set to an invalid directory` (Windows)**
+
+JDK 21 이 없거나 `JAVA_HOME` 이 **실제로 존재하지 않는 경로**를 가리키는 경우입니다.
 `'""'은(는) 내부 또는 외부 명령...` 이 함께 뜨는 것도 같은 원인입니다.
 
-**1) 이미 설치돼 있는지 확인**
+> ⚠️ 아래 경로의 버전 번호(`21.0.x.y`)는 설치할 때마다 다릅니다.
+> **그대로 복사하지 말고 반드시 본인 PC 의 실제 경로를 확인하세요.**
+
+**1) 설치된 JDK 경로 찾기**
 
 ```bat
-java -version
+dir /b "C:\Program Files\Eclipse Adoptium"
+dir /b "C:\Program Files\Java"
+dir /b "C:\Program Files\Microsoft"
+```
+
+`jdk-21...` 로 시작하는 폴더 이름이 보이면 그게 실제 경로입니다.
+예를 들어 `jdk-21.0.8.9-hotspot` 이 나왔다면 전체 경로는
+`C:\Program Files\Eclipse Adoptium\jdk-21.0.8.9-hotspot` 입니다.
+
+이미 PATH 에 잡혀 있다면 이렇게도 찾을 수 있습니다.
+
+```bat
 where java
 ```
 
-`21` 로 시작하는 버전이 보이면 설치는 돼 있는 것입니다.
-`where java` 가 알려준 경로에서 `\bin\java.exe` 를 뺀 부분이 `JAVA_HOME` 입니다.
+나온 경로에서 `\bin\java.exe` 를 뺀 부분이 `JAVA_HOME` 입니다.
 
-**2) 없다면 설치**
+**2) 아무것도 안 나오면 설치**
 
 ```bat
 winget install EclipseAdoptium.Temurin.21.JDK
 ```
 
-**3) JAVA_HOME 설정** (경로는 실제 설치 위치로 바꾸세요)
+설치 후 **1) 을 다시 실행**해 실제 폴더 이름을 확인하세요.
+
+**3) JAVA_HOME 설정** — 1) 에서 확인한 **실제 경로**를 넣습니다.
 
 ```bat
-setx JAVA_HOME "C:\Program Files\Eclipse Adoptium\jdk-21.0.5.11-hotspot"
+setx JAVA_HOME "C:\Program Files\Eclipse Adoptium\<1번에서_확인한_폴더명>"
 ```
 
 > `setx` 는 **새로 여는 터미널부터** 적용됩니다. 지금 창을 닫고 새로 여세요.
-> 확인: `echo %JAVA_HOME%`
 
-**4) 확인 후 실행**
+**4) 제대로 잡혔는지 확인** — 이 단계를 건너뛰지 마세요.
+
+```bat
+echo %JAVA_HOME%
+dir "%JAVA_HOME%\bin\java.exe"
+```
+
+`java.exe` 가 목록에 보이면 성공입니다.
+`파일을 찾을 수 없습니다` 가 나오면 경로가 여전히 틀린 것이니 1) 로 돌아가세요.
+
+**5) 실행**
 
 ```bat
 cd api

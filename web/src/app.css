@@ -1,0 +1,542 @@
+/*
+ * 디자인 방향 B "낮의 서재".
+ * 밝은 화면이 기본이고, 나이트 모드는 같은 색 계열을 어둡게 뒤집은 한 벌이다.
+ * 배치는 건드리지 않는다 — 색·서체·간격·상태 표시만 이 파일이 맡는다.
+ */
+
+:root {
+    color-scheme: light;
+
+    --bg: #fbfcfb;
+    --surface: #ffffff;
+    --sunken: #f1f4f2;
+    --border: #e2e6e3;
+    --border-strong: #c7d0cb;
+    --text: #161a18;
+    --muted: #6e756f;
+    --accent: #17604f;
+    --accent-hover: #114c3e;
+    --accent-soft: #e6f0ec;
+    --on-accent: #ffffff;
+    --danger: #c2352c;
+    --danger-soft: #fbecea;
+
+    --radius: 6px;
+    --gap: 20px;
+    --shadow: 0 1px 2px rgb(22 26 24 / 0.05);
+}
+
+:root[data-theme='dark'] {
+    color-scheme: dark;
+
+    --bg: #101413;
+    --surface: #171d1b;
+    --sunken: #0b0f0e;
+    --border: #28312d;
+    --border-strong: #3b4642;
+    --text: #e8ecea;
+    --muted: #929c97;
+    --accent: #56c6a6;
+    --accent-hover: #74d6bb;
+    --accent-soft: #16302a;
+    --on-accent: #0c1211;
+    --danger: #ef8479;
+    --danger-soft: #2f1e1c;
+
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Gothic A1', system-ui, -apple-system, 'Segoe UI', 'Malgun Gothic', sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    color: inherit;
+}
+
+h2 {
+    margin: 0 0 16px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+h3 {
+    margin: 24px 0 8px;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ── 머리 ── */
+.nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+}
+
+.nav__brand {
+    color: var(--accent);
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    text-decoration: none;
+}
+
+.nav__links,
+.nav__account {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.nav__links a,
+.nav__account a {
+    color: var(--muted);
+    font-size: 15px;
+    text-decoration: none;
+}
+
+.nav__links a:hover,
+.nav__account a:hover {
+    color: var(--text);
+}
+
+.nav__search {
+    display: flex;
+    flex: 1;
+    gap: 6px;
+    min-width: 200px;
+}
+
+.nav__search input {
+    flex: 1;
+}
+
+.nav__account {
+    margin-left: auto;
+}
+
+.main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 20px 64px;
+}
+
+.narrow {
+    max-width: 560px;
+}
+
+/* ── 입력 ── */
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 20px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin: 16px 0;
+}
+
+.form label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.form label input,
+.form label select,
+.form label textarea {
+    color: var(--text);
+    font-size: 15px;
+}
+
+input,
+select,
+textarea,
+button {
+    padding: 9px 11px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 15px;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--muted);
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+    border-color: var(--border-strong);
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    border-color: var(--accent);
+    outline-offset: 0;
+}
+
+textarea {
+    resize: vertical;
+}
+
+button {
+    background: var(--sunken);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+button:hover:not(:disabled) {
+    border-color: var(--border-strong);
+}
+
+button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* 무언가를 확정하는 버튼만 색을 쓴다. 나머지는 조용히 둔다. */
+button[type='submit'],
+.chat__form button {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 600;
+}
+
+button[type='submit']:hover:not(:disabled),
+.chat__form button:hover:not(:disabled) {
+    border-color: var(--accent-hover);
+    background: var(--accent-hover);
+}
+
+/* 검색은 매번 누르는 버튼이라 색을 빼 둔다. */
+.nav__search button {
+    border-color: var(--border);
+    background: var(--sunken);
+    color: var(--text);
+    font-weight: 400;
+}
+
+.nav__search button:hover:not(:disabled) {
+    border-color: var(--border-strong);
+    background: var(--sunken);
+}
+
+/* 세로 폼에서 버튼이 입력칸만큼 늘어나지 않게 한다. */
+.form button {
+    align-self: flex-start;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.nav__theme {
+    padding: 6px 10px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+/* ── 글 ── */
+.meta {
+    margin: 4px 0;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.meta a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.error {
+    margin: 12px 0;
+    padding: 10px 12px;
+    border: 1px solid var(--danger);
+    border-radius: var(--radius);
+    background: var(--danger-soft);
+    color: var(--danger);
+    font-size: 14px;
+}
+
+.empty {
+    padding: 40px 0;
+    color: var(--muted);
+    text-align: center;
+}
+
+.description {
+    color: var(--muted);
+    white-space: pre-wrap;
+}
+
+code {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--sunken);
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+
+/* ── 목록 ── */
+.player {
+    width: 100%;
+    max-height: 60vh;
+    border-radius: var(--radius);
+    background: #000;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--gap);
+    padding: 0;
+    list-style: none;
+}
+
+.card__thumb {
+    display: block;
+    text-decoration: none;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--sunken);
+}
+
+.card__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.card__thumb--blank {
+    display: grid;
+    place-items: center;
+    height: 100%;
+    color: var(--muted);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+}
+
+.card__body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-top: 10px;
+}
+
+.card__title {
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.4;
+    text-decoration: none;
+}
+
+.card__meta {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13.5px;
+    text-decoration: none;
+}
+
+a.card__meta:hover {
+    color: var(--text);
+}
+
+.comments,
+.notifications {
+    padding: 0;
+    list-style: none;
+}
+
+.comments li,
+.notifications li {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.comments p {
+    margin: 4px 0;
+}
+
+.comment__actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+/* 답글은 원 댓글 아래로 한 칸 들여 세로줄을 그어 묶는다. */
+.comments--replies {
+    margin: 10px 0 0;
+    padding-left: 16px;
+    border-left: 2px solid var(--border-strong);
+}
+
+.comments--replies li {
+    padding: 10px 0 0;
+    border-bottom: none;
+}
+
+.comments--replies li + li {
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+}
+
+/* 답글 줄(padding 16px + 세로줄 2px)에 맞춰 들여써서 실 안쪽에 있는 것처럼 보이게 한다. */
+.comment__reply {
+    display: flex;
+    gap: 6px;
+    margin: 10px 0 0 18px;
+}
+
+/* 위쪽 댓글 입력칸과 비슷한 폭으로 맞춘다. 끝까지 늘어나면 등록 버튼이 너무 멀어진다. */
+.comment__reply input {
+    flex: 1;
+    min-width: 0;
+    max-width: 420px;
+}
+
+.notifications li.read {
+    color: var(--muted);
+}
+
+.pager {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 28px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+/* ── 라이브: 넓은 화면에서는 영상 옆에 채팅을 붙인다 ── */
+.live {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--gap);
+}
+
+@media (min-width: 900px) {
+    .live {
+        grid-template-columns: 1fr 320px;
+    }
+}
+
+.chat {
+    display: flex;
+    flex-direction: column;
+    height: 60vh;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+}
+
+.chat__header {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 700;
+}
+
+.chat__list {
+    flex: 1;
+    margin: 0;
+    padding: 12px 14px;
+    overflow-y: auto;
+    list-style: none;
+}
+
+.chat__list li {
+    margin-bottom: 8px;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+
+.chat__list strong {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.chat__form {
+    display: flex;
+    gap: 6px;
+    padding: 12px 14px;
+    border-top: 1px solid var(--border);
+}
+
+.chat__form input {
+    flex: 1;
+    min-width: 0;
+}
+
+/* ── 접었다 펴는 칸 ── */
+details {
+    margin: 12px 0;
+    padding: 0 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+}
+
+/* summary 는 칸 전체를 덮어야 눌러지는 곳이 분명해진다. */
+summary {
+    margin: 0 -16px;
+    padding: 14px 16px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+summary:hover {
+    color: var(--accent);
+}
+
+details[open] {
+    padding-bottom: 16px;
+}
+
+details[open] summary {
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+}
+
+details ul {
+    padding-left: 18px;
+}
+
+details li {
+    margin: 6px 0;
+}

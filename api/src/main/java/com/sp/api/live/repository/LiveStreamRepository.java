@@ -5,6 +5,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
 import java.util.List;
@@ -14,6 +16,21 @@ public interface LiveStreamRepository extends JpaRepository<LiveStream, Long> {
 
     @EntityGraph(attributePaths = "user")
     Page<LiveStream> findByStatusOrderByStartedAtDesc(LiveStream.Status status, Pageable pageable);
+
+    /**
+     * 지금 방송 중인 목록에서 내가 차단한 채널은 뺀다.
+     * excludedUserIds 는 비어 있으면 안 된다 (JPQL 의 not in 은 빈 컬렉션을 못 받는다).
+     */
+    @EntityGraph(attributePaths = "user")
+    @Query("""
+            select l from LiveStream l
+            where l.status = :status and l.user.id not in :excludedUserIds
+            order by l.startedAt desc
+            """)
+    Page<LiveStream> findByStatusExcludingUsers(
+            @Param("status") LiveStream.Status status,
+            @Param("excludedUserIds") Collection<Long> excludedUserIds,
+            Pageable pageable);
 
     @EntityGraph(attributePaths = "user")
     Optional<LiveStream> findWithUserById(Long id);

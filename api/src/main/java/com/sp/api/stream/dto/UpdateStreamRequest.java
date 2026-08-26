@@ -17,4 +17,6 @@ public class UpdateStreamRequest {
 
     @NotBlank
     private String videoUrl;
+
+    private Long categoryId;
 }

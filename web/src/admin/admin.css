@@ -1,0 +1,197 @@
+/*
+ * 관리자 화면은 시청자 화면과 같은 토큰(app.css)을 쓴다.
+ * 여기서는 표·탭·배지처럼 관리자에만 있는 것만 정의한다.
+ */
+
+.admin {
+    --ok: #17795f;
+    --ok-soft: #e3f1eb;
+    --warn: #8a6100;
+    --warn-soft: #f9f0d8;
+
+    min-height: 100vh;
+    padding: 24px;
+    background: var(--bg);
+    color: var(--text);
+}
+
+:root[data-theme='dark'] .admin {
+    --ok: #56c6a6;
+    --ok-soft: #16302a;
+    --warn: #dfb45f;
+    --warn-soft: #322a13;
+}
+
+.admin__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.admin__title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+
+.admin__who {
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.admin__tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.admin__tab {
+    padding: 10px 16px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: none;
+    color: var(--muted);
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.admin__tab:hover:not(.admin__tab--active) {
+    color: var(--text);
+}
+
+.admin__tab--active {
+    border-bottom-color: var(--accent);
+    color: var(--text);
+    font-weight: 700;
+}
+
+.admin__panel {
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+}
+
+.admin__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.admin table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.admin th,
+.admin td {
+    padding: 12px 8px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+}
+
+.admin th {
+    color: var(--muted);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* 표가 좁은 화면에서 페이지 자체를 밀어내지 않게 한다. */
+.admin__scroll {
+    overflow-x: auto;
+}
+
+.admin input,
+.admin select,
+.admin button {
+    font-size: 14px;
+}
+
+/* .admin button 보다 명시도가 높아야 배경색이 덮인다. */
+.admin button.admin__button--primary {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 600;
+}
+
+.admin button.admin__button--primary:hover:not(:disabled) {
+    border-color: var(--accent-hover);
+    background: var(--accent-hover);
+}
+
+.admin__badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.admin__badge--pending {
+    background: var(--warn-soft);
+    color: var(--warn);
+}
+
+.admin__badge--resolved {
+    background: var(--ok-soft);
+    color: var(--ok);
+}
+
+.admin__badge--rejected {
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
+.admin__badge--admin {
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+.admin__error {
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--danger);
+    border-radius: var(--radius);
+    background: var(--danger-soft);
+    color: var(--danger);
+    font-size: 14px;
+}
+
+.admin__empty {
+    padding: 40px 0;
+    color: var(--muted);
+    text-align: center;
+}
+
+.admin__pager {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.admin__login {
+    max-width: 340px;
+    margin: 80px auto;
+}
+
+.admin__login form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
