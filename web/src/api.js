@@ -186,8 +186,11 @@ export const toggleLike = (streamId) =>
 export const getComments = (streamId, page = 0) =>
     maybeAuthorized(`/api/streams/${streamId}/comments${query({ page })}`)
 
-export const createComment = (streamId, content) =>
-    authorized(`/api/streams/${streamId}/comments`, { method: 'POST', body: { content } })
+export const createComment = (streamId, content, parentId = null) =>
+    authorized(`/api/streams/${streamId}/comments`, {
+        method: 'POST',
+        body: { content, parentId },
+    })
 
 export const updateComment = (streamId, commentId, content) =>
     authorized(`/api/streams/${streamId}/comments/${commentId}`, {

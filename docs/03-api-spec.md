@@ -226,7 +226,7 @@ Authorization: Bearer <accessToken>
 - `likedByMe` 는 비로그인으로 조회하면 항상 `false` 입니다. 토큰을 함께 보내면 실제 값이 옵니다.
 - `userId` 로 `/api/channels/{userId}` 채널 페이지에 연결할 수 있습니다.
 - `categoryId`/`categoryName` 은 미분류면 둘 다 `null`.
-- 영상을 삭제하면 달려 있던 댓글·좋아요도 함께 정리됩니다.
+- 영상을 삭제하면 달려 있던 댓글(답글 포함)·좋아요도 함께 정리됩니다.
 
 ---
 
@@ -249,12 +249,45 @@ Authorization: Bearer <accessToken>
 
 | 메서드 | 경로 | 인증 | 설명 |
 |---|---|---|---|
-| POST | `/api/streams/{streamId}/comments` | 필요 | 등록 (201) |
-| GET | `/api/streams/{streamId}/comments` | 공개 | 목록 (페이지) |
+| POST | `/api/streams/{streamId}/comments` | 필요 | 등록 (201). `parentId` 를 주면 답글 |
+| GET | `/api/streams/{streamId}/comments` | 공개 | 목록 (페이지). 답글은 원 댓글에 딸려 온다 |
 | PUT | `/api/streams/{streamId}/comments/{commentId}` | 필요 | 수정 (본인만) |
-| DELETE | `/api/streams/{streamId}/comments/{commentId}` | 필요 | 삭제 (본인만) |
+| DELETE | `/api/streams/{streamId}/comments/{commentId}` | 필요 | 삭제 (본인만). 답글도 함께 사라진다 |
 
 `{ "content": "댓글 내용" }` — 댓글이 해당 `streamId` 에 속하지 않으면 404.
+
+#### 답글 (대댓글)
+
+등록할 때 원 댓글 id 를 함께 보냅니다.
+
+```json
+{ "content": "답글 내용", "parentId": 12 }
+```
+
+깊이는 **두 단계까지**입니다. 답글에 다시 답글을 달면 **400**,
+다른 영상의 댓글을 `parentId` 로 주면 **404** 입니다.
+
+목록은 **원 댓글만 페이지로 나누고**, 그 페이지에 실린 댓글의 답글은
+`replies` 에 통째로 담아 함께 보냅니다. 답글은 쓴 순서(오래된 것부터)입니다.
+
+```json
+{
+  "content": [
+    {
+      "id": 12, "content": "원 댓글", "nickname": "긴예",
+      "parentId": null,
+      "replies": [
+        { "id": 13, "content": "답글", "nickname": "도라", "parentId": 12, "replies": [] }
+      ]
+    }
+  ],
+  "page": 0, "size": 20, "totalElements": 1, "totalPages": 1, "last": true
+}
+```
+
+`totalElements` 는 원 댓글 수입니다. 영상의 `commentCount` 는 답글까지 센 수라 서로 다를 수 있습니다.
+
+원 댓글을 지우면 거기 달린 답글도 함께 지워집니다.
 
 ---
 

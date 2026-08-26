@@ -19,6 +19,8 @@ export default function StreamPage({ id }) {
     const { me } = useAuth()
     const [commentPage, setCommentPage] = useState(0)
     const [content, setContent] = useState('')
+    const [replyTo, setReplyTo] = useState(null)
+    const [replyContent, setReplyContent] = useState('')
 
     const {
         data: stream,
@@ -56,11 +58,39 @@ export default function StreamPage({ id }) {
         }
     }
 
-    async function handleDeleteComment(commentId) {
-        if (!window.confirm('댓글을 삭제할까요?')) return
+    async function handleReply(event, parentId) {
+        event.preventDefault()
 
         try {
-            await deleteComment(id, commentId)
+            await createComment(id, replyContent.trim(), parentId)
+            closeReply()
+            reloadComments()
+            reload()
+        } catch (e) {
+            failComments(e)
+        }
+    }
+
+    function openReply(commentId) {
+        setReplyTo(commentId)
+        setReplyContent('')
+    }
+
+    function closeReply() {
+        setReplyTo(null)
+        setReplyContent('')
+    }
+
+    async function handleDeleteComment(comment) {
+        const message = comment.replies?.length
+            ? `답글 ${comment.replies.length}개도 함께 삭제됩니다. 삭제할까요?`
+            : '댓글을 삭제할까요?'
+
+        if (!window.confirm(message)) return
+
+        try {
+            await deleteComment(id, comment.id)
+            if (replyTo === comment.id) closeReply()
             reloadComments()
             reload()
         } catch (e) {
@@ -150,12 +180,44 @@ export default function StreamPage({ id }) {
             <ul className="comments">
                 {comments?.content.map((comment) => (
                     <li key={comment.id}>
-                        <strong>{comment.nickname}</strong>{' '}
-                        <span className="meta">{formatDateTime(comment.createdAt)}</span>
-                        <p>{comment.content}</p>
+                        <CommentLine
+                            comment={comment}
+                            me={me}
+                            onReply={() => openReply(comment.id)}
+                            onDelete={() => handleDeleteComment(comment)}
+                        />
 
-                        {me?.nickname === comment.nickname && (
-                            <button onClick={() => handleDeleteComment(comment.id)}>삭제</button>
+                        {comment.replies?.length > 0 && (
+                            <ul className="comments comments--replies">
+                                {comment.replies.map((reply) => (
+                                    <li key={reply.id}>
+                                        <CommentLine
+                                            comment={reply}
+                                            me={me}
+                                            onDelete={() => handleDeleteComment(reply)}
+                                        />
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+
+                        {replyTo === comment.id && (
+                            <form
+                                className="comment__reply"
+                                onSubmit={(e) => handleReply(e, comment.id)}
+                            >
+                                <input
+                                    value={replyContent}
+                                    onChange={(e) => setReplyContent(e.target.value)}
+                                    placeholder={`${comment.nickname} 님에게 답글`}
+                                    required
+                                    autoFocus
+                                />
+                                <button type="submit">등록</button>
+                                <button type="button" onClick={closeReply}>
+                                    취소
+                                </button>
+                            </form>
                         )}
                     </li>
                 ))}
@@ -163,6 +225,27 @@ export default function StreamPage({ id }) {
 
             <Pager page={comments} onChange={setCommentPage} />
         </section>
+    )
+}
+
+/** 댓글 한 줄. onReply 가 없으면 답글 버튼도 없다 — 답글에는 다시 답글을 달 수 없다. */
+function CommentLine({ comment, me, onReply, onDelete }) {
+    const canReply = Boolean(me && onReply)
+    const canDelete = Boolean(me) && me.nickname === comment.nickname
+
+    return (
+        <>
+            <strong>{comment.nickname}</strong>{' '}
+            <span className="meta">{formatDateTime(comment.createdAt)}</span>
+            <p>{comment.content}</p>
+
+            {(canReply || canDelete) && (
+                <div className="comment__actions">
+                    {canReply && <button onClick={onReply}>답글</button>}
+                    {canDelete && <button onClick={onDelete}>삭제</button>}
+                </div>
+            )}
+        </>
     )
 }
 
