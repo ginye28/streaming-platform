@@ -128,6 +128,63 @@ class CommentReplyIntegrationTest extends IntegrationTestSupport {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    @DisplayName("답글이 달리면 원 댓글 작성자에게 알림이 간다")
+    void replyNotifiesTheParentAuthor() throws Exception {
+
+        String owner = signupAndLogin("noti-owner@test.com", "알림주인");
+        String asker = signupAndLogin("noti-asker@test.com", "알림질문자");
+        long streamId = createStream(owner, "알림영상1");
+
+        long parentId = comment(asker, streamId, "이거 어떻게 하나요?", null);
+        comment(owner, streamId, "이렇게 하시면 됩니다", parentId);
+
+        mockMvc.perform(get("/api/notifications")
+                        .header("Authorization", "Bearer " + asker))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalElements").value(1))
+                .andExpect(jsonPath("$.data.content[0].type").value("COMMENT_REPLY"))
+                .andExpect(jsonPath("$.data.content[0].message")
+                        .value("알림주인 님이 회원님의 댓글에 답글을 남겼습니다."))
+                // 눌렀을 때 영상으로 갈 수 있어야 한다
+                .andExpect(jsonPath("$.data.content[0].targetId").value(streamId))
+                .andExpect(jsonPath("$.data.content[0].read").value(false));
+
+        mockMvc.perform(get("/api/notifications/unread-count")
+                        .header("Authorization", "Bearer " + asker))
+                .andExpect(jsonPath("$.data.unreadCount").value(1));
+    }
+
+    @Test
+    @DisplayName("자기 댓글에 자기가 단 답글은 알림을 남기지 않는다")
+    void replyingToYourselfNotifiesNobody() throws Exception {
+
+        String owner = signupAndLogin("noti-self@test.com", "알림혼잣말");
+        long streamId = createStream(owner, "알림영상2");
+
+        long parentId = comment(owner, streamId, "원 댓글", null);
+        comment(owner, streamId, "아 참 그리고", parentId);
+
+        mockMvc.perform(get("/api/notifications")
+                        .header("Authorization", "Bearer " + owner))
+                .andExpect(jsonPath("$.data.totalElements").value(0));
+    }
+
+    @Test
+    @DisplayName("답글이 아닌 새 댓글은 알림을 남기지 않는다")
+    void plainCommentsNotifyNobody() throws Exception {
+
+        String owner = signupAndLogin("noti-owner3@test.com", "알림주인3");
+        String guest = signupAndLogin("noti-guest3@test.com", "알림손님3");
+        long streamId = createStream(owner, "알림영상3");
+
+        comment(guest, streamId, "영상 잘 봤습니다", null);
+
+        mockMvc.perform(get("/api/notifications")
+                        .header("Authorization", "Bearer " + owner))
+                .andExpect(jsonPath("$.data.totalElements").value(0));
+    }
+
     /** @return 만들어진 댓글 id. parentId 가 null 이면 원 댓글이다. */
     private long comment(String token, long streamId, String content, Long parentId) throws Exception {
 

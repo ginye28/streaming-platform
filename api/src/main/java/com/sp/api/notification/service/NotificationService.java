@@ -1,5 +1,6 @@
 package com.sp.api.notification.service;
 
+import com.sp.api.comment.entity.Comment;
 import com.sp.api.common.exception.NotFoundException;
 import com.sp.api.common.response.PageResponse;
 import com.sp.api.live.entity.LiveStream;
@@ -51,6 +52,29 @@ public class NotificationService {
         notificationRepository.saveAll(notifications);
 
         return notifications.size();
+    }
+
+    /**
+     * 답글이 달리면 원 댓글 작성자에게 알림을 남긴다.
+     * 자기 댓글에 스스로 단 답글은 알리지 않는다.
+     */
+    @Transactional
+    public void notifyReply(Comment reply) {
+
+        User recipient = reply.getParent().getUser();
+        User writer = reply.getUser();
+
+        if (recipient.getId().equals(writer.getId())) {
+            return;
+        }
+
+        notificationRepository.save(new Notification(
+                recipient,
+                Notification.Type.COMMENT_REPLY,
+                writer.getNickname() + " 님이 회원님의 댓글에 답글을 남겼습니다.",
+                writer.getId(),
+                reply.getStream().getId()
+        ));
     }
 
     public PageResponse<NotificationResponse> findMine(String email, Pageable pageable) {
