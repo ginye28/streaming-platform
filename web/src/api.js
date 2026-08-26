@@ -165,10 +165,6 @@ export const getStreams = (categoryId, sortBy = 'LATEST', page = 0) =>
 export const searchStreams = (keyword, page = 0) =>
     maybeAuthorized(`/api/streams/search${query({ keyword, page })}`)
 
-export const getPopularStreams = () => maybeAuthorized('/api/streams/popular')
-
-export const getLatestStreams = () => maybeAuthorized('/api/streams/latest')
-
 export const getSubscribedFeed = (page = 0) =>
     authorized(`/api/streams/subscribed${query({ page })}`)
 
