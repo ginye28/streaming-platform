@@ -160,14 +160,38 @@ Authorization: Bearer <accessToken>
 | 메서드 | 경로 | 인증 | 설명 |
 |---|---|---|---|
 | POST | `/api/streams` | 필요 | 등록 (201) |
-| GET | `/api/streams?categoryId=` | 공개 | 목록 (페이지). `categoryId` 로 좁힐 수 있다. 로그인 상태면 내가 차단한 채널의 영상은 빠진다. |
+| GET | `/api/streams?categoryId=&sortBy=` | 공개 | 목록 (페이지). `categoryId` 로 좁히고 `sortBy` 로 정렬한다. 로그인 상태면 내가 차단한 채널의 영상은 빠진다. |
 | GET | `/api/streams/search?keyword=` | 공개 | 제목·설명 검색 (페이지) |
-| GET | `/api/streams/popular` | 공개 | 조회수 상위 10 |
-| GET | `/api/streams/latest` | 공개 | 최신 10 |
+| GET | `/api/streams/popular` | 공개 | 조회수 상위 10 (= `sortBy=POPULAR` 의 첫 10개) |
+| GET | `/api/streams/latest` | 공개 | 최신 10 (= `sortBy=LATEST` 의 첫 10개) |
 | GET | `/api/streams/subscribed` | **필요** | 구독 중인 채널들의 영상 피드 (페이지) |
-| GET | `/api/streams/{id}` | 공개 | 상세 (조회수 +1) |
+| GET | `/api/streams/{id}` | 공개 | 상세 (조회수 +1, 같은 시청자는 30분에 한 번만) |
 | PUT | `/api/streams/{id}` | 필요 | 수정 (본인만, 아니면 403) |
 | DELETE | `/api/streams/{id}` | 필요 | 삭제 (본인만, 아니면 403) |
+
+#### 정렬 (`sortBy`)
+
+| 값 | 뜻 |
+|---|---|
+| `LATEST` (기본) | 최신순. 올린 시각이 같으면 id 로 한 번 더 끊는다. |
+| `POPULAR` | 조회수순. 조회수가 같으면 최신 영상이 앞에 온다. |
+
+엔티티 필드 이름을 그대로 받지 않고 위 두 값만 허용합니다.
+다른 값을 주면 **400** 입니다. (`?sortBy=NO_SUCH` → 400)
+
+파라미터 이름이 `sort` 가 아니라 `sortBy` 인 이유는, `sort` 가 Spring Data 의
+페이지 정렬 파라미터와 겹치기 때문입니다.
+
+#### 조회수 집계
+
+`GET /api/streams/{id}` 는 조회수를 올리지만, **같은 시청자는 30분에 한 번만** 셉니다.
+새로고침을 반복해도 숫자가 오르지 않습니다.
+
+- 로그인 상태면 **계정** 기준
+- 비로그인이면 **접속 IP** 기준 (nginx 뒤라면 `X-Forwarded-For` 의 첫 값)
+
+기록은 서버 메모리에 있습니다. 서버를 다시 켜면 창이 초기화되고, 서버가 여러 대면
+대마다 따로 셉니다. 동시 시청자 수와 같은 한계이고, Redis 를 들이면 함께 옮겨 갈 자리입니다.
 
 등록/수정 요청
 ```json

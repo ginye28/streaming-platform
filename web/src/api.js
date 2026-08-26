@@ -159,8 +159,8 @@ export const toggleBlock = (userId) =>
 
 // ---- 영상 ----
 
-export const getStreams = (categoryId, page = 0) =>
-    maybeAuthorized(`/api/streams${query({ categoryId, page })}`)
+export const getStreams = (categoryId, sortBy = 'LATEST', page = 0) =>
+    maybeAuthorized(`/api/streams${query({ categoryId, sortBy, page })}`)
 
 export const searchStreams = (keyword, page = 0) =>
     maybeAuthorized(`/api/streams/search${query({ keyword, page })}`)
