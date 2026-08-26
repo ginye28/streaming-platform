@@ -12,14 +12,20 @@ export function useAsyncData(fetcher, deps) {
 
     useEffect(() => {
         let cancelled = false
+        const controller = new AbortController()
 
-        fetcher().then(
-            (data) => !cancelled && setState({ data, error: null, loading: false }),
-            (error) => !cancelled && setState({ data: null, error: error.message, loading: false })
+        fetcher(controller.signal).then(
+            (data) => !cancelled && setState((prev) => ({ data, error: null, loading: false })),
+            (error) => {
+                if (!cancelled && error.name !== 'AbortError') {
+                    setState((prev) => ({ ...prev, error: error.message, loading: false }))
+                }
+            }
         )
 
         return () => {
             cancelled = true
+            controller.abort()
         }
         // fetcher 는 매 렌더 새로 만들어지므로 의존성에서 뺀다. 갱신 조건은 deps 가 정한다.
         // eslint-disable-next-line react-hooks/exhaustive-deps

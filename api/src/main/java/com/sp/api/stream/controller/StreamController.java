@@ -12,6 +12,7 @@ import com.sp.api.stream.service.StreamService;
 import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -20,8 +21,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.validation.annotation.Validated;
 
 @RestController
+@Validated
 @RequestMapping("/api/streams")
 @RequiredArgsConstructor
 public class StreamController {
@@ -60,7 +63,7 @@ public class StreamController {
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<PageResponse<StreamResponse>>> search(
-            @RequestParam @NotBlank String keyword,
+            @RequestParam @NotBlank @Size(min = 2, max = 100) String keyword,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
             Pageable pageable,
             Authentication authentication

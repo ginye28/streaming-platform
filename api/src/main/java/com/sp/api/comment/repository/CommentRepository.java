@@ -19,7 +19,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     // 목록에는 원 댓글만 싣는다. 답글은 아래에서 묶어 온다.
     // CommentResponse 가 user.nickname 을 읽으므로 함께 조회한다.
     @EntityGraph(attributePaths = "user")
-    Page<Comment> findByStreamIdAndParentIsNull(Long streamId, Pageable pageable);
+    Page<Comment> findByStreamIdAndParentIsNullOrderByCreatedAtDescIdDesc(Long streamId, Pageable pageable);
 
     /**
      * 이 페이지에 실린 원 댓글들의 답글을 한 번에 가져온다.
@@ -27,7 +27,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
      * parentId 를 컬럼으로 착각하니 JPQL 을 직접 적는다.
      */
     @EntityGraph(attributePaths = {"user", "parent"})
-    @Query("select c from Comment c where c.parent.id in :parentIds order by c.createdAt asc")
+    @Query("select c from Comment c where c.parent.id in :parentIds order by c.createdAt asc, c.id asc")
     List<Comment> findRepliesOf(@Param("parentIds") Collection<Long> parentIds);
 
     // 댓글이 실제로 해당 영상에 속하는지까지 확인한다.
