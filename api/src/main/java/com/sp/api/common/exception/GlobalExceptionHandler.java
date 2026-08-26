@@ -1,6 +1,7 @@
 package com.sp.api.common.exception;
 
 import com.sp.api.common.response.ApiResponse;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -46,6 +47,32 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("서버 오류가 발생했습니다."));
+    }
+
+    /**
+     * `@Validated` 가 붙은 컨트롤러의 파라미터 검증(@RequestParam 의 @NotBlank·@Size 등)은
+     * MethodValidationInterceptor 를 거쳐 이 예외로 온다. 여기서 잡지 않으면
+     * 아래 catch-all 로 떨어져 잘못된 요청이 500 이 된다.
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(ConstraintViolationException e) {
+
+        String message = e.getConstraintViolations()
+                .stream()
+                .map(violation -> lastNode(violation.getPropertyPath().toString())
+                        + ": " + violation.getMessage())
+                .collect(Collectors.joining(", "));
+
+        if (message.isBlank()) {
+            message = "요청 값이 올바르지 않습니다.";
+        }
+
+        return ResponseEntity.badRequest().body(ApiResponse.error(message));
+    }
+
+    /** 경로가 "search.keyword" 처럼 오므로 파라미터 이름만 남긴다. */
+    private static String lastNode(String propertyPath) {
+        return propertyPath.substring(propertyPath.lastIndexOf('.') + 1);
     }
 
     /** @Valid 실패는 어떤 필드가 왜 틀렸는지 알려준다. */

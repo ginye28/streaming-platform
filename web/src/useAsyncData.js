@@ -15,7 +15,7 @@ export function useAsyncData(fetcher, deps) {
         const controller = new AbortController()
 
         fetcher(controller.signal).then(
-            (data) => !cancelled && setState((prev) => ({ data, error: null, loading: false })),
+            (data) => !cancelled && setState({ data, error: null, loading: false }),
             (error) => {
                 if (!cancelled && error.name !== 'AbortError') {
                     setState((prev) => ({ ...prev, error: error.message, loading: false }))

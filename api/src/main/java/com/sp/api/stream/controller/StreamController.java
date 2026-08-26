@@ -63,7 +63,10 @@ public class StreamController {
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<PageResponse<StreamResponse>>> search(
-            @RequestParam @NotBlank @Size(min = 2, max = 100) String keyword,
+            @RequestParam
+            @NotBlank(message = "검색어를 입력해 주세요.")
+            @Size(min = 2, max = 100, message = "검색어는 2자 이상 100자 이하여야 합니다.")
+            String keyword,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
             Pageable pageable,
             Authentication authentication
