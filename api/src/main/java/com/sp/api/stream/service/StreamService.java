@@ -128,6 +128,8 @@ public class StreamService {
         Stream stream = findOwned(id, email, "삭제 권한이 없습니다.");
 
         // 댓글·좋아요가 FK 로 영상을 참조하므로 먼저 정리해야 한다.
+        // 답글은 원 댓글을 참조하므로 답글이 먼저다.
+        commentRepository.deleteRepliesByStreamId(id);
         commentRepository.deleteByStreamId(id);
         likeRepository.deleteByStreamId(id);
 

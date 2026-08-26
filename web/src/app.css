@@ -392,6 +392,43 @@ a.card__meta:hover {
     margin: 4px 0;
 }
 
+.comment__actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+/* 답글은 원 댓글 아래로 한 칸 들여 세로줄을 그어 묶는다. */
+.comments--replies {
+    margin: 10px 0 0;
+    padding-left: 16px;
+    border-left: 2px solid var(--border-strong);
+}
+
+.comments--replies li {
+    padding: 10px 0 0;
+    border-bottom: none;
+}
+
+.comments--replies li + li {
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+}
+
+/* 답글 줄(padding 16px + 세로줄 2px)에 맞춰 들여써서 실 안쪽에 있는 것처럼 보이게 한다. */
+.comment__reply {
+    display: flex;
+    gap: 6px;
+    margin: 10px 0 0 18px;
+}
+
+/* 위쪽 댓글 입력칸과 비슷한 폭으로 맞춘다. 끝까지 늘어나면 등록 버튼이 너무 멀어진다. */
+.comment__reply input {
+    flex: 1;
+    min-width: 0;
+    max-width: 420px;
+}
+
 .notifications li.read {
     color: var(--muted);
 }
