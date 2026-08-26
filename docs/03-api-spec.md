@@ -162,8 +162,6 @@ Authorization: Bearer <accessToken>
 | POST | `/api/streams` | 필요 | 등록 (201) |
 | GET | `/api/streams?categoryId=&sortBy=` | 공개 | 목록 (페이지). `categoryId` 로 좁히고 `sortBy` 로 정렬한다. 로그인 상태면 내가 차단한 채널의 영상은 빠진다. |
 | GET | `/api/streams/search?keyword=` | 공개 | 제목·설명 검색 (페이지) |
-| GET | `/api/streams/popular` | 공개 | 조회수 상위 10 (= `sortBy=POPULAR` 의 첫 10개) |
-| GET | `/api/streams/latest` | 공개 | 최신 10 (= `sortBy=LATEST` 의 첫 10개) |
 | GET | `/api/streams/subscribed` | **필요** | 구독 중인 채널들의 영상 피드 (페이지) |
 | GET | `/api/streams/{id}` | 공개 | 상세 (조회수 +1, 같은 시청자는 30분에 한 번만) |
 | PUT | `/api/streams/{id}` | 필요 | 수정 (본인만, 아니면 403) |

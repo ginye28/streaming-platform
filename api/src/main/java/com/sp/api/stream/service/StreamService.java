@@ -41,9 +41,6 @@ public class StreamService {
     private final StreamResponseAssembler assembler;
     private final StreamViewGuard viewGuard;
 
-    /** 인기·최신 목록에서 보여 줄 개수. */
-    private static final int TOP_SIZE = 10;
-
     @Transactional
     public StreamResponse create(CreateStreamRequest request, String email) {
 
@@ -139,28 +136,6 @@ public class StreamService {
 
     public PageResponse<StreamResponse> search(String keyword, Pageable pageable, String viewerEmail) {
         return toPageResponse(streamRepository.search(keyword, pageable), viewerEmail);
-    }
-
-    public List<StreamResponse> popular(String viewerEmail) {
-        return top(StreamSort.POPULAR, viewerEmail);
-    }
-
-    public List<StreamResponse> latest(String viewerEmail) {
-        return top(StreamSort.LATEST, viewerEmail);
-    }
-
-    /**
-     * 상위 몇 개만 보여 주는 목록.
-     * 전체 목록과 같은 쿼리를 써서, 차단한 사용자의 영상이 이쪽으로 새지 않게 한다.
-     */
-    private List<StreamResponse> top(StreamSort sort, String viewerEmail) {
-
-        Page<Stream> page = streamRepository.findAllFiltered(
-                null,
-                blockService.excludedUserIds(viewerEmail),
-                PageRequest.of(0, TOP_SIZE, sort.toSort()));
-
-        return assembler.assemble(page.getContent(), viewerEmail);
     }
 
     /** 정렬은 sortBy 로만 정한다. 요청에 실려 온 Pageable 의 정렬은 쓰지 않는다. */

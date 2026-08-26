@@ -21,8 +21,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/streams")
 @RequiredArgsConstructor
@@ -70,20 +68,6 @@ public class StreamController {
 
         return ResponseEntity.ok(ApiResponse.ok(
                 streamService.search(keyword, pageable, AuthUtils.emailOrNull(authentication))
-        ));
-    }
-
-    @GetMapping("/popular")
-    public ResponseEntity<ApiResponse<List<StreamResponse>>> popular(Authentication authentication) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                streamService.popular(AuthUtils.emailOrNull(authentication))
-        ));
-    }
-
-    @GetMapping("/latest")
-    public ResponseEntity<ApiResponse<List<StreamResponse>>> latest(Authentication authentication) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                streamService.latest(AuthUtils.emailOrNull(authentication))
         ));
     }
 
