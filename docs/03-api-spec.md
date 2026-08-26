@@ -289,6 +289,8 @@ Authorization: Bearer <accessToken>
 
 원 댓글을 지우면 거기 달린 답글도 함께 지워집니다.
 
+답글이 달리면 원 댓글 작성자에게 `COMMENT_REPLY` 알림이 갑니다 (자기 댓글에 자기가 단 답글은 제외).
+
 ---
 
 ## 좋아요
@@ -384,7 +386,7 @@ STOMP over WebSocket 을 씁니다.
 
 ## 알림 (`/api/notifications`)
 
-모두 인증이 필요합니다. 구독한 채널이 방송을 시작하면 알림이 쌓입니다.
+모두 인증이 필요합니다.
 
 | 메서드 | 경로 | 설명 |
 |---|---|---|
@@ -392,6 +394,16 @@ STOMP over WebSocket 을 씁니다.
 | GET | `/api/notifications/unread-count` | 안 읽은 개수 → `{ "unreadCount": 3 }` |
 | PATCH | `/api/notifications/{id}/read` | 하나 읽음 처리 |
 | POST | `/api/notifications/read-all` | 전부 읽음 처리 → `{ "updated": 3 }` |
+
+#### 알림 종류
+
+| `type` | 언제 | 받는 사람 | `channelId` | `targetId` |
+|---|---|---|---|---|
+| `LIVE_START` | 구독한 채널이 방송을 시작 | 구독자 전원 | 방송인 id | 방송 id |
+| `COMMENT_REPLY` | 내 댓글에 답글이 달림 | 원 댓글 작성자 | 답글 쓴 사람 id | 영상 id |
+
+`COMMENT_REPLY` 는 **자기 댓글에 자기가 단 답글이면 남기지 않습니다.**
+답글이 아닌 새 댓글은 알림을 만들지 않습니다.
 
 알림 응답
 ```json
@@ -402,6 +414,12 @@ STOMP over WebSocket 을 씁니다.
   "read": false, "createdAt": "2026-08-21T09:00:00"
 }
 ```
+
+`targetId` 로 어디를 가리키는지는 `type` 마다 다릅니다 (위 표 참고).
+화면에서는 `LIVE_START` 는 방송 화면, `COMMENT_REPLY` 는 영상 화면으로 넘깁니다.
+
+> 알림 종류를 새로 더할 때는 **이미 만들어진 DB 의 `notifications.type` 칸을 넓혀야** 합니다.
+> 자세한 건 README 의 [이미 쓰던 DB 라면 알림 칸을 한 번 넓혀야 합니다](../README.md#이미-쓰던-db-라면-알림-칸을-한-번-넓혀야-합니다) 참고.
 
 ---
 

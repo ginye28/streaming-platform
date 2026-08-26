@@ -2,6 +2,8 @@ package com.sp.api.notification.entity;
 
 import com.sp.api.user.entity.User;
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,7 +27,13 @@ public class Notification {
     @JoinColumn(name = "recipient_id", nullable = false)
     private User recipient;
 
+    /**
+     * DB 의 ENUM 이 아니라 문자열 칸으로 만든다.
+     * ENUM 으로 두면 종류를 하나 늘릴 때 ddl-auto: update 가 기존 칸을 넓혀 주지 못해,
+     * 이미 만들어진 DB 에서 "Value not permitted for column" 으로 터진다.
+     */
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(nullable = false, length = 30)
     private Type type;
 
@@ -67,6 +75,7 @@ public class Notification {
     }
 
     public enum Type {
-        LIVE_START
+        LIVE_START,
+        COMMENT_REPLY
     }
 }

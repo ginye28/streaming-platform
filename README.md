@@ -428,6 +428,7 @@ npm run build
 | 실시간 채팅 (WebSocket) · 채팅 저장 | 완료 |
 | 동시 시청자 수 | 완료 (단일 서버 기준) |
 | 방송 시작 알림 | 완료 |
+| 답글 알림 (원 댓글 작성자에게) | 완료 |
 | 리프레시 토큰 · 로그아웃 | 완료 |
 | 카테고리 (영상 분류, 관리자 생성) | 완료 |
 | 사용자 차단 (피드 필터링) | 완료 |
@@ -531,6 +532,8 @@ powershell -ExecutionPolicy Bypass -File scripts\verify-live.ps1  # PowerShell
 - [ ] 영상 신고 → 관리자 화면에서 처리 / 반려
 - [ ] 사용자 차단 → 그 사람 영상이 홈에서 빠지는지
 - [ ] 영상 올리기 · 좋아요 · 댓글 · 검색 · 구독
+- [ ] 댓글에 **답글** → 원 댓글 쓴 사람에게 알림이 가는지
+      ([이미 쓰던 DB 라면 먼저 이걸](#이미-쓰던-db-라면-알림-칸을-한-번-넓혀야-합니다))
 
 `어둡게` 를 누르면 위의 홈 화면이 이렇게 바뀝니다.
 
@@ -545,8 +548,38 @@ powershell -ExecutionPolicy Bypass -File scripts\verify-live.ps1  # PowerShell
 | OBS `채널 혹은 스트림 키에 접근할 수 없습니다` | 스트림 키가 틀림 |
 | `java` 를 못 찾음 | PATH 설정 후 **새 창**을 열어야 반영됨 |
 | `no configuration file provided` | 프로젝트 루트가 아닌 곳에서 `docker compose` 실행 |
+| 답글 달 때 `서버 오류가 발생했습니다` | 알림 칸이 아직 안 넓혀짐 — [바로 아래](#이미-쓰던-db-라면-알림-칸을-한-번-넓혀야-합니다) |
 
 더 자세한 건 아래 [자주 겪는 문제](#자주-겪는-문제) 에 있습니다.
+
+### 이미 쓰던 DB 라면 알림 칸을 한 번 넓혀야 합니다
+
+**DB 를 새로 만들어 쓴다면 이 절은 건너뛰어도 됩니다.**
+
+Hibernate 는 열거형을 DB 의 `ENUM` 칸으로 만듭니다. `ENUM('LIVE_START')` 처럼
+그때 있던 값만 적힌 칸이 되는데, `ddl-auto: update` 는 **이미 만들어진 칸을 넓혀 주지 않습니다.**
+그래서 알림 종류에 `COMMENT_REPLY` 를 더한 지금, 예전에 만든 DB 에 답글을 달면
+알림을 넣다가 `Value not permitted for column` 으로 500 이 납니다.
+알림과 답글이 한 트랜잭션이라 **답글도 함께 취소됩니다.**
+
+한 번만 이렇게 바꿔 주세요.
+
+```sql
+-- MySQL
+ALTER TABLE notifications MODIFY COLUMN type VARCHAR(30) NOT NULL;
+
+-- H2 (local 프로필, api/data/streaming.mv.db)
+ALTER TABLE notifications ALTER COLUMN type VARCHAR(30) NOT NULL;
+```
+
+H2 는 `http://localhost:8080/h2-console` 에서 바로 칠 수 있습니다.
+(JDBC URL `jdbc:h2:file:./data/streaming;MODE=MySQL`, 사용자 `sa`, 비밀번호 없음)
+
+앞으로 새로 만드는 DB 는 괜찮습니다. `Notification.type` 에
+`@JdbcTypeCode(SqlTypes.VARCHAR)` 를 붙여서 처음부터 문자열 칸으로 만들도록 했습니다.
+
+> 나머지 열거형 칸(`users.role`, `reports.status` 등)은 아직 `ENUM` 입니다.
+> 거기에 값을 새로 더할 때도 같은 작업이 필요합니다.
 
 ---
 

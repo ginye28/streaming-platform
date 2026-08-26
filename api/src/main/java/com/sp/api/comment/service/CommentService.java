@@ -9,6 +9,7 @@ import com.sp.api.common.exception.BadRequestException;
 import com.sp.api.common.exception.ForbiddenException;
 import com.sp.api.common.exception.NotFoundException;
 import com.sp.api.common.response.PageResponse;
+import com.sp.api.notification.service.NotificationService;
 import com.sp.api.stream.entity.Stream;
 import com.sp.api.stream.repository.StreamRepository;
 import com.sp.api.user.entity.User;
@@ -31,6 +32,7 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final StreamRepository streamRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public CommentResponse create(Long streamId, CreateCommentRequest request, String email) {
@@ -47,9 +49,13 @@ public class CommentService {
                 new Comment(request.getContent(), stream, user, parent)
         );
 
-        return parent == null
-                ? CommentResponse.withReplies(saved, List.of())
-                : CommentResponse.reply(saved, parent.getId());
+        if (parent == null) {
+            return CommentResponse.withReplies(saved, List.of());
+        }
+
+        notificationService.notifyReply(saved);
+
+        return CommentResponse.reply(saved, parent.getId());
     }
 
     /**

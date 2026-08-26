@@ -52,13 +52,7 @@ export default function NotificationsPage() {
             <ul className="notifications">
                 {page?.content.map((notification) => (
                     <li key={notification.id} className={notification.read ? 'read' : ''}>
-                        {notification.type === 'LIVE_START' && notification.targetId ? (
-                            <Link to={{ view: 'live', id: notification.targetId }}>
-                                {notification.message}
-                            </Link>
-                        ) : (
-                            notification.message
-                        )}
+                        <NotificationText notification={notification} />
 
                         <span className="meta"> {formatDateTime(notification.createdAt)}</span>
 
@@ -72,6 +66,28 @@ export default function NotificationsPage() {
             <Pager page={page} onChange={setPageNumber} />
         </section>
     )
+}
+
+/** 눌렀을 때 갈 곳을 아는 알림만 링크로 만든다. 모르는 종류는 글만 보여 준다. */
+function NotificationText({ notification }) {
+    const target = linkTarget(notification)
+
+    if (!target) return notification.message
+
+    return <Link to={target}>{notification.message}</Link>
+}
+
+function linkTarget({ type, targetId }) {
+    if (!targetId) return null
+
+    switch (type) {
+        case 'LIVE_START':
+            return { view: 'live', id: targetId }
+        case 'COMMENT_REPLY':
+            return { view: 'stream', id: targetId }
+        default:
+            return null
+    }
 }
 
 function formatDateTime(value) {
