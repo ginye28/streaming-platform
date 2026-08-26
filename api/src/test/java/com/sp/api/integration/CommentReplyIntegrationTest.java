@@ -171,8 +171,8 @@ class CommentReplyIntegrationTest extends IntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("답글이 아닌 새 댓글은 알림을 남기지 않는다")
-    void plainCommentsNotifyNobody() throws Exception {
+    @DisplayName("영상에 댓글이 달리면 영상 주인에게 알림이 간다")
+    void commentNotifiesTheStreamOwner() throws Exception {
 
         String owner = signupAndLogin("noti-owner3@test.com", "알림주인3");
         String guest = signupAndLogin("noti-guest3@test.com", "알림손님3");
@@ -182,7 +182,49 @@ class CommentReplyIntegrationTest extends IntegrationTestSupport {
 
         mockMvc.perform(get("/api/notifications")
                         .header("Authorization", "Bearer " + owner))
+                .andExpect(jsonPath("$.data.totalElements").value(1))
+                .andExpect(jsonPath("$.data.content[0].type").value("STREAM_COMMENT"))
+                .andExpect(jsonPath("$.data.content[0].message")
+                        .value("알림손님3 님이 회원님의 영상에 댓글을 남겼습니다."))
+                .andExpect(jsonPath("$.data.content[0].targetId").value(streamId));
+    }
+
+    @Test
+    @DisplayName("자기 영상에 자기가 단 댓글은 알림을 남기지 않는다")
+    void commentingOnYourOwnStreamNotifiesNobody() throws Exception {
+
+        String owner = signupAndLogin("noti-owner4@test.com", "알림주인4");
+        long streamId = createStream(owner, "알림영상4");
+
+        comment(owner, streamId, "제 영상입니다", null);
+
+        mockMvc.perform(get("/api/notifications")
+                        .header("Authorization", "Bearer " + owner))
                 .andExpect(jsonPath("$.data.totalElements").value(0));
+    }
+
+    @Test
+    @DisplayName("답글은 원 댓글 작성자에게만 가고 영상 주인에게는 가지 않는다")
+    void replyDoesNotAlsoNotifyTheStreamOwner() throws Exception {
+
+        String owner = signupAndLogin("noti-owner5@test.com", "알림주인5");
+        String asker = signupAndLogin("noti-asker5@test.com", "알림질문자5");
+        String helper = signupAndLogin("noti-helper5@test.com", "알림도우미5");
+        long streamId = createStream(owner, "알림영상5");
+
+        long parentId = comment(asker, streamId, "이거 어떻게 하나요?", null);
+        comment(helper, streamId, "이렇게요", parentId);
+
+        // 영상 주인은 원 댓글 알림 하나만 받는다 (답글 알림은 받지 않는다)
+        mockMvc.perform(get("/api/notifications")
+                        .header("Authorization", "Bearer " + owner))
+                .andExpect(jsonPath("$.data.totalElements").value(1))
+                .andExpect(jsonPath("$.data.content[0].type").value("STREAM_COMMENT"));
+
+        mockMvc.perform(get("/api/notifications")
+                        .header("Authorization", "Bearer " + asker))
+                .andExpect(jsonPath("$.data.totalElements").value(1))
+                .andExpect(jsonPath("$.data.content[0].type").value("COMMENT_REPLY"));
     }
 
     /** @return 만들어진 댓글 id. parentId 가 null 이면 원 댓글이다. */

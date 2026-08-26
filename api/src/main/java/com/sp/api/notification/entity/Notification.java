@@ -31,6 +31,8 @@ public class Notification {
      * DB 의 ENUM 이 아니라 문자열 칸으로 만든다.
      * ENUM 으로 두면 종류를 하나 늘릴 때 ddl-auto: update 가 기존 칸을 넓혀 주지 못해,
      * 이미 만들어진 DB 에서 "Value not permitted for column" 으로 터진다.
+     * (Hibernate 가 "이 값들만 허용" 검사는 그래도 붙이므로, 종류를 늘릴 때
+     *  이미 만들어진 DB 를 손봐야 하는 건 마찬가지다 — README 참고.)
      */
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.VARCHAR)
@@ -76,6 +78,7 @@ public class Notification {
 
     public enum Type {
         LIVE_START,
+        STREAM_COMMENT,
         COMMENT_REPLY
     }
 }

@@ -83,6 +83,7 @@ function linkTarget({ type, targetId }) {
     switch (type) {
         case 'LIVE_START':
             return { view: 'live', id: targetId }
+        case 'STREAM_COMMENT':
         case 'COMMENT_REPLY':
             return { view: 'stream', id: targetId }
         default:
