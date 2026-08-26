@@ -3,11 +3,14 @@ package com.sp.api.stream.controller;
 import com.sp.api.common.response.ApiResponse;
 import com.sp.api.common.response.PageResponse;
 import com.sp.api.common.security.AuthUtils;
+import com.sp.api.common.web.ViewerKey;
 import com.sp.api.stream.dto.CreateStreamRequest;
 import com.sp.api.stream.dto.StreamResponse;
+import com.sp.api.stream.dto.StreamSort;
 import com.sp.api.stream.dto.UpdateStreamRequest;
 import com.sp.api.stream.service.StreamService;
 import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -17,8 +20,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/streams")
@@ -38,15 +39,20 @@ public class StreamController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(response));
     }
 
+    /**
+     * 전체 목록. 정렬은 sortBy(LATEST · POPULAR)로 받는다.
+     * Pageable 이 쓰는 sort 와 이름이 겹치지 않게 파라미터 이름을 따로 두었다.
+     */
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<StreamResponse>>> findAll(
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
-            Pageable pageable,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(defaultValue = "LATEST") StreamSort sortBy,
+            @PageableDefault(size = 20) Pageable pageable,
             Authentication authentication
     ) {
 
         return ResponseEntity.ok(ApiResponse.ok(
-                streamService.findAll(pageable, AuthUtils.emailOrNull(authentication))
+                streamService.findAll(pageable, sortBy, AuthUtils.emailOrNull(authentication), categoryId)
         ));
     }
 
@@ -62,20 +68,6 @@ public class StreamController {
 
         return ResponseEntity.ok(ApiResponse.ok(
                 streamService.search(keyword, pageable, AuthUtils.emailOrNull(authentication))
-        ));
-    }
-
-    @GetMapping("/popular")
-    public ResponseEntity<ApiResponse<List<StreamResponse>>> popular(Authentication authentication) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                streamService.popular(AuthUtils.emailOrNull(authentication))
-        ));
-    }
-
-    @GetMapping("/latest")
-    public ResponseEntity<ApiResponse<List<StreamResponse>>> latest(Authentication authentication) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                streamService.latest(AuthUtils.emailOrNull(authentication))
         ));
     }
 
@@ -95,11 +87,14 @@ public class StreamController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<StreamResponse>> findById(
             @PathVariable Long id,
-            Authentication authentication
+            Authentication authentication,
+            HttpServletRequest request
     ) {
 
+        String email = AuthUtils.emailOrNull(authentication);
+
         return ResponseEntity.ok(ApiResponse.ok(
-                streamService.findById(id, AuthUtils.emailOrNull(authentication))
+                streamService.findById(id, email, ViewerKey.of(email, request))
         ));
     }
 

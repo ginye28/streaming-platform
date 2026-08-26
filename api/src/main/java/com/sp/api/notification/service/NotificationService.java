@@ -1,5 +1,6 @@
 package com.sp.api.notification.service;
 
+import com.sp.api.comment.entity.Comment;
 import com.sp.api.common.exception.NotFoundException;
 import com.sp.api.common.response.PageResponse;
 import com.sp.api.live.entity.LiveStream;
@@ -51,6 +52,44 @@ public class NotificationService {
         notificationRepository.saveAll(notifications);
 
         return notifications.size();
+    }
+
+    /**
+     * 영상에 댓글이 달리면 영상 주인에게 알림을 남긴다.
+     * 답글은 원 댓글 작성자에게만 가므로 여기서는 다루지 않는다 — 한 번에 두 곳으로 알리지 않는다.
+     */
+    @Transactional
+    public void notifyComment(Comment comment) {
+        notify(comment.getStream().getUser(), comment, Notification.Type.STREAM_COMMENT,
+                " 님이 회원님의 영상에 댓글을 남겼습니다.");
+    }
+
+    /**
+     * 답글이 달리면 원 댓글 작성자에게 알림을 남긴다.
+     * 자기 댓글에 스스로 단 답글은 알리지 않는다.
+     */
+    @Transactional
+    public void notifyReply(Comment reply) {
+        notify(reply.getParent().getUser(), reply, Notification.Type.COMMENT_REPLY,
+                " 님이 회원님의 댓글에 답글을 남겼습니다.");
+    }
+
+    /** 자기가 자기한테 보내는 알림은 남기지 않는다. 눌렀을 때는 댓글이 달린 영상으로 간다. */
+    private void notify(User recipient, Comment comment, Notification.Type type, String suffix) {
+
+        User writer = comment.getUser();
+
+        if (recipient.getId().equals(writer.getId())) {
+            return;
+        }
+
+        notificationRepository.save(new Notification(
+                recipient,
+                type,
+                writer.getNickname() + suffix,
+                writer.getId(),
+                comment.getStream().getId()
+        ));
     }
 
     public PageResponse<NotificationResponse> findMine(String email, Pageable pageable) {

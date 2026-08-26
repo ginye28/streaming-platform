@@ -106,6 +106,14 @@ public class User {
         this.password = encodedPassword;
     }
 
+    public void changeRole(Role role) {
+        this.role = role;
+    }
+
+    public boolean isAdmin() {
+        return this.role == Role.ADMIN;
+    }
+
     /** 스트림 키가 노출됐을 때 재발급한다. */
     public void regenerateStreamKey() {
         this.streamKey = UUID.randomUUID().toString();
