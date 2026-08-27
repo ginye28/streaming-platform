@@ -231,6 +231,33 @@ export const getLiveSetting = () => authorized('/api/lives/settings')
 export const updateLiveSetting = (payload) =>
     authorized('/api/lives/settings', { method: 'PUT', body: payload })
 
+// ---- 인트로 (처음 들어온 시청자에게 보여 주는 자기소개) ----
+
+/** 띄울지 말지는 응답의 showGate 가 정한다. 규칙은 서버 한 곳에만 둔다. */
+export const getChannelIntro = (channelId) =>
+    maybeAuthorized(`/api/channels/${channelId}/intro`)
+
+/** action: 'SKIP' | 'WATCHED' | 'PASS'. 비로그인도 접속 IP 로 기억된다. */
+export const recordIntroSeen = async (channelId, action) => {
+    const token = getAccessToken()
+    const path = `/api/channels/${channelId}/intro/seen`
+    const options = { method: 'POST', body: { action } }
+
+    return token ? authorized(path, options) : unwrap(await request(path, options))
+}
+
+/** 방송 화면용. 방송 정보와 나란히 받으려고 방송 id 로 조회한다. */
+export const getLiveIntro = (liveId) => maybeAuthorized(`/api/lives/${liveId}/intro`)
+
+export const getMyIntro = () => authorized('/api/users/me/intro')
+
+export const updateMyIntro = (payload) =>
+    authorized('/api/users/me/intro', { method: 'PUT', body: payload })
+
+/** 아직 안 본 방송 하나. 없으면 404 라 null 로 바꿔 돌려준다. */
+export const getNextLive = (excludeLiveId) =>
+    maybeAuthorized(`/api/lives/next${query({ excludeLiveId })}`).catch(() => null)
+
 // ---- 알림 ----
 
 export const getNotifications = (page = 0) => authorized(`/api/notifications${query({ page })}`)

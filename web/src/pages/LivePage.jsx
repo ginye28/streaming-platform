@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { getChatHistory, getLive } from '../api.js'
+import { getChatHistory, getLive, getLiveIntro } from '../api.js'
 import { useAuth } from '../useAuth.js'
 import HlsPlayer from '../components/HlsPlayer.jsx'
+import IntroGate from '../components/IntroGate.jsx'
 import Link from '../components/Link.jsx'
 import { useAsyncData } from '../useAsyncData.js'
 import { useChat } from '../useChat.js'
@@ -11,15 +12,29 @@ export default function LivePage({ id }) {
 
     const { data: live, error, loading } = useAsyncData(() => getLive(id), [id])
 
+    // 방송 정보와 나란히 받는다. 인트로 때문에 화면이 늦게 뜨면 안 된다.
+    const { data: intro, loading: introLoading } = useAsyncData(
+        () => getLiveIntro(id),
+        [id]
+    )
+
     // 지난 내역은 최신순으로 오므로 오래된 것부터 보이도록 뒤집는다.
     const { data: history } = useAsyncData(
         () => getChatHistory(id).then((page) => [...page.content].reverse()),
         [id]
     )
 
-    if (loading) return <p className="empty">불러오는 중…</p>
+    // "어느 방송에서 들어가기를 눌렀는지" 를 들고 있는다.
+    // 단순한 참/거짓으로 두면 이어보기로 넘어갔을 때 이전 판정이 남아 인트로를 건너뛴다.
+    const [enteredLiveId, setEnteredLiveId] = useState(null)
+
+    if (loading || introLoading) return <p className="empty">불러오는 중…</p>
     if (error) return <p className="error">{error}</p>
     if (!live) return null
+
+    if (intro?.showGate && enteredLiveId !== id) {
+        return <IntroGate intro={intro} liveId={id} onEnter={() => setEnteredLiveId(id)} />
+    }
 
     return (
         <section className="live">

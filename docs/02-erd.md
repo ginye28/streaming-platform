@@ -1,6 +1,6 @@
 # ERD
 
-표 13개. `ddl-auto: update` 로 만들어지므로, 아래는 실제로 만들어진 MySQL 8.0 스키마를 그대로 옮긴 것입니다.
+표 15개. `ddl-auto: update` 로 만들어지므로, 아래는 실제로 만들어진 MySQL 8.0 스키마를 그대로 옮긴 것입니다.
 
 ```
 users ─┬─< streams ─┬─< comments ─┐
@@ -182,6 +182,43 @@ ENUM 으로 두면 종류를 하나 늘릴 때 `ddl-auto: update` 가 기존 칸
 이미 만들어진 DB 에서 터집니다 ([README 의 겪은 사례](../README.md#이미-쓰던-db-라면-알림-칸을-한-번-넓혀야-합니다)).
 
 인덱스: `(recipient_id, is_read)` — 안 읽은 개수 조회용.
+
+---
+
+## channel_intros — 첫 방문자에게 보여 줄 자기소개
+
+| 컬럼 | 타입 | | 설명 |
+|---|---|---|---|
+| id | bigint | PK | |
+| user_id | bigint | FK → users, **UNIQUE** | 사람당 한 줄 |
+| video_url | varchar(255) | null 허용 | 짧은 소개 영상. 없으면 카드로 대신 보여 준다 |
+| headline | varchar(60) | null 허용 | 한 줄 소개 |
+| greeting | text | null 허용 | 소개글 |
+
+**방송이 아니라 사람에게 붙습니다.** 방송마다 제목이 바뀌어도 "이 사람이 누구인가" 는 그대로라,
+다음 방송 설정(`live_settings`)과 따로 뒀습니다.
+
+---
+
+## intro_impressions — 누가 인트로를 보고 무엇을 눌렀나
+
+| 컬럼 | 타입 | | 설명 |
+|---|---|---|---|
+| id | bigint | PK | |
+| viewer_key | varchar(120) | | 로그인했으면 계정, 아니면 접속 IP |
+| channel_id | bigint | FK → users | |
+| action | **varchar(20)** | | `SKIP` · `WATCHED` · `PASS` |
+| updated_at | datetime(6) | | |
+
+`(viewer_key, channel_id)` **UNIQUE** — 한 사람의 한 채널에 대한 **마지막 행동만** 남습니다.
+인덱스: `(viewer_key, action)`.
+
+두 가지 일을 합니다.
+
+1. 한 번 본 인트로를 다시 띄우지 않습니다. (매번 뜨면 그건 광고입니다)
+2. `PASS` 가 쌓인 채널은 "이어보기" 에서 건너뜁니다.
+
+`action` 이 ENUM 이 아니라 varchar 인 것은 `notifications.type` 과 같은 이유입니다.
 
 ---
 

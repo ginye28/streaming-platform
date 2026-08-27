@@ -86,6 +86,10 @@ public class SecurityConfig {
                         // 영상 목록/상세/검색/댓글 조회는 비로그인도 볼 수 있어야 한다.
                         .requestMatchers(HttpMethod.GET, "/api/streams/**").permitAll()
 
+                        // 인트로를 봤다는 기록은 비로그인 시청자도 남겨야 한다.
+                        // 안 그러면 로그인 안 한 사람에게는 인트로가 매번 다시 뜬다.
+                        .requestMatchers(HttpMethod.POST, "/api/channels/*/intro/seen").permitAll()
+
                         // 채널 페이지 조회도 공개 (구독 토글은 아래 anyRequest 규칙으로 인증 필요)
                         .requestMatchers(HttpMethod.GET, "/api/channels/**").permitAll()
 

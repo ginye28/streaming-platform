@@ -3,10 +3,12 @@ package com.sp.api.live.controller;
 import com.sp.api.common.response.ApiResponse;
 import com.sp.api.common.response.PageResponse;
 import com.sp.api.common.security.AuthUtils;
+import com.sp.api.common.web.ViewerKey;
 import com.sp.api.live.dto.LiveSettingRequest;
 import com.sp.api.live.dto.LiveSettingResponse;
 import com.sp.api.live.dto.LiveStreamResponse;
 import com.sp.api.live.service.LiveStreamService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -50,6 +52,24 @@ public class LiveController {
 
         return ResponseEntity.ok(ApiResponse.ok(
                 liveStreamService.updateSetting(authentication.getName(), request)
+        ));
+    }
+
+    /**
+     * "이어보기" — 아직 안 본 방송 하나. 인트로에서 [다음 방송] 을 눌렀을 때 쓴다.
+     * 리터럴 경로라 /{liveId} 보다 먼저 선언한다.
+     */
+    @GetMapping("/next")
+    public ResponseEntity<ApiResponse<LiveStreamResponse>> next(
+            @RequestParam(required = false) Long excludeLiveId,
+            Authentication authentication,
+            HttpServletRequest request
+    ) {
+
+        String email = AuthUtils.emailOrNull(authentication);
+
+        return ResponseEntity.ok(ApiResponse.ok(
+                liveStreamService.findNext(email, ViewerKey.of(email, request), excludeLiveId)
         ));
     }
 

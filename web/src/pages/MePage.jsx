@@ -3,12 +3,15 @@ import {
     changePassword,
     getLiveSetting,
     getMyBlocks,
+    getMyIntro,
     getMySubscriptions,
     getStreamKey,
     regenerateStreamKey,
     toggleBlock,
     updateLiveSetting,
+    updateMyIntro,
     updateProfile,
+    uploadFile,
 } from '../api.js'
 import { useAuth } from '../useAuth.js'
 import Link from '../components/Link.jsx'
@@ -29,6 +32,7 @@ export default function MePage() {
             <PasswordForm />
             <StreamKeyPanel />
             <LiveSettingForm />
+            <IntroForm />
             <SubscriptionList />
             <BlockList />
         </section>
@@ -247,6 +251,117 @@ function LiveSettingFields({ setting, onFail }) {
                 </label>
 
                 <button type="submit">저장</button>
+            </form>
+        </>
+    )
+}
+
+/**
+ * 처음 들어온 시청자에게 보여 줄 자기소개.
+ * 방송마다 바뀌는 제목과 달리 "이 사람이 누구인가" 는 그대로라 따로 둔다.
+ */
+function IntroForm() {
+    const { data: intro, error, loading, fail } = useAsyncData(getMyIntro, [])
+
+    return (
+        <details>
+            <summary>첫 방문자에게 보여 줄 소개</summary>
+
+            {error && <p className="error">{error}</p>}
+            {loading && <p className="empty">불러오는 중…</p>}
+
+            {!loading && intro && <IntroFields intro={intro} onFail={fail} />}
+        </details>
+    )
+}
+
+function IntroFields({ intro, onFail }) {
+    const [videoUrl, setVideoUrl] = useState(intro.videoUrl ?? '')
+    const [headline, setHeadline] = useState(intro.headline ?? '')
+    const [greeting, setGreeting] = useState(intro.greeting ?? '')
+    const [message, setMessage] = useState(null)
+    const [busy, setBusy] = useState(false)
+
+    async function handleUpload(event) {
+        const file = event.target.files?.[0]
+
+        if (!file) return
+
+        setBusy(true)
+        setMessage(null)
+
+        try {
+            const uploaded = await uploadFile(file)
+            setVideoUrl(uploaded.url)
+        } catch (e) {
+            onFail(e)
+        } finally {
+            setBusy(false)
+        }
+    }
+
+    async function handleSubmit(event) {
+        event.preventDefault()
+        setMessage(null)
+
+        try {
+            await updateMyIntro({
+                videoUrl: videoUrl || null,
+                headline: headline || null,
+                greeting: greeting || null,
+            })
+            setMessage('저장했습니다. 처음 들어온 시청자에게 보입니다.')
+        } catch (e) {
+            onFail(e)
+        }
+    }
+
+    return (
+        <>
+            <p className="meta">
+                내 방송에 처음 들어온 사람에게 먼저 보여 줍니다. 이미 구독한 사람이나 한 번 본
+                사람에게는 다시 뜨지 않습니다. 비워 두면 바로 방송이 시작됩니다.
+            </p>
+
+            {message && <p className="meta">{message}</p>}
+
+            <form className="form" onSubmit={handleSubmit}>
+                <label>
+                    소개 영상 (선택)
+                    <input type="file" accept="video/*" onChange={handleUpload} />
+                </label>
+                {videoUrl && (
+                    <p className="meta">
+                        올린 영상: {videoUrl}{' '}
+                        <button type="button" onClick={() => setVideoUrl('')}>
+                            지우기
+                        </button>
+                    </p>
+                )}
+
+                <label>
+                    한 줄 소개
+                    <input
+                        value={headline}
+                        onChange={(e) => setHeadline(e.target.value)}
+                        maxLength={60}
+                        placeholder="주로 게임 방송을 합니다"
+                    />
+                </label>
+
+                <label>
+                    소개글
+                    <textarea
+                        value={greeting}
+                        onChange={(e) => setGreeting(e.target.value)}
+                        rows={4}
+                        placeholder="처음 오신 분들께 하고 싶은 말"
+                    />
+                </label>
+
+                <button type="submit" disabled={busy}>
+                    {busy ? '올리는 중…' : '저장'}
+                </button>
             </form>
         </>
     )
