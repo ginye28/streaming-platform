@@ -3,17 +3,21 @@ import {
     changePassword,
     getLiveSetting,
     getMyBlocks,
+    getMyChannelProfile,
     getMyIntro,
     getMySubscriptions,
     getStreamKey,
     regenerateStreamKey,
     toggleBlock,
     updateLiveSetting,
+    updateMyChannelProfile,
     updateMyIntro,
     updateProfile,
     uploadFile,
 } from '../api.js'
+import { assetUrl } from '../assets.js'
 import { useAuth } from '../useAuth.js'
+import { CREDIT_ROLES } from '../components/ChannelIdentity.jsx'
 import Link from '../components/Link.jsx'
 import { useAsyncData } from '../useAsyncData.js'
 
@@ -33,6 +37,7 @@ export default function MePage() {
             <StreamKeyPanel />
             <LiveSettingForm />
             <IntroForm />
+            <ChannelProfileForm />
             <SubscriptionList />
             <BlockList />
         </section>
@@ -358,6 +363,183 @@ function IntroFields({ intro, onFail }) {
                         placeholder="처음 오신 분들께 하고 싶은 말"
                     />
                 </label>
+
+                <button type="submit" disabled={busy}>
+                    {busy ? '올리는 중…' : '저장'}
+                </button>
+            </form>
+        </>
+    )
+}
+
+/** 오시마크 · 팬네임 · 데뷔/졸업 · 모델 크레딧. */
+function ChannelProfileForm() {
+    const { data: profile, error, loading, fail } = useAsyncData(getMyChannelProfile, [])
+
+    return (
+        <details>
+            <summary>채널 정보</summary>
+
+            {error && <p className="error">{error}</p>}
+            {loading && <p className="empty">불러오는 중…</p>}
+
+            {!loading && profile && <ChannelProfileFields profile={profile} onFail={fail} />}
+        </details>
+    )
+}
+
+function ChannelProfileFields({ profile, onFail }) {
+    const [oshiMarkUrl, setOshiMarkUrl] = useState(profile.oshiMarkUrl ?? '')
+    const [fanName, setFanName] = useState(profile.fanName ?? '')
+    const [debutOn, setDebutOn] = useState(profile.debutOn ?? '')
+    const [graduatedOn, setGraduatedOn] = useState(profile.graduatedOn ?? '')
+    const [credits, setCredits] = useState(profile.credits)
+    const [message, setMessage] = useState(null)
+    const [busy, setBusy] = useState(false)
+
+    async function handleMarkUpload(event) {
+        const file = event.target.files?.[0]
+
+        if (!file) return
+
+        setBusy(true)
+        setMessage(null)
+
+        try {
+            const uploaded = await uploadFile(file)
+            setOshiMarkUrl(uploaded.url)
+        } catch (e) {
+            onFail(e)
+        } finally {
+            setBusy(false)
+        }
+    }
+
+    function updateCredit(index, patch) {
+        setCredits(credits.map((credit, i) => (i === index ? { ...credit, ...patch } : credit)))
+    }
+
+    async function handleSubmit(event) {
+        event.preventDefault()
+        setMessage(null)
+
+        try {
+            await updateMyChannelProfile({
+                oshiMarkUrl: oshiMarkUrl || null,
+                fanName: fanName || null,
+                debutOn: debutOn || null,
+                graduatedOn: graduatedOn || null,
+                // 이름이 빈 줄은 보내지 않는다. 서버가 400 으로 막는 값이다.
+                credits: credits.filter((credit) => credit.name.trim()),
+            })
+            setMessage('저장했습니다.')
+        } catch (e) {
+            onFail(e)
+        }
+    }
+
+    return (
+        <>
+            {message && <p className="meta">{message}</p>}
+
+            <form className="form" onSubmit={handleSubmit}>
+                <label>
+                    오시마크
+                    <input type="file" accept="image/*" onChange={handleMarkUpload} />
+                </label>
+                <p className="meta">
+                    구독한 사람의 채팅에 이 표식이 붙습니다. 작게 보이니 단순한 그림이 좋습니다.
+                </p>
+                {oshiMarkUrl && (
+                    <p className="meta">
+                        <img className="identity__mark" src={assetUrl(oshiMarkUrl)} alt="" />{' '}
+                        {oshiMarkUrl}{' '}
+                        <button type="button" onClick={() => setOshiMarkUrl('')}>
+                            지우기
+                        </button>
+                    </p>
+                )}
+
+                <label>
+                    팬네임
+                    <input
+                        value={fanName}
+                        onChange={(e) => setFanName(e.target.value)}
+                        maxLength={30}
+                        placeholder="별무리"
+                    />
+                </label>
+                <p className="meta">채널에서 &quot;구독자 N명&quot; 대신 이 이름으로 보입니다.</p>
+
+                <label>
+                    데뷔일
+                    <input
+                        type="date"
+                        value={debutOn}
+                        onChange={(e) => setDebutOn(e.target.value)}
+                    />
+                </label>
+
+                <label>
+                    졸업일
+                    <input
+                        type="date"
+                        value={graduatedOn}
+                        onChange={(e) => setGraduatedOn(e.target.value)}
+                    />
+                </label>
+                <p className="meta">
+                    졸업일을 넣으면 채널에 졸업으로 표시됩니다. 올린 영상과 지난 방송은 그대로
+                    남습니다.
+                </p>
+
+                <fieldset className="credits">
+                    <legend>만들어 주신 분들</legend>
+
+                    {credits.map((credit, index) => (
+                        <div className="credits__row" key={index}>
+                            <select
+                                value={credit.role}
+                                onChange={(e) => updateCredit(index, { role: e.target.value })}
+                            >
+                                {Object.entries(CREDIT_ROLES).map(([value, label]) => (
+                                    <option key={value} value={value}>
+                                        {label}
+                                    </option>
+                                ))}
+                            </select>
+
+                            <input
+                                value={credit.name}
+                                onChange={(e) => updateCredit(index, { name: e.target.value })}
+                                placeholder="이름"
+                                maxLength={60}
+                            />
+
+                            <input
+                                value={credit.link ?? ''}
+                                onChange={(e) => updateCredit(index, { link: e.target.value })}
+                                placeholder="주소 (선택)"
+                            />
+
+                            <button
+                                type="button"
+                                onClick={() => setCredits(credits.filter((_, i) => i !== index))}
+                            >
+                                삭제
+                            </button>
+                        </div>
+                    ))}
+
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setCredits([...credits, { role: 'ILLUSTRATOR', name: '', link: '' }])
+                        }
+                    >
+                        한 줄 추가
+                    </button>
+                </fieldset>
 
                 <button type="submit" disabled={busy}>
                     {busy ? '올리는 중…' : '저장'}

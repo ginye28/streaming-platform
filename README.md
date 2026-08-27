@@ -23,7 +23,7 @@ docs/        요구사항 · ERD · API 명세 · 아키텍처 · 컨벤션 · �
 | | |
 |---|---|
 | [01-requirements.md](docs/01-requirements.md) | 무엇을 왜 만들기로 했나 |
-| [02-erd.md](docs/02-erd.md) | 표 15개의 컬럼과 관계 |
+| [02-erd.md](docs/02-erd.md) | 표 17개의 컬럼과 관계 |
 | [03-api-spec.md](docs/03-api-spec.md) | API 상세 |
 | [04-architecture.md](docs/04-architecture.md) | 기술 선택과 송출 흐름, 패키지 구조 |
 | [05-convention.md](docs/05-convention.md) | 커밋 · 코드 · 테스트 규칙 |
@@ -484,6 +484,9 @@ docker compose --profile full up -d --build
 | 실시간 채팅 (WebSocket) · 채팅 저장 | 완료 |
 | 동시 시청자 수 | 완료 (단일 서버 기준) |
 | 첫 방문자 인트로 (자기소개 → 방송 보기 · 다음 방송) | 완료 |
+| 오시마크 (구독자 채팅에 표식) · 팬네임 | 완료 |
+| 데뷔일 · 졸업일 표시 | 완료 |
+| 모델 크레딧 (일러스트 · 리깅 · 3D · 로고 · BGM) | 완료 |
 | 방송 시작 알림 | 완료 |
 | 댓글 알림 (영상 주인에게) | 완료 |
 | 답글 알림 (원 댓글 작성자에게) | 완료 |
