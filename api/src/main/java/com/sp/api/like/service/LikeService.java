@@ -40,10 +40,7 @@ public class LikeService {
                     return false;
                 })
                 .orElseGet(() -> {
-                    Like like = new Like();
-                    like.setUser(user);
-                    like.setStream(stream);
-                    likeRepository.save(like);
+                    likeRepository.save(new Like(user, stream));
                     return true;
                 });
 
