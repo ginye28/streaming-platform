@@ -39,6 +39,8 @@ services:
     ports:
       - "1935:1935"   # RTMP 송출
       - "8081:8081"   # HLS 재생
+    # 1936(안쪽 통로)은 일부러 공개하지 않는다.
+    # 컨테이너 안에서 nginx 가 스스로에게 리다이렉트할 때만 쓴다.
     # nginx 가 호스트에서 도는 API(8080)로 on_publish 콜백을 보낼 수 있게 한다.
     # Linux 에서는 host-gateway 매핑이 필요하다.
     extra_hosts:
