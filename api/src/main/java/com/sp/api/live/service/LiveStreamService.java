@@ -4,6 +4,7 @@ import com.sp.api.block.service.BlockService;
 import com.sp.api.common.exception.ForbiddenException;
 import com.sp.api.common.exception.NotFoundException;
 import com.sp.api.common.response.PageResponse;
+import com.sp.api.intro.service.IntroService;
 import com.sp.api.live.config.LiveProperties;
 import com.sp.api.live.dto.LiveSettingRequest;
 import com.sp.api.live.dto.LiveSettingResponse;
@@ -22,6 +23,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -39,6 +42,7 @@ public class LiveStreamService {
     private final LiveViewerTracker viewerTracker;
     private final LiveProperties liveProperties;
     private final BlockService blockService;
+    private final IntroService introService;
 
     /**
      * OBS 가 송출을 시작할 때 nginx-rtmp 가 넘겨준 스트림 키를 검증하고 방송을 연다.
@@ -130,6 +134,32 @@ public class LiveStreamService {
                                 LiveStream.Status.LIVE, blockService.excludedUserIds(viewerEmail), pageable)
                         .map(this::toResponse)
         );
+    }
+
+    /**
+     * "이어보기" — 지금 방송 중인 것 중 이 시청자가 아직 안 본 방송 하나.
+     *
+     * 인트로에서 [다음 방송] 을 눌렀을 때 어디로 보낼지 정한다.
+     * 이미 인트로를 본 채널과 차단한 채널은 뺀다. 넘긴 사람이 계속 다시 나오면
+     * 넘긴 의미가 없기 때문이다.
+     */
+    public LiveStreamResponse findNext(String viewerEmail, String viewerKey, Long excludeLiveId) {
+
+        Set<Long> excluded = new HashSet<>(blockService.excludedUserIds(viewerEmail));
+
+        excluded.addAll(introService.seenChannelIds(viewerKey));
+
+        if (excludeLiveId != null) {
+            liveStreamRepository.findWithUserById(excludeLiveId)
+                    .ifPresent(live -> excluded.add(live.getUser().getId()));
+        }
+
+        return liveStreamRepository
+                .findByStatusExcludingUsers(LiveStream.Status.LIVE, excluded, Pageable.ofSize(1))
+                .stream()
+                .findFirst()
+                .map(this::toResponse)
+                .orElseThrow(() -> new NotFoundException("더 볼 방송이 없습니다."));
     }
 
     public LiveStreamResponse findById(Long id) {

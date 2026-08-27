@@ -351,6 +351,88 @@ code {
     letter-spacing: 0.04em;
 }
 
+/* 방송에 처음 들어온 사람에게 먼저 보이는 자기소개.
+   방송 화면을 통째로 대신하므로 가운데에 크게 둔다. */
+.intro {
+    display: grid;
+    place-items: center;
+    min-height: 60vh;
+}
+
+.intro__body {
+    width: 100%;
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+}
+
+.intro__video {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: var(--radius);
+    background: var(--sunken);
+}
+
+.intro__card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 32px 24px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--sunken);
+}
+
+.intro__avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.intro__avatar--blank {
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border-strong);
+    color: var(--muted);
+    font-size: 36px;
+}
+
+.intro__headline {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.intro__greeting {
+    margin: 0;
+    color: var(--muted);
+    white-space: pre-wrap;
+}
+
+/* 스킵을 처음부터 열어 둔다. 갇혀 있다고 느끼면 그때부터 광고로 읽힌다. */
+.intro__actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.intro__actions button:first-child {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 600;
+}
+
+.intro__actions button:first-child:hover:not(:disabled) {
+    border-color: var(--accent-hover);
+    background: var(--accent-hover);
+}
+
 /* 올리기 화면의 썸네일 미리보기. 목록의 카드와 같은 16:9 로 보여 준다. */
 .thumbnail-preview {
     display: flex;

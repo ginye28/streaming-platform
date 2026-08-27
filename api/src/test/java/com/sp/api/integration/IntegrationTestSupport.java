@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.JsonNode;
@@ -144,6 +145,18 @@ abstract class IntegrationTestSupport {
 
         mockMvc.perform(post("/api/internal/rtmp/publish-done").param("name", publicName))
                 .andExpect(status().isOk());
+    }
+
+    /**
+     * 비로그인 시청자는 접속 IP 로 구분하므로, 요청마다 IP 를 바꿔 다른 사람인 척한다.
+     * 조회수 중복 판정과 인트로 노출 판정이 같은 방식을 쓴다.
+     */
+    protected static RequestPostProcessor remoteAddr(String ip) {
+
+        return request -> {
+            request.setRemoteAddr(ip);
+            return request;
+        };
     }
 
     protected JsonNode json(MvcResult result) throws Exception {

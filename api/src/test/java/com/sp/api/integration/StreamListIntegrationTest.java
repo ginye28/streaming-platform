@@ -147,12 +147,4 @@ class StreamListIntegrationTest extends IntegrationTestSupport {
                 .andExpect(status().isOk());
     }
 
-    /** 비로그인 시청자를 IP 로 구분하므로 요청마다 접속 IP 를 바꿔 준다. */
-    private static org.springframework.test.web.servlet.request.RequestPostProcessor remoteAddr(String ip) {
-
-        return request -> {
-            request.setRemoteAddr(ip);
-            return request;
-        };
-    }
 }

@@ -403,6 +403,56 @@ STOMP over WebSocket 을 씁니다.
 
 ---
 
+## 인트로 — 처음 들어온 시청자에게 보여 주는 자기소개
+
+낯선 방송에 들어가면 잡담 한복판에 떨어져 그대로 나가 버립니다. 그 사이에 한 겹을 둡니다.
+
+| 메서드 | 경로 | 인증 | 설명 |
+|---|---|---|---|
+| GET | `/api/lives/{liveId}/intro` | 공개 | **방송 화면이 쓰는 통로.** 방송 정보와 나란히 받는다 |
+| GET | `/api/channels/{channelId}/intro` | 공개 | 채널 기준 조회 |
+| POST | `/api/channels/{channelId}/intro/seen` | **공개** | 무엇을 눌렀는지 기록. `{"action":"SKIP"}` (`WATCHED` · `PASS`) |
+| GET | `/api/users/me/intro` | 필요 | 내 인트로 |
+| PUT | `/api/users/me/intro` | 필요 | 내 인트로 저장 (`videoUrl` · `headline` · `greeting`) |
+| GET | `/api/lives/next?excludeLiveId=` | 공개 | **이어보기.** 아직 안 본 방송 하나. 없으면 404 |
+
+응답의 **`showGate` 가 띄울지 말지를 정합니다.** 규칙을 화면마다 두면 금방 어긋나므로 서버 한 곳에서만 판단합니다.
+
+```json
+{
+  "channelId": 1, "nickname": "하늘별", "profileImage": null,
+  "videoUrl": null, "headline": "주로 게임하고 노래도 합니다",
+  "greeting": "처음 오셨나요?", "subscriberCount": 0,
+  "subscribed": false, "showGate": true
+}
+```
+
+`videoUrl` 이 있으면 영상으로, 없으면 나머지 값들로 카드를 만들어 보여 줍니다.
+
+### 띄우는 조건
+
+넷 중 하나라도 어긋나면 `showGate` 는 `false` 이고 화면은 바로 방송을 틉니다.
+
+- 올려 둔 인트로가 있을 것 (셋 다 비어 있으면 없는 것으로 친다)
+- 이미 본 채널이 아닐 것
+- 구독 중인 채널이 아닐 것 — 이미 아는 사람이다
+- 자기 방송이 아닐 것
+
+> **`intro/seen` 이 비로그인도 되는 이유** — 로그인하지 않은 사람에게 인트로가 매번 다시 뜨면
+> 그건 광고입니다. 조회수 중복 판정과 같은 방식(계정 또는 접속 IP)으로 기억합니다.
+
+### 스킵과 패스는 다른 동작이다
+
+```
+방송 진입 → 인트로
+             ├ [방송 보기]  SKIP → 이 방송을 본다
+             └ [다음 방송]  PASS → 안 본다, /api/lives/next 로 다음 사람에게
+```
+
+`PASS` 가 쌓인 채널은 이어보기에서 다시 나오지 않습니다. 넘긴 의미가 없어지기 때문입니다.
+
+---
+
 ## 알림 (`/api/notifications`)
 
 모두 인증이 필요합니다.
