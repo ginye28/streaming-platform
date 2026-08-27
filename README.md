@@ -407,7 +407,50 @@ npm run build
 - **API**: `./gradlew build` (컴파일 + 테스트). 실패 시 테스트 리포트가 아티팩트로 올라갑니다.
 - **Web**: `npm ci` → `npm run lint` → `npm run build`
 
+`.github/workflows/docker.yml` 은 세 이미지(`api` · `web` · `streaming`)를 실제로 만들어 봅니다.
+PR 에서는 만들기만 하고, `main` 에 들어가면 `ghcr.io/ginye28/streaming-platform/{이름}` 으로 올립니다.
+Dockerfile 이 깨졌는지는 여기서 걸러집니다.
+
 머지 전에 CI가 초록인지 확인하세요. 로컬에서 같은 명령을 그대로 돌려볼 수 있습니다.
+
+---
+
+## 통째로 컨테이너로 띄우기
+
+평소 개발할 때는 [실행하기](#실행하기) 의 A~C 가 빠릅니다.
+아래는 **다른 컴퓨터에 그대로 올려 보고 싶을 때** 쓰는 방법입니다.
+
+```bash
+# 비밀 키는 매번 적기 번거로우니 .env 에 적어 둡니다 (이 파일은 커밋되지 않습니다)
+echo "JWT_SECRET=$(openssl rand -hex 32)" > .env
+
+docker compose --profile full up -d --build
+```
+
+| 주소 | 무엇 |
+|---|---|
+| http://localhost:3000 | 화면 |
+| http://localhost:8080 | API |
+| http://localhost:8081/hls | HLS 재생 |
+| `rtmp://localhost:1935/live` | OBS 송출 |
+
+- `JWT_SECRET` 은 기본값이 없습니다. 안 넣으면 API 가
+  `jwt.secret 은 최소 32바이트여야 합니다` 로 멈춥니다. 일부러 그렇게 뒀습니다.
+- 올린 영상·썸네일은 `api-uploads` 볼륨에 남습니다. `docker compose down` 으로는 지워지지 않습니다.
+- **다른 주소로 서비스한다면** `VITE_API_BASE_URL` 을 같이 넘겨 다시 빌드해야 합니다.
+  Vite 는 이 값을 빌드할 때 코드에 박아 넣어서, 컨테이너를 다시 띄우는 것만으로는 안 바뀝니다.
+  ```bash
+  VITE_API_BASE_URL=https://api.내도메인 docker compose --profile full up -d --build web
+  ```
+  이때 API 쪽 `CORS_ALLOWED_ORIGINS` 도 화면 주소로 바꿔 줘야 합니다
+  (`docker-compose.yml` 의 `api.environment`).
+- `HLS_BASE_URL` 은 **시청자 브라우저가 직접 여는 주소**입니다. 컨테이너 이름이 아니라
+  바깥에서 닿는 주소를 적어야 합니다.
+- 평소처럼 인프라만 띄우는 `docker compose up -d` 는 그대로입니다.
+  `api` · `web` 은 `full` 프로필에만 들어 있어서 따라 뜨지 않습니다.
+
+값을 바꾸는 곳은 `docker-compose.yml` 의 `api.environment` 이고,
+그 값을 읽는 곳은 `api/src/main/resources/application-docker.yaml` 입니다.
 
 ---
 
@@ -439,6 +482,7 @@ npm run build
 | 신고 (접수 · 관리자 처리) | 완료 |
 | 관리자 계정 발급 (설정 부트스트랩 + 승격 API) | 완료 |
 | 관리자 화면 (신고 · 카테고리 · 사용자) | 완료 |
+| 배포용 이미지 (api · web · streaming) + GHCR 푸시 | 완료 |
 | 시청자 화면 (목록 · 재생 · 댓글 · 채널 · 라이브 · 채팅 · 알림 · 업로드) | 완료 |
 | 화면 색·서체 (밝은 화면 + 나이트 모드) | 완료 (배치는 미확정) |
 | 소셜 로그인 | 엔티티만 준비 (`Provider`) |
@@ -453,8 +497,7 @@ API 상세는 [docs/03-api-spec.md](docs/03-api-spec.md) 참고.
    `app.css` 는 색만 맡고 있어서 배치를 바꿔도 색이 깨지지 않습니다.
 2. **Redis 도입** — 시청자 수 집계, 조회수 중복 판정, 채팅 브로커를 서버 여러 대로 확장할 때 필요.
    지금은 셋 다 서버 메모리에 있어서 단일 서버에서만 맞습니다.
-3. **배포** — `api` · `web` 의 Dockerfile 이 없습니다. CI 는 있지만 CD 는 없습니다.
-4. **스키마 마이그레이션 (Flyway)** — 지금은 `ddl-auto: update` 라 열거형에 값을 하나 더할 때마다
+3. **스키마 마이그레이션 (Flyway)** — 지금은 `ddl-auto: update` 라 열거형에 값을 하나 더할 때마다
    이미 만들어진 DB 를 손으로 고쳐야 합니다
    ([겪은 사례](#이미-쓰던-db-라면-알림-칸을-한-번-넓혀야-합니다)).
 

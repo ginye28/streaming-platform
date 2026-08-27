@@ -1,0 +1,6 @@
+# docker compose 가 읽는 환경변수 파일. JWT_SECRET 같은 값이 들어가므로 올리지 않는다.
+.env
+.env.*
+!.env.example
+
+.DS_Store
