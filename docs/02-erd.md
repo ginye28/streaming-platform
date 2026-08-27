@@ -1,6 +1,6 @@
 # ERD
 
-표 15개. `ddl-auto: update` 로 만들어지므로, 아래는 실제로 만들어진 MySQL 8.0 스키마를 그대로 옮긴 것입니다.
+표 17개. `ddl-auto: update` 로 만들어지므로, 아래는 실제로 만들어진 MySQL 8.0 스키마를 그대로 옮긴 것입니다.
 
 ```
 users ─┬─< streams ─┬─< comments ─┐
@@ -219,6 +219,37 @@ ENUM 으로 두면 종류를 하나 늘릴 때 `ddl-auto: update` 가 기존 칸
 2. `PASS` 가 쌓인 채널은 "이어보기" 에서 건너뜁니다.
 
 `action` 이 ENUM 이 아니라 varchar 인 것은 `notifications.type` 과 같은 이유입니다.
+
+---
+
+## channel_profiles — 채널의 정체성
+
+| 컬럼 | 타입 | | 설명 |
+|---|---|---|---|
+| id | bigint | PK | |
+| user_id | bigint | FK → users, **UNIQUE** | 사람당 한 줄 |
+| oshi_mark_url | varchar(255) | null 허용 | 팬이 채팅에서 달고 다니는 표식 |
+| fan_name | varchar(30) | null 허용 | 팬덤 이름 |
+| debut_on | date | null 허용 | 데뷔일. 아직 안 왔으면 화면에서 남은 날을 센다 |
+| graduated_on | date | null 허용 | 졸업일. 넣으면 졸업으로 표시된다 |
+
+**졸업해도 올린 영상과 지난 방송은 그대로 남습니다.**
+
+---
+
+## model_credits — 모델을 만들어 준 사람들
+
+| 컬럼 | 타입 | | 설명 |
+|---|---|---|---|
+| id | bigint | PK | |
+| user_id | bigint | FK → users | |
+| role | **varchar(30)** | | `ILLUSTRATOR` · `RIGGER` · `MODELER_3D` · `LOGO` · `BGM` · `OTHER` |
+| name | varchar(60) | | |
+| link | varchar(255) | null 허용 | 그 사람의 X · 픽시브 같은 주소 |
+| position | int | | 본인이 정한 차례 |
+
+인덱스: `(user_id, position)`.
+채널마다 여러 명이 붙으므로 1:N 입니다. 저장할 때는 통째로 갈아 끼웁니다.
 
 ---
 
