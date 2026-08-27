@@ -26,8 +26,6 @@ public class FileUploadController {
             @RequestParam("file") MultipartFile file
     ) throws IOException {
 
-        String url = fileUploadService.upload(file);
-
-        return ResponseEntity.ok(ApiResponse.ok(new UploadResponse(url)));
+        return ResponseEntity.ok(ApiResponse.ok(fileUploadService.upload(file)));
     }
 }

@@ -1,6 +1,7 @@
 package com.sp.api.common.file.service;
 
 import com.sp.api.common.exception.BadRequestException;
+import com.sp.api.common.file.dto.UploadResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -25,12 +26,17 @@ public class FileUploadService {
     );
 
     private final Path uploadRoot;
+    private final VideoThumbnailService thumbnailService;
 
-    public FileUploadService(@Value("${file.upload-dir}") String uploadDir) {
+    public FileUploadService(
+            @Value("${file.upload-dir}") String uploadDir,
+            VideoThumbnailService thumbnailService
+    ) {
         this.uploadRoot = Paths.get(uploadDir).toAbsolutePath().normalize();
+        this.thumbnailService = thumbnailService;
     }
 
-    public String upload(MultipartFile file) throws IOException {
+    public UploadResponse upload(MultipartFile file) throws IOException {
 
         if (file == null || file.isEmpty()) {
             throw new BadRequestException("업로드할 파일이 비어 있습니다.");
@@ -40,7 +46,8 @@ public class FileUploadService {
 
         Files.createDirectories(uploadRoot);
 
-        String fileName = UUID.randomUUID() + "." + extension;
+        String baseName = UUID.randomUUID().toString();
+        String fileName = baseName + "." + extension;
 
         Path target = uploadRoot.resolve(fileName).normalize();
 
@@ -53,7 +60,19 @@ public class FileUploadService {
 
         log.debug("파일 업로드 완료: {}", fileName);
 
-        return "/uploads/" + fileName;
+        return new UploadResponse("/uploads/" + fileName, thumbnailUrl(target, baseName, extension));
+    }
+
+    /** 영상이면 첫 장면을 뽑아 둔다. 못 뽑아도 업로드 자체는 성공이다. */
+    private String thumbnailUrl(Path video, String baseName, String extension) {
+
+        if (!thumbnailService.isVideo(extension)) {
+            return null;
+        }
+
+        String thumbnailName = thumbnailService.generate(video, baseName);
+
+        return thumbnailName == null ? null : "/uploads/" + thumbnailName;
     }
 
     private String extractExtension(String originalFilename) {
