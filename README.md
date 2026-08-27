@@ -17,8 +17,18 @@
 api/         Spring Boot 백엔드
 web/         React 프론트엔드
 streaming/   nginx-rtmp 도커 구성
-docs/        요구사항 · ERD · API 명세 · 컨벤션
+docs/        요구사항 · ERD · API 명세 · 아키텍처 · 컨벤션 · 배포 · 겪은 문제
 ```
+
+| | |
+|---|---|
+| [01-requirements.md](docs/01-requirements.md) | 무엇을 왜 만들기로 했나 |
+| [02-erd.md](docs/02-erd.md) | 표 13개의 컬럼과 관계 |
+| [03-api-spec.md](docs/03-api-spec.md) | API 상세 |
+| [04-architecture.md](docs/04-architecture.md) | 기술 선택과 송출 흐름, 패키지 구조 |
+| [05-convention.md](docs/05-convention.md) | 커밋 · 코드 · 테스트 규칙 |
+| [06-deployment.md](docs/06-deployment.md) | 컨테이너로 띄우기, 환경변수 |
+| [07-troubleshooting.md](docs/07-troubleshooting.md) | 만들면서 부딪힌 것들과 원인 |
 
 > 처음 켜신다면 [집에서 확인할 것](#집에서-확인할-것) 을 순서대로 따라가시면 됩니다.
 
