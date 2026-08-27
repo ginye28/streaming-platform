@@ -43,7 +43,9 @@ app:
     # OBS 송출이 거부되면 false 로 두고 확인할 것 (그 경우 재생 URL 에 키가 노출된다).
     rename-on-publish: true
     # nginx 가 스스로에게 다시 송출할 주소.
-    redirect-base: rtmp://127.0.0.1:1935/live
+    # streaming/nginx.conf 의 "안쪽 통로"(루프백 전용 1936 포트의 hls application)와 짝을 이룬다.
+    # 바깥 포트(1935)로 되돌리면 스트림 키 이름으로도 재생목록이 만들어진다.
+    redirect-base: rtmp://127.0.0.1:1936/hls
 
 logging:
   level:
