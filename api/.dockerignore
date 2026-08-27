@@ -1,0 +1,7 @@
+build/
+.gradle/
+uploads/
+data/
+# 로컬 전용 설정은 이미지에 넣지 않는다. 값은 환경변수로 넘긴다.
+src/main/resources/application-secret.yaml
+src/main/resources/application-db.yaml
