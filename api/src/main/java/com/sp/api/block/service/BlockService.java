@@ -51,10 +51,7 @@ public class BlockService {
                     return false;
                 })
                 .orElseGet(() -> {
-                    Block block = new Block();
-                    block.setBlocker(blocker);
-                    block.setBlocked(blocked);
-                    blockRepository.save(block);
+                    blockRepository.save(new Block(blocker, blocked));
                     return true;
                 });
 

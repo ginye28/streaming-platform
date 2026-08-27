@@ -2,14 +2,13 @@ package com.sp.api.subscribe.entity;
 
 import com.sp.api.user.entity.User;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Getter
-@Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(
         name = "subscriptions",
         uniqueConstraints = {
@@ -31,4 +30,9 @@ public class Subscribe {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "channel_id", nullable = false)
     private User channel;
+
+    public Subscribe(User subscriber, User channel) {
+        this.subscriber = subscriber;
+        this.channel = channel;
+    }
 }

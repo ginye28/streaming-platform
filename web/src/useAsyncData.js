@@ -11,13 +11,14 @@ export function useAsyncData(fetcher, deps) {
     const [reloadKey, setReloadKey] = useState(0)
 
     useEffect(() => {
+        // deps 가 빨리 바뀌면 먼저 보낸 요청이 나중에 도착할 수 있다.
+        // 이 깃발로 지난 요청의 응답을 버린다.
         let cancelled = false
-        const controller = new AbortController()
 
-        fetcher(controller.signal).then(
+        fetcher().then(
             (data) => !cancelled && setState({ data, error: null, loading: false }),
             (error) => {
-                if (!cancelled && error.name !== 'AbortError') {
+                if (!cancelled) {
                     setState((prev) => ({ ...prev, error: error.message, loading: false }))
                 }
             }
@@ -25,7 +26,6 @@ export function useAsyncData(fetcher, deps) {
 
         return () => {
             cancelled = true
-            controller.abort()
         }
         // fetcher 는 매 렌더 새로 만들어지므로 의존성에서 뺀다. 갱신 조건은 deps 가 정한다.
         // eslint-disable-next-line react-hooks/exhaustive-deps

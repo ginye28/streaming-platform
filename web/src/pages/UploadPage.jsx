@@ -6,6 +6,7 @@ import {
     updateStream,
     uploadFile,
 } from '../api.js'
+import { assetUrl } from '../assets.js'
 import { navigate } from '../router.js'
 import { useAsyncData } from '../useAsyncData.js'
 
@@ -43,21 +44,44 @@ function StreamForm({ id, existing, categories }) {
     const [error, setError] = useState(null)
     const [busy, setBusy] = useState(false)
 
-    async function handleUpload(event, setter) {
+    /** @returns 업로드 결과. 실패하면 null. */
+    async function handleUpload(event) {
         const file = event.target.files?.[0]
 
-        if (!file) return
+        if (!file) return null
 
         setBusy(true)
         setError(null)
 
         try {
-            const { url } = await uploadFile(file)
-            setter(url)
+            return await uploadFile(file)
         } catch (e) {
             setError(e.message)
+            return null
         } finally {
             setBusy(false)
+        }
+    }
+
+    async function handleVideoUpload(event) {
+        const uploaded = await handleUpload(event)
+
+        if (!uploaded) return
+
+        setVideoUrl(uploaded.url)
+
+        // 서버가 첫 장면을 뽑아 줬으면 썸네일로 쓴다.
+        // 직접 고른 썸네일이 이미 있으면 그대로 둔다.
+        if (uploaded.thumbnailUrl) {
+            setThumbnailUrl((current) => current || uploaded.thumbnailUrl)
+        }
+    }
+
+    async function handleThumbnailUpload(event) {
+        const uploaded = await handleUpload(event)
+
+        if (uploaded) {
+            setThumbnailUrl(uploaded.url)
         }
     }
 
@@ -111,7 +135,7 @@ function StreamForm({ id, existing, categories }) {
                     <input
                         type="file"
                         accept="video/*"
-                        onChange={(e) => handleUpload(e, setVideoUrl)}
+                        onChange={handleVideoUpload}
                     />
                 </label>
                 {videoUrl && <p className="meta">업로드됨: {videoUrl}</p>}
@@ -121,10 +145,17 @@ function StreamForm({ id, existing, categories }) {
                     <input
                         type="file"
                         accept="image/*"
-                        onChange={(e) => handleUpload(e, setThumbnailUrl)}
+                        onChange={handleThumbnailUpload}
                     />
                 </label>
-                {thumbnailUrl && <p className="meta">업로드됨: {thumbnailUrl}</p>}
+                {thumbnailUrl && (
+                    <div className="thumbnail-preview">
+                        <img src={assetUrl(thumbnailUrl)} alt="썸네일 미리보기" />
+                        <button type="button" onClick={() => setThumbnailUrl('')}>
+                            지우기
+                        </button>
+                    </div>
+                )}
 
                 <label>
                     카테고리

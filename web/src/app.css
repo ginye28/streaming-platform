@@ -351,6 +351,23 @@ code {
     letter-spacing: 0.04em;
 }
 
+/* 올리기 화면의 썸네일 미리보기. 목록의 카드와 같은 16:9 로 보여 준다. */
+.thumbnail-preview {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.thumbnail-preview img {
+    width: 240px;
+    max-width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--sunken);
+}
+
 .card__body {
     display: flex;
     flex-direction: column;

@@ -310,8 +310,26 @@ Authorization: Bearer <accessToken>
 
 - 허용 확장자: `mp4`, `mov`, `webm`, `m4v`, `jpg`, `jpeg`, `png`, `webp`, `gif`
 - 최대 100MB (초과 시 413)
-- 응답: `{ "success": true, "data": { "url": "/uploads/{uuid}.mp4" } }`
+- 응답: `{ "success": true, "data": { "url": "/uploads/{uuid}.mp4", "thumbnailUrl": "/uploads/{uuid}.jpg" } }`
 - 저장된 파일은 `GET /uploads/{파일명}` 으로 공개 제공된다.
+
+### 썸네일 자동 생성
+
+올린 파일이 영상(`mp4`·`mov`·`webm`·`m4v`)이면 서버가 ffmpeg 로 한 장면을 뽑아
+같은 이름의 `.jpg` 로 저장하고 `thumbnailUrl` 에 담아 준다.
+영상이 아니거나 뽑지 못했으면 `thumbnailUrl` 은 없다(`null`).
+
+- 1초 지점을 먼저 뽑는다. 맨 앞은 검은 화면인 경우가 많아서다.
+  영상이 1초보다 짧으면 맨 앞으로 물러선다.
+- 가로 640 으로 줄여 저장한다.
+- **ffmpeg 이 없어도 업로드는 성공한다.** 썸네일만 안 붙을 뿐이다.
+  서버 로그에 `썸네일을 만들지 못했습니다` 가 남는다.
+- 설정은 `application.yaml` 의 `file.thumbnail` (`enabled`·`ffmpeg-path`·`timeout-seconds`).
+- 업로드 응답을 기다리는 동안 같이 처리되므로, 아주 큰 영상이면 업로드가 그만큼 늦게 끝난다.
+  `-ss` 로 건너뛰어 훑지 않기 때문에 보통은 1초 안쪽이고, `timeout-seconds` 를 넘기면 포기한다.
+
+화면에서는 영상 파일을 고르면 썸네일 칸이 이 주소로 자동으로 채워진다.
+직접 고른 썸네일이 이미 있으면 덮어쓰지 않는다.
 
 ---
 

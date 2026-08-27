@@ -40,10 +40,7 @@ class LikeRepositoryTest {
 
         assertThat(user.getId()).isNotEqualTo(stream.getId());
 
-        Like like = new Like();
-        like.setUser(user);
-        like.setStream(stream);
-        em.persistAndFlush(like);
+        em.persistAndFlush(new Like(user, stream));
         em.clear();
 
         Optional<Like> found =
@@ -62,10 +59,7 @@ class LikeRepositoryTest {
         User other = persistUser("other@test.com", "other");
         Stream stream = persistStream(owner);
 
-        Like like = new Like();
-        like.setUser(owner);
-        like.setStream(stream);
-        em.persistAndFlush(like);
+        em.persistAndFlush(new Like(owner, stream));
         em.clear();
 
         assertThat(likeRepository.findByStreamIdAndUserId(stream.getId(), other.getId()))

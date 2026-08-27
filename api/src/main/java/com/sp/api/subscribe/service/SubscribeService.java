@@ -39,10 +39,7 @@ public class SubscribeService {
                     return false;
                 })
                 .orElseGet(() -> {
-                    Subscribe subscribe = new Subscribe();
-                    subscribe.setSubscriber(subscriber);
-                    subscribe.setChannel(channel);
-                    subscribeRepository.save(subscribe);
+                    subscribeRepository.save(new Subscribe(subscriber, channel));
                     return true;
                 });
 
