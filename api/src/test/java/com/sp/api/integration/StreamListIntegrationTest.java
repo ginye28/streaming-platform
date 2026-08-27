@@ -115,10 +115,22 @@ class StreamListIntegrationTest extends IntegrationTestSupport {
 
         // @Validated 가 붙은 컨트롤러의 파라미터 검증은 ConstraintViolationException 으로 오는데,
         // 이걸 처리하지 않으면 잘못된 요청이 catch-all 로 떨어져 500 이 된다.
-        for (String keyword : new String[]{"", "   ", "짧"}) {
+        for (String keyword : new String[]{"", "   ", "가".repeat(101)}) {
             mockMvc.perform(get("/api/streams/search").param("keyword", keyword))
                     .andExpect(status().isBadRequest());
         }
+    }
+
+    @Test
+    @DisplayName("한 글자로도 검색할 수 있다")
+    void searchesWithSingleCharacter() throws Exception {
+
+        String owner = signupAndLogin("search-owner@test.com", "검색주인");
+        createStream(owner, "봄나들이 방송");
+
+        mockMvc.perform(get("/api/streams/search").param("keyword", "봄"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].title").value("봄나들이 방송"));
     }
 
     @Test

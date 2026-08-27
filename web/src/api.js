@@ -28,7 +28,7 @@ async function unwrap(response) {
     return body?.data
 }
 
-function request(path, { method = 'GET', body, token, formData, signal } = {}) {
+function request(path, { method = 'GET', body, token, formData } = {}) {
     return fetch(`${API_BASE_URL}${path}`, {
         method,
         headers: {
@@ -38,7 +38,6 @@ function request(path, { method = 'GET', body, token, formData, signal } = {}) {
         },
         ...(body ? { body: JSON.stringify(body) } : {}),
         ...(formData ? { body: formData } : {}),
-        ...(signal ? { signal } : {}),
     })
 }
 

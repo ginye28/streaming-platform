@@ -22,6 +22,12 @@ springdoc:
 
 file:
   upload-dir: uploads
+  # 영상을 올리면 ffmpeg 로 첫 장면을 뽑아 썸네일로 쓴다.
+  # ffmpeg 이 없으면 썸네일 없이 업로드만 되니, 안 쓸 거면 enabled 를 false 로 둬도 된다.
+  thumbnail:
+    enabled: true
+    ffmpeg-path: ffmpeg
+    timeout-seconds: 20
 
 app:
   admin:
