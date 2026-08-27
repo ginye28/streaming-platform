@@ -31,7 +31,7 @@ app:
 
   rtmp:
     rename-on-publish: true
-    redirect-base: rtmp://127.0.0.1:1935/live
+    redirect-base: rtmp://127.0.0.1:1936/hls
 
 jwt:
   secret: test-secret-key-for-unit-tests-only-32bytes+
