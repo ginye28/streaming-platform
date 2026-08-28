@@ -2,12 +2,14 @@ import { useState } from 'react'
 import {
     getChannel,
     getChannelLive,
+    getChannelProfile,
     getChannelLiveHistory,
     getChannelStreams,
     toggleBlock,
     toggleSubscribe,
 } from '../api.js'
 import { useAuth } from '../useAuth.js'
+import ChannelIdentity from '../components/ChannelIdentity.jsx'
 import Pager from '../components/Pager.jsx'
 import StreamList from '../components/StreamList.jsx'
 import Link from '../components/Link.jsx'
@@ -26,6 +28,8 @@ export default function ChannelPage({ id }) {
     } = useAsyncData(() => getChannel(id), [id])
 
     const { data: live } = useAsyncData(() => getChannelLive(id), [id])
+
+    const { data: profile } = useAsyncData(() => getChannelProfile(id), [id])
 
     const { data: streams } = useAsyncData(
         () => getChannelStreams(id, pageNumber),
@@ -65,9 +69,11 @@ export default function ChannelPage({ id }) {
             <h2>{channel.nickname}</h2>
 
             <p className="meta">
-                구독자 {channel.subscriberCount}명 · 영상 {channel.streamCount}개
-                {channel.live && ' · 방송 중'}
+                {profile?.fanName ?? '구독자'} {channel.subscriberCount}명 · 영상{' '}
+                {channel.streamCount}개{channel.live && ' · 방송 중'}
             </p>
+
+            <ChannelIdentity profile={profile} />
 
             {me && !mine && (
                 <div className="toolbar">

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { getChatHistory, getLive, getLiveIntro } from '../api.js'
+import { assetUrl } from '../assets.js'
 import { useAuth } from '../useAuth.js'
 import HlsPlayer from '../components/HlsPlayer.jsx'
 import IntroGate from '../components/IntroGate.jsx'
@@ -95,6 +96,14 @@ function ChatPanel({ liveId, history, canSend }) {
             <ul className="chat__list" ref={listRef}>
                 {messages.map((message) => (
                     <li key={message.id}>
+                        {message.oshiMarkUrl && (
+                            <img
+                                className="chat__mark"
+                                src={assetUrl(message.oshiMarkUrl)}
+                                alt=""
+                                title="이 채널 구독자"
+                            />
+                        )}
                         <strong>{message.nickname}</strong> {message.content}
                     </li>
                 ))}

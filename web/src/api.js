@@ -258,6 +258,16 @@ export const updateMyIntro = (payload) =>
 export const getNextLive = (excludeLiveId) =>
     maybeAuthorized(`/api/lives/next${query({ excludeLiveId })}`).catch(() => null)
 
+// ---- 채널 정보 (오시마크 · 팬네임 · 데뷔/졸업 · 모델 크레딧) ----
+
+export const getChannelProfile = (channelId) =>
+    maybeAuthorized(`/api/channels/${channelId}/profile`)
+
+export const getMyChannelProfile = () => authorized('/api/users/me/channel-profile')
+
+export const updateMyChannelProfile = (payload) =>
+    authorized('/api/users/me/channel-profile', { method: 'PUT', body: payload })
+
 // ---- 알림 ----
 
 export const getNotifications = (page = 0) => authorized(`/api/notifications${query({ page })}`)

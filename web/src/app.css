@@ -351,6 +351,91 @@ code {
     letter-spacing: 0.04em;
 }
 
+/* 크레딧 편집 — 한 줄에 맡은 일 · 이름 · 주소 · 삭제 */
+.credits {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+}
+
+.credits legend {
+    padding: 0 6px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.credits__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.credits__row input {
+    flex: 1;
+    min-width: 120px;
+}
+
+/* 채널 정체성 — 오시마크 · 팬네임 · 데뷔/졸업 · 모델 크레딧 */
+.identity {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.identity__badges {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.identity__mark {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.identity__tag {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.identity__tag--debut {
+    border: 1px solid var(--accent);
+    color: var(--accent);
+}
+
+.identity__tag--graduated {
+    border: 1px solid var(--border-strong);
+    color: var(--muted);
+}
+
+.identity__credits ul {
+    margin: 8px 0 0;
+    padding-left: 18px;
+}
+
+/* 맡은 일은 이름보다 조용하게. 읽는 사람이 찾는 건 이름이다. */
+.identity__role {
+    display: inline-block;
+    min-width: 72px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+/* 채팅에서 구독자 옆에 붙는 표식. 글자 높이에 맞춘다. */
+.chat__mark {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    vertical-align: -2px;
+    margin-right: 2px;
+}
+
 /* 방송에 처음 들어온 사람에게 먼저 보이는 자기소개.
    방송 화면을 통째로 대신하므로 가운데에 크게 둔다. */
 .intro {

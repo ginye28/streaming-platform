@@ -403,6 +403,66 @@ STOMP over WebSocket 을 씁니다.
 
 ---
 
+## 채널 정보 — 오시마크 · 팬네임 · 데뷔/졸업 · 모델 크레딧
+
+방송 제목처럼 매번 바뀌는 것이 아니라 **그 사람을 이루는 값들**입니다.
+
+| 메서드 | 경로 | 인증 | 설명 |
+|---|---|---|---|
+| GET | `/api/channels/{channelId}/profile` | 공개 | 채널 페이지에서 보여 줄 정보 |
+| GET | `/api/users/me/channel-profile` | 필요 | 내 것 (편집용) |
+| PUT | `/api/users/me/channel-profile` | 필요 | 저장 |
+
+```json
+{
+  "channelId": 1, "nickname": "하늘별", "profileImage": null,
+  "oshiMarkUrl": "/uploads/mark.png",
+  "fanName": "별무리", "subscriberCount": 1,
+  "debutOn": "2026-09-10", "daysUntilDebut": 14,
+  "graduatedOn": null, "graduated": false,
+  "credits": [
+    { "role": "ILLUSTRATOR", "name": "그림작가님", "link": "https://x.com/example" },
+    { "role": "RIGGER", "name": "리거님", "link": null }
+  ]
+}
+```
+
+**아직 아무것도 안 채운 채널도 같은 형태로 내려옵니다.** 화면이 분기하지 않게 하기 위해서입니다.
+
+### 오시마크
+
+`/api/files/upload` 로 이미지를 올리고 그 주소를 `oshiMarkUrl` 에 넣습니다.
+**그 채널을 구독한 사람의 채팅에만** 붙습니다 — 아무나 달 수 있으면 표식이 아니게 됩니다.
+
+채팅 응답에 `oshiMarkUrl` 이 함께 옵니다. 구독자가 아니면 `null` 입니다.
+
+```json
+{ "id": 1, "nickname": "열혈팬", "content": "오시 최고",
+  "oshiMarkUrl": "/uploads/mark.png", "createdAt": "..." }
+```
+
+채팅 한 페이지의 마크는 **한 번에 가려냅니다.** 줄마다 물어보면 N+1 이 됩니다.
+
+### 팬네임
+
+채널에서 `구독자 1명` 대신 `별무리 1명` 으로 보입니다. 없으면 `구독자` 라고 씁니다.
+
+### 데뷔 · 졸업
+
+- `debutOn` 이 아직 오지 않았으면 `daysUntilDebut` 에 남은 날수가 옵니다 (화면은 `데뷔 D-14`).
+- `graduatedOn` 을 넣으면 그 날부터 `graduated: true` 입니다. **예정일이 미래면 아직 졸업이 아닙니다.**
+- 졸업해도 **올린 영상과 지난 방송은 그대로 남습니다.**
+
+### 모델 크레딧
+
+`role` 은 `ILLUSTRATOR` · `RIGGER` · `MODELER_3D` · `LOGO` · `BGM` · `OTHER`.
+`link` 는 비워 둘 수 있습니다. 넣은 차례대로 나옵니다.
+
+> **`credits` 를 보내지 않으면 기존 것을 그대로 둡니다.** 지우려면 빈 배열을 보내세요.
+> 보내면 줄마다 따지지 않고 **통째로 갈아 끼웁니다** — 그 편이 단순합니다.
+
+---
+
 ## 인트로 — 처음 들어온 시청자에게 보여 주는 자기소개
 
 낯선 방송에 들어가면 잡담 한복판에 떨어져 그대로 나가 버립니다. 그 사이에 한 겹을 둡니다.
