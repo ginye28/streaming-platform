@@ -496,6 +496,7 @@ docker compose --profile full up -d --build
 | 신고 (접수 · 관리자 처리) | 완료 |
 | 관리자 계정 발급 (설정 부트스트랩 + 승격 API) | 완료 |
 | 관리자 화면 (신고 · 카테고리 · 사용자) | 완료 |
+| 스키마 마이그레이션 (Flyway) | 완료 (CI 가 실제 MySQL 로 대조) |
 | 배포용 이미지 (api · web · streaming) + GHCR 푸시 | 완료 |
 | 시청자 화면 (목록 · 재생 · 댓글 · 채널 · 라이브 · 채팅 · 알림 · 업로드) | 완료 |
 | 화면 색·서체 (밝은 화면 + 나이트 모드) | 완료 (배치는 미확정) |
@@ -511,9 +512,6 @@ API 상세는 [docs/03-api-spec.md](docs/03-api-spec.md) 참고.
    `app.css` 는 색만 맡고 있어서 배치를 바꿔도 색이 깨지지 않습니다.
 2. **Redis 도입** — 시청자 수 집계, 조회수 중복 판정, 채팅 브로커를 서버 여러 대로 확장할 때 필요.
    지금은 셋 다 서버 메모리에 있어서 단일 서버에서만 맞습니다.
-3. **스키마 마이그레이션 (Flyway)** — 지금은 `ddl-auto: update` 라 열거형에 값을 하나 더할 때마다
-   이미 만들어진 DB 를 손으로 고쳐야 합니다
-   ([겪은 사례](#이미-쓰던-db-라면-알림-칸을-한-번-넓혀야-합니다)).
 
 ---
 
@@ -598,7 +596,6 @@ powershell -ExecutionPolicy Bypass -File scripts\verify-live.ps1  # PowerShell
 - [ ] 영상 올리기 · 좋아요 · 댓글 · 검색 · 구독
 - [ ] 남의 영상에 **댓글** → 영상 주인에게 알림이 가는지
 - [ ] 그 댓글에 **답글** → 원 댓글 쓴 사람에게 알림이 가는지
-      ([이미 쓰던 DB 라면 먼저 이걸](#이미-쓰던-db-라면-알림-칸을-한-번-넓혀야-합니다))
 
 `어둡게` 를 누르면 위의 홈 화면이 이렇게 바뀝니다.
 
@@ -613,46 +610,76 @@ powershell -ExecutionPolicy Bypass -File scripts\verify-live.ps1  # PowerShell
 | OBS `채널 혹은 스트림 키에 접근할 수 없습니다` | 스트림 키가 틀림 |
 | `java` 를 못 찾음 | PATH 설정 후 **새 창**을 열어야 반영됨 |
 | `no configuration file provided` | 프로젝트 루트가 아닌 곳에서 `docker compose` 실행 |
-| 댓글·답글 달 때 `서버 오류가 발생했습니다` | 알림 칸이 아직 안 넓혀짐 — [바로 아래](#이미-쓰던-db-라면-알림-칸을-한-번-넓혀야-합니다) |
+| 기동하다 `Schema validation` 으로 멈춤 | `ddl-auto` 가 아직 `update` — [바로 아래](#이미-쓰던-db-가-있다면-한-줄만-바꿔-주세요) |
 
 더 자세한 건 아래 [자주 겪는 문제](#자주-겪는-문제) 에 있습니다.
 
-### 이미 쓰던 DB 라면 알림 칸을 한 번 넓혀야 합니다
+### 이미 쓰던 DB 가 있다면 한 줄만 바꿔 주세요
 
-**DB 를 새로 만들어 쓴다면 이 절은 건너뛰어도 됩니다.**
+**스키마는 이제 Hibernate 가 아니라 Flyway 가 만듭니다.**
+`api/src/main/resources/db/migration/` 의 SQL 이 유일한 출처이고,
+Hibernate 는 엔티티와 실제 표가 맞는지 **확인만** 합니다.
 
-Hibernate 는 열거형을 DB 의 `ENUM` 칸으로 만듭니다. `ENUM('LIVE_START')` 처럼
-그때 있던 값만 적힌 칸이 되는데, `ddl-auto: update` 는 **이미 만들어진 칸을 넓혀 주지 않습니다.**
-그래서 알림 종류에 `STREAM_COMMENT` · `COMMENT_REPLY` 를 더한 지금,
-예전에 만든 DB 에 댓글이나 답글을 달면
-알림을 넣다가 `Value not permitted for column` 으로 500 이 납니다.
-알림과 댓글이 한 트랜잭션이라 **댓글도 함께 취소됩니다.**
+직접 만든 `application-db.yaml` 을 쓰고 계시다면 한 줄만 바꿔 주세요.
+(`.gitignore` 된 파일이라 저장소에 없습니다.)
 
-한 번만 이렇게 바꿔 주세요.
-
-```sql
--- MySQL
-ALTER TABLE notifications MODIFY COLUMN type VARCHAR(30) NOT NULL;
-
--- H2 (local 프로필, api/data/streaming.mv.db)
-ALTER TABLE notifications ALTER COLUMN type VARCHAR(30) NOT NULL;
+```yaml
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate   # update 였던 것을 validate 로
 ```
 
-H2 는 `http://localhost:8080/h2-console` 에서 바로 칠 수 있습니다.
-(JDBC URL `jdbc:h2:file:./data/streaming;MODE=MySQL`, 사용자 `sa`, 비밀번호 없음)
+`application-mysql.yaml` · `application-docker.yaml` 로 띄우신다면 이미 바꿔 뒀으니 그대로 두시면 됩니다.
 
-한 번 바꿔 두면 **그 DB 는** 그 뒤로 알림 종류가 더 늘어도 손댈 게 없습니다.
-(`STREAM_COMMENT` 를 더할 때 이 방법으로 고친 DB 에서 그대로 동작하는 걸 확인했습니다.)
+**쓰던 데이터는 지워지지 않습니다.** 표가 이미 들어 있는 DB 를 만나면
+Flyway 는 베이스라인 SQL 을 실행하지 않고 "여기까지는 이미 됐다" 는 기록만 남깁니다
+(`baseline-on-migrate`). 실제로 회원 데이터가 든 DB 로 확인했습니다.
 
-새로 만드는 DB 는 `ENUM` 대신 문자열 칸이 되지만, Hibernate 가 대신
-`type IN ('LIVE_START', 'STREAM_COMMENT', 'COMMENT_REPLY')` 검사를 붙입니다.
-그래서 **나중에 알림 종류를 또 더하면 그 DB 도 한 번 손봐야 합니다** — 위 `ALTER` 를 그대로 쓰면 됩니다.
+기동하면 로그에 이렇게 찍힙니다.
 
-> **이건 알림만의 문제가 아닙니다.** `users.role`, `reports.status`,
-> `reports.target_type`, `live_streams.status`, `users.provider` 도 같은 `ENUM` 칸이라,
-> 거기에 값을 새로 더할 때도 같은 작업이 필요합니다.
-> 근본적으로는 `ddl-auto: update` 대신 Flyway 같은 마이그레이션 도구를 쓰는 게 답입니다
-> ([다음 할 일](#다음-할-일)).
+```
+Creating Schema History table `streaming`.`flyway_schema_history` with baseline ...
+Successfully baselined schema with version: 1
+Schema `streaming` is up to date. No migration necessary.
+```
+
+#### 앞으로 표를 바꿀 때
+
+`ddl-auto: update` 를 쓰던 동안에는 열거형에 값을 하나 더할 때마다
+이미 만들어진 칸을 손으로 넓혀야 했습니다
+(`ENUM('LIVE_START')` 같은 칸은 `update` 가 넓혀 주지 않습니다).
+`users.role` · `reports.status` · `reports.target_type` ·
+`live_streams.status` · `users.provider` 가 아직 그런 `ENUM` 칸이고,
+문자열로 바꿔 둔 칸들도 Hibernate 가 붙인 `CHECK` 검사가 같은 식으로 걸립니다.
+
+이제는 그 손질을 **SQL 파일로 적어 두면 됩니다.** 알림 종류를 하나 더한다면:
+
+```sql
+-- api/src/main/resources/db/migration/V2__notification_type_add_new_subscriber.sql
+ALTER TABLE notifications DROP CHECK notifications_chk_1;
+ALTER TABLE notifications ADD CONSTRAINT notifications_chk_1
+    CHECK (type IN ('LIVE_START', 'STREAM_COMMENT', 'COMMENT_REPLY', 'NEW_SUBSCRIBER'));
+```
+
+파일 이름은 `V<번호>__<설명>.sql` 입니다. 설명은 **영문·숫자·밑줄**로 쓰세요 —
+파일 이름의 한글은 OS 마다 인코딩이 달라 Windows 와 리눅스에서 다르게 읽힐 수 있습니다.
+파일을 넣고 기동하면 Flyway 가 알아서 한 번만 적용합니다.
+**이미 적용된 파일은 고치면 안 됩니다** — Flyway 가 내용을 대조해서 기동을 멈춥니다. 새 번호로 하나 더 만드세요.
+
+#### 깜빡해도 CI 가 잡습니다
+
+엔티티에 칸을 더해 놓고 마이그레이션을 안 쓰면, 배포하고 나서야 알게 되는 게 보통입니다.
+그래서 CI 에 **스키마 (MySQL 8.0)** 작업을 뒀습니다.
+빈 MySQL 에 `db/migration` 을 전부 적용한 다음 `ddl-auto: validate` 로 앱을 띄워 보고,
+안 맞으면 이렇게 알려 주며 실패합니다.
+
+```
+Schema validation: missing column [drift_check_column] in table [channel_profiles]
+```
+
+나머지 테스트는 H2 로 도는데 H2 는 MySQL 문법의 마이그레이션을 실행하지 못해서,
+이 작업이 없으면 어긋남이 드러나지 않습니다.
 
 ---
 
