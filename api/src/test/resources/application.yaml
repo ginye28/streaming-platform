@@ -14,6 +14,11 @@ spring:
     username: sa
     password:
 
+  # 대부분의 테스트는 H2 로 빠르게 돈다. MySQL 문법인 마이그레이션 SQL 은 여기서 돌지 않으므로,
+  # 마이그레이션이 엔티티와 어긋나지 않는지는 SchemaMigrationTest 가 진짜 MySQL 로 따로 확인한다.
+  flyway:
+    enabled: false
+
   jpa:
     hibernate:
       ddl-auto: create-drop

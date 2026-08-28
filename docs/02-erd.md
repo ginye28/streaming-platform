@@ -1,6 +1,7 @@
 # ERD
 
-표 17개. `ddl-auto: update` 로 만들어지므로, 아래는 실제로 만들어진 MySQL 8.0 스키마를 그대로 옮긴 것입니다.
+표 17개. 스키마는 `api/src/main/resources/db/migration/` 의 SQL 이 만듭니다.
+아래는 실제로 만들어진 MySQL 8.0 스키마를 그대로 옮긴 것입니다.
 
 ```
 users ─┬─< streams ─┬─< comments ─┐
@@ -178,8 +179,10 @@ nginx-rtmp 의 `on_publish` 로 한 줄이 생기고, `on_publish_done` 으로 `
 | created_at | datetime(6) | | |
 
 `type` 이 ENUM 이 아니라 varchar 인 것은 **일부러** 입니다.
-ENUM 으로 두면 종류를 하나 늘릴 때 `ddl-auto: update` 가 기존 칸을 넓혀 주지 못해
-이미 만들어진 DB 에서 터집니다 ([README 의 겪은 사례](../README.md#이미-쓰던-db-라면-알림-칸을-한-번-넓혀야-합니다)).
+ENUM 으로 두면 종류를 하나 늘릴 때 기존 칸을 넓혀 주지 못해 이미 만들어진 DB 에서 터졌습니다
+([겪은 사례](07-troubleshooting.md)).
+지금은 스키마를 Flyway 가 관리하므로 칸을 넓히는 일도 SQL 파일로 적어 둡니다
+([README 의 마이그레이션 절](../README.md#이미-쓰던-db-가-있다면-한-줄만-바꿔-주세요)).
 
 인덱스: `(recipient_id, is_read)` — 안 읽은 개수 조회용.
 

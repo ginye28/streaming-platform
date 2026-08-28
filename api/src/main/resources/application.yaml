@@ -8,6 +8,15 @@ spring:
       - secret
       - db
 
+  # 스키마는 db/migration 의 SQL 로만 바뀐다. Hibernate 는 더 이상 표를 손대지 않는다.
+  flyway:
+    enabled: true
+    # 이미 표가 들어 있는 DB 는 V1(베이스라인)을 실행하지 않고 "여기까지는 됐다" 도장만 찍는다.
+    # 지금 돌고 있는 DB 를 지우지 않고 그대로 넘겨받기 위한 설정이다.
+    baseline-on-migrate: true
+    baseline-version: 1
+    baseline-description: ddl-auto 로 만들어져 있던 스키마
+
   servlet:
     multipart:
       max-file-size: 100MB

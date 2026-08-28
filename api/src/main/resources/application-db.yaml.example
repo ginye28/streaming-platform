@@ -11,7 +11,9 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      # 표를 만들고 고치는 건 Flyway(db/migration) 담당이다.
+      # Hibernate 는 엔티티와 실제 표가 맞는지 확인만 하고, 안 맞으면 기동을 멈춘다.
+      ddl-auto: validate
     properties:
       hibernate:
         format_sql: true

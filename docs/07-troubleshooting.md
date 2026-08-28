@@ -40,13 +40,29 @@ private Type type;
 - `columnDefinition = "varchar(30)"` — 칸은 varchar 가 되지만
   Hibernate 가 붙이는 CHECK 제약은 그대로 남습니다.
 
-### 남은 한계
+### 남은 한계, 그리고 그걸 없앤 방법
 
-새로 만드는 DB 도 varchar 칸에 `type IN (...)` CHECK 가 붙습니다.
-**종류를 또 늘리면 그 DB 도 한 번 손봐야 합니다.**
+varchar 로 바꿔도 Hibernate 는 `type IN (...)` CHECK 를 붙입니다.
+종류를 또 늘리면 **그 CHECK 가 같은 자리에서 막습니다.**
 `users.role` · `reports.status` · `reports.target_type` · `live_streams.status` ·
-`users.provider` 도 같은 `ENUM` 칸이라 사정이 같습니다.
-[README 의 ALTER 문](../README.md#이미-쓰던-db-라면-알림-칸을-한-번-넓혀야-합니다) 참고.
+`users.provider` 는 아직 네이티브 `ENUM` 칸이라 사정이 같습니다.
+
+즉 칸 타입을 바꾼 건 증상을 옮긴 것이지 원인을 없앤 게 아니었습니다.
+**원인은 "스키마를 바꾸는 방법이 `ddl-auto: update` 하나뿐" 이라는 것**이었고,
+그래서 Flyway 를 넣었습니다. 이제 칸을 넓히는 일은 SQL 파일 한 장으로 적어 둡니다.
+
+```sql
+-- api/src/main/resources/db/migration/V2__notification_type_add_new_subscriber.sql
+ALTER TABLE notifications DROP CHECK notifications_chk_1;
+ALTER TABLE notifications ADD CONSTRAINT notifications_chk_1
+    CHECK (type IN ('LIVE_START', 'STREAM_COMMENT', 'COMMENT_REPLY', 'NEW_SUBSCRIBER'));
+```
+
+적어 두는 걸 깜빡하는 것까지가 이 문제의 일부라, CI 에 **스키마 (MySQL 8.0)** 작업을 뒀습니다.
+빈 MySQL 에 마이그레이션을 전부 적용한 뒤 `ddl-auto: validate` 로 띄워 보고,
+엔티티와 어긋나면 `missing column [...] in table [...]` 로 실패합니다.
+
+[README 의 마이그레이션 절](../README.md#이미-쓰던-db-가-있다면-한-줄만-바꿔-주세요) 참고.
 
 ---
 
