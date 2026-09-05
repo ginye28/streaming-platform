@@ -4,3 +4,6 @@
 !.env.example
 
 .DS_Store
+
+# Claude Code 의 개인 설정. 도구 허용 목록처럼 사람마다 다른 값이라 올리지 않는다.
+.claude/settings.local.json
