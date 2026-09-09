@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getCategories, getLives, getStreams } from '../api.js'
 import { assetUrl } from '../assets.js'
 import Link from '../components/Link.jsx'
@@ -28,7 +28,7 @@ export default function HomePage() {
 
     return (
         <section className="home">
-            {featured && <Hero live={featured} next={rest.slice(0, 4)} />}
+            {featured && <Hero live={featured} next={rest.slice(0, 10)} />}
 
             <div className="home__filters">
                 <Chip active={categoryId === ''} onClick={() => setCategoryId('')}>
@@ -97,22 +97,129 @@ function Hero({ live, next }) {
                 </div>
             </Link>
 
-            {next.length > 0 && (
-                <ul className="hero__rail">
-                    {next.map((item) => (
-                        <li key={item.id}>
-                            <Link to={{ view: 'live', id: item.id }} className="hero__rail-item">
-                                {item.thumbnailUrl ? (
-                                    <img src={assetUrl(item.thumbnailUrl)} alt="" />
-                                ) : (
-                                    <span className="hero__rail-blank">LIVE</span>
-                                )}
-                                <span className="hero__rail-title">{item.title}</span>
-                            </Link>
-                        </li>
-                    ))}
-                </ul>
-            )}
+            {next.length > 0 && <RailWheel items={next} />}
+        </div>
+    )
+}
+
+/**
+ * 오른쪽에 곡선을 그리며 걸쳐 있는 카드들. 세로로 끌면 원을 그리듯 돌아가며
+ * 다음 카드가 앞으로(왼쪽·정중앙 쪽으로) 나온다 — 끝까지 끌어도 처음으로
+ * 되돌아오는 무한 루프다. 정중앙에서 멀어질수록 오른쪽으로 휘어지며 작아지다가
+ * 컨테이너 밖으로 잘려 나간다 (overflow: hidden).
+ */
+function RailWheel({ items }) {
+    const containerRef = useRef(null)
+    const dragRef = useRef(null)
+    const [containerHeight, setContainerHeight] = useState(340)
+    const [offset, setOffset] = useState(0)
+    const [dragging, setDragging] = useState(false)
+
+    useEffect(() => {
+        const el = containerRef.current
+        if (!el) return
+
+        const observer = new ResizeObserver(([entry]) => setContainerHeight(entry.contentRect.height))
+        observer.observe(el)
+        return () => observer.disconnect()
+    }, [])
+
+    const CARD_HEIGHT = 116
+    const SPACING = 132
+    const n = items.length
+    const loopHeight = n * SPACING
+
+    function wrap(value) {
+        if (loopHeight === 0) return 0
+        return ((value % loopHeight) + loopHeight) % loopHeight
+    }
+
+    function handlePointerDown(event) {
+        dragRef.current = { startY: event.clientY, startOffset: offset, moved: false }
+        setDragging(true)
+        containerRef.current?.setPointerCapture(event.pointerId)
+    }
+
+    function handlePointerMove(event) {
+        const drag = dragRef.current
+        if (!drag) return
+
+        const delta = event.clientY - drag.startY
+        // 살짝 흔들린 것까지 드래그로 치면 클릭이 죽는다.
+        if (Math.abs(delta) > 4) drag.moved = true
+        setOffset(wrap(drag.startOffset - delta))
+    }
+
+    function handlePointerUp(event) {
+        containerRef.current?.releasePointerCapture(event.pointerId)
+        setDragging(false)
+        // 놓으면 가장 가까운 카드가 정중앙으로 딱 맞게 스냅한다.
+        setOffset((current) => wrap(Math.round(current / SPACING) * SPACING))
+        dragRef.current = null
+    }
+
+    // 끌어서 넘긴 직후의 클릭은 이동시키지 않는다.
+    function handleClickCapture(event) {
+        if (dragRef.current?.moved) {
+            event.preventDefault()
+            event.stopPropagation()
+        }
+    }
+
+    const centerY = containerHeight / 2
+    const cards = []
+
+    if (n > 0) {
+        // 화면 위아래로 한 칸씩 여유를 두고, 그 범위에 걸리는 슬롯만 그린다.
+        const from = Math.floor((offset - SPACING - centerY) / SPACING) - 1
+        const to = Math.ceil((offset + containerHeight + SPACING - centerY) / SPACING) + 1
+
+        for (let slot = from; slot <= to; slot++) {
+            const y = centerY + slot * SPACING - offset
+            if (y < -SPACING || y > containerHeight + SPACING) continue
+
+            // 정중앙에서 멀어진 정도(0~1). 멀수록 오른쪽으로 휘고 작아지고 흐려진다.
+            const t = Math.min(Math.abs(y - centerY) / (centerY || 1), 1)
+            const bulge = 46 * t ** 1.6
+            const scale = 1 - 0.22 * t
+            const opacity = 1 - 0.5 * t
+            const item = items[((slot % n) + n) % n]
+
+            cards.push(
+                <Link
+                    key={slot}
+                    to={{ view: 'live', id: item.id }}
+                    className="railwheel__card"
+                    draggable="false"
+                    style={{
+                        transform: `translate(${bulge}px, ${y - CARD_HEIGHT / 2}px) scale(${scale})`,
+                        opacity,
+                        zIndex: Math.round((1 - t) * 100),
+                        transition: dragging ? 'none' : 'transform 320ms ease, opacity 320ms ease',
+                    }}
+                >
+                    {item.thumbnailUrl ? (
+                        <img src={assetUrl(item.thumbnailUrl)} alt="" draggable="false" />
+                    ) : (
+                        <span className="railwheel__blank">LIVE</span>
+                    )}
+                    <span className="railwheel__title">{item.title}</span>
+                </Link>
+            )
+        }
+    }
+
+    return (
+        <div
+            className="hero__rail"
+            ref={containerRef}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            onClickCapture={handleClickCapture}
+        >
+            {cards}
         </div>
     )
 }
@@ -172,7 +279,7 @@ function Carousel({ title, items }) {
             >
                 {items.map((stream) => (
                     <li key={stream.id} className="carousel__item">
-                        <Link to={{ view: 'stream', id: stream.id }} className="tile">
+                        <Link to={{ view: 'stream', id: stream.id }} className="tile" draggable="false">
                             <span className="tile__thumb">
                                 {stream.thumbnailUrl ? (
                                     <img src={assetUrl(stream.thumbnailUrl)} alt="" draggable="false" />
