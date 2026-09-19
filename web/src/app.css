@@ -742,47 +742,17 @@ details li {
     gap: 28px;
 }
 
-/* 배너 그릇. 여기에만 원근감을 주고, 안쪽 카드들은 이 원근감 안에서 돈다.
- * 옆으로 돌아 나간 카드는 이 그릇 밖으로 잘려 나간다. */
+/* 고정된 큰 배너. 여기는 돌지 않는다 — 도는 건 그 위에 얹힌 바퀴뿐이다. */
 .hero-wrap {
     position: relative;
     min-height: 420px;
     border-radius: var(--corner-lg);
     overflow: hidden;
-    /* 카드가 돌아 나가며 생기는 빈 자리는 무대 안쪽이다. 밝으면 구멍처럼
-     * 보이므로, 밝은 화면에서도 여기만은 어둡게 깐다. */
     background: #0c100f;
-    perspective: 2200px;
-    cursor: grab;
-    touch-action: pan-y;
-    user-select: none;
+    isolation: isolate;
 }
 
-.hero-wrap:active {
-    cursor: grabbing;
-}
-
-.hero-stage {
-    position: absolute;
-    inset: 0;
-    transform-style: preserve-3d;
-}
-
-.hero-card {
-    position: absolute;
-    /* 카드는 늘 그릇과 같은 크기이고, 물러난 정도는 transform 의 scale 로만
-     * 표현한다. width/height 를 직접 바꾸면 매 프레임 레이아웃이 다시 잡힌다. */
-    inset: 0;
-    border-radius: var(--corner-lg);
-    overflow: hidden;
-    background: #16201d;
-    /* 뒤돌아선 카드는 그리지 않는다. 안 그러면 뒷면이 비쳐 지저분해진다. */
-    backface-visibility: hidden;
-    will-change: transform, opacity;
-    -webkit-user-drag: none;
-}
-
-.hero-card__bg {
+.hero-bg {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -790,43 +760,39 @@ details li {
     object-fit: cover;
 }
 
-/* 맨 앞 카드만 글자가 읽혀야 하므로, 그 카드에만 아래쪽을 어둡게 깐다. */
-.hero-card--front::after {
+/* 어떤 썸네일이 와도 글자가 읽히도록 아래쪽을 어둡게 깐다. */
+.hero-wrap::after {
     content: '';
     position: absolute;
     inset: 0;
     background: linear-gradient(
         to top,
         rgb(8 12 11 / 0.92) 0%,
-        rgb(8 12 11 / 0.72) 38%,
-        rgb(8 12 11 / 0.15) 100%
+        rgb(8 12 11 / 0.7) 40%,
+        rgb(8 12 11 / 0.12) 100%
     );
 }
 
-.hero-card__link {
-    position: absolute;
-    inset: 0;
+.hero-body {
+    position: relative;
     z-index: 1;
-    display: flex;
-    align-items: flex-end;
-    padding: 28px;
-    text-decoration: none;
-}
-
-.hero-card__body {
     display: grid;
     gap: 12px;
     justify-items: start;
+    align-content: end;
+    min-height: 420px;
     max-width: 620px;
+    padding: 28px;
     color: #f4f7f5;
+    text-decoration: none;
 }
 
-.hero-card__badges {
+.hero-badges {
     display: flex;
     gap: 8px;
 }
 
-.hero-card__title {
+.hero-title {
     margin: 0;
     font-size: 34px;
     line-height: 1.2;
@@ -835,7 +801,7 @@ details li {
     word-break: keep-all;
 }
 
-.hero-card__channel {
+.hero-channel {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -844,7 +810,7 @@ details li {
     opacity: 0.92;
 }
 
-.hero-card__avatar {
+.hero-avatar {
     display: grid;
     place-items: center;
     width: 26px;
@@ -855,7 +821,7 @@ details li {
     font-weight: 700;
 }
 
-.hero-card__cta {
+.hero-cta {
     margin-top: 4px;
     padding: 11px 22px;
     border-radius: 999px;
@@ -865,25 +831,76 @@ details li {
     font-weight: 700;
 }
 
-.hero-card__link:hover .hero-card__cta {
+.hero-body:hover .hero-cta {
     background: #fff;
 }
 
-/* 아직 오지 않은 카드는 제목만 살짝 얹어 둔다. 어차피 돌아가 있어서 못 읽는다. */
-.hero-card__peek-title {
+/* 배너 오른쪽 위에 얹힌 바퀴. 카드 자리는 JS 가 원 위에서 계산한다. */
+.wheel {
+    position: absolute;
+    inset: 0 0 0 auto;
+    z-index: 2;
+    /* JS 의 WHEEL_W 와 같은 값이어야 카드 자리가 맞는다. */
+    width: 330px;
+    cursor: grab;
+    touch-action: pan-y;
+    user-select: none;
+}
+
+.wheel:active {
+    cursor: grabbing;
+}
+
+.wheel__card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: var(--corner-sm);
+    overflow: hidden;
+    background: #16201d;
+    box-shadow: 0 10px 30px rgb(0 0 0 / 0.45);
+    text-decoration: none;
+    will-change: transform, opacity;
+    -webkit-user-drag: none;
+}
+
+.wheel__card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+}
+
+.wheel__blank {
+    display: grid;
+    place-items: center;
+    height: 100%;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.wheel__title {
     position: absolute;
     inset: auto 0 0;
-    padding: 40px 20px 18px;
+    padding: 22px 10px 8px;
     background: linear-gradient(to top, rgb(8 12 11 / 0.92), transparent);
     color: #f4f7f5;
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 12px;
+    font-weight: 600;
     line-height: 1.35;
     word-break: keep-all;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    pointer-events: none;
+}
+
+/* 맨 앞 카드만 테두리로 표시해 둔다. */
+.wheel__card--front {
+    outline: 2px solid rgb(255 255 255 / 0.85);
+    outline-offset: -2px;
 }
 
 .pill {
@@ -1034,15 +1051,21 @@ details li {
 
 /* 좁은 화면에서는 오른쪽 레일을 접고 배너만 남긴다. */
 @media (max-width: 860px) {
-    .hero-wrap {
-        min-height: 300px;
+    .hero-wrap,
+    .hero-body {
+        min-height: 320px;
     }
 
-    .hero-card__link {
+    .hero-body {
         padding: 20px;
     }
 
-    .hero-card__title {
+    .hero-title {
         font-size: 24px;
+    }
+
+    /* 좁은 화면에서는 바퀴가 글자를 덮는다. 접어 둔다. */
+    .wheel {
+        display: none;
     }
 }

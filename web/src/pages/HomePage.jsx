@@ -25,7 +25,9 @@ export default function HomePage() {
 
     return (
         <section className="home">
-            {lives?.content.length > 0 && <HeroWheel items={lives.content} />}
+            {lives?.content.length > 0 && (
+                <HeroBanner live={lives.content[0]} others={lives.content.slice(1)} />
+            )}
 
             <div className="home__filters">
                 <Chip active={categoryId === ''} onClick={() => setCategoryId('')}>
@@ -67,50 +69,55 @@ export default function HomePage() {
     )
 }
 
-// 한 칸 뒤로 물러난 카드가 줄어들 너비. 맨 앞 카드는 배너를 꽉 채우고,
-// 뒤로 갈수록 이 크기까지 줄며 오른쪽 아래로 흘러간다.
-const PEEK_WIDTH = 300
-// 한 칸 물러날 때마다 더 기우는 각도.
-const TILT_PER_STEP = 24
-// 한 칸 물러날 때마다 앞으로 띄우는 깊이. 뒤 카드가 앞 카드 위에 겹쳐 보이게 한다.
-const LIFT_PER_STEP = 26
+// 오른쪽 바퀴에 놓인 작은 카드 한 장의 크기.
+const CARD_W = 200
+const CARD_H = 118
+// 카드들이 도는 원의 반지름. 원의 중심은 배너 바깥(오른쪽)에 있어서,
+// 화면에는 그 원의 왼쪽 자락만 세로로 휘어 보인다.
+const RING_RADIUS = 230
+// 바퀴가 차지하는 폭과, 맨 앞 카드 중심이 그 오른쪽 끝에서 얼마나 안쪽인지.
+const WHEEL_W = 330
+const FRONT_INSET = 120
+// 카드 사이의 각도. 원 둘레를 이 간격으로 나눠 자리를 잡는다.
+const SLOT_DEG = 30
+// 이 각도를 넘어가면 원의 뒤쪽으로 돌아간 것이라 그리지 않는다.
+const VISIBLE_DEG = 92
 // 드래그 픽셀을 각도로 바꾸는 비율.
-const DEG_PER_PX = 0.35
-// 이 칸수보다 더 뒤로 물러난 카드는 그리지 않는다.
-const PEEK_LIMIT = 3.4
+const DEG_PER_PX = 0.32
 
 /**
- * 지금 방송 중인 채널들이 구를 이루며 돈다. 맨 앞의 것 하나만 온전한 배너로
- * 꽉 채워 보이고, 나머지는 오른쪽에서 휘어져 들어오며 다가온다.
- * 오른쪽에서 왼쪽으로 끌면 맨 앞 카드가 뒤로 돌아 사라지고, 오른쪽에 걸쳐
- * 있던 다음 카드가 돌아 들어와 새로 맨 앞이 된다 — 끝까지 끌어도 처음으로
- * 돌아오는 무한 루프다.
+ * 큰 배너는 고정이고, 그 위 오른쪽에서 작은 카드들만 원을 그리며 돈다.
+ *
+ * 원의 중심이 배너 바깥(오른쪽)에 있어서 화면에는 원의 왼쪽 자락만 보인다.
+ * 그래서 카드들이 오른쪽 가장자리를 따라 세로로 휘어 늘어서고, 가장 왼쪽에
+ * 있는(=배너 쪽으로 가장 나온) 카드가 맨 앞이 된다.
+ *
+ * 오른쪽에서 왼쪽으로 끌면 바퀴가 돌아 맨 앞 카드가 위로 빠지고, 아래에서
+ * 다음 카드가 올라와 맨 앞이 된다. 자리는 각도를 카드 수로 나눈 나머지로
+ * 정하므로 끝까지 끌어도 처음 카드로 돌아온다.
  */
-function HeroWheel({ items }) {
-    const wrapRef = useRef(null)
+function LiveWheel({ items }) {
+    const ringRef = useRef(null)
     const dragRef = useRef(null)
-    const [size, setSize] = useState({ width: 0, height: 420 })
+    const [height, setHeight] = useState(420)
     const [angle, setAngle] = useState(0)
     const [dragging, setDragging] = useState(false)
 
     useEffect(() => {
-        const el = wrapRef.current
+        const el = ringRef.current
         if (!el) return
 
-        const observer = new ResizeObserver(([entry]) => {
-            setSize({ width: entry.contentRect.width, height: entry.contentRect.height })
-        })
+        const observer = new ResizeObserver(([entry]) => setHeight(entry.contentRect.height))
         observer.observe(el)
         return () => observer.disconnect()
     }, [])
 
     const n = items.length
-    const step = 360 / n
 
     function handlePointerDown(event) {
         dragRef.current = { startX: event.clientX, startAngle: angle, moved: false }
         setDragging(true)
-        wrapRef.current?.setPointerCapture(event.pointerId)
+        ringRef.current?.setPointerCapture(event.pointerId)
     }
 
     function handlePointerMove(event) {
@@ -120,20 +127,19 @@ function HeroWheel({ items }) {
         const delta = event.clientX - drag.startX
         // 살짝 흔들린 것까지 드래그로 치면 클릭이 죽는다.
         if (Math.abs(delta) > 4) drag.moved = true
-        // 오른쪽 → 왼쪽 드래그(delta 음수)일수록 각도가 커져서, 오른쪽에
-        // 걸쳐 있던 다음 카드가 정면(0도)으로 끌려온다.
+        // 오른쪽 → 왼쪽으로 끌면(delta 음수) 각도가 커져 바퀴가 돌아간다.
         setAngle(drag.startAngle - delta * DEG_PER_PX)
     }
 
     function handlePointerUp(event) {
-        wrapRef.current?.releasePointerCapture(event.pointerId)
+        ringRef.current?.releasePointerCapture(event.pointerId)
         setDragging(false)
-        // 손을 놓으면 가장 가까운 카드가 정확히 정면에 오도록 스냅한다.
-        setAngle((current) => Math.round(current / step) * step)
+        // 놓으면 가장 가까운 카드가 맨 앞에 딱 서도록 스냅한다.
+        setAngle((current) => Math.round(current / SLOT_DEG) * SLOT_DEG)
         dragRef.current = null
     }
 
-    // 끌어서 넘긴 직후의 클릭은 이동시키지 않는다.
+    // 끌어서 돌린 직후의 클릭은 방송을 열지 않는다.
     function handleClickCapture(event) {
         if (dragRef.current?.moved) {
             event.preventDefault()
@@ -141,115 +147,99 @@ function HeroWheel({ items }) {
         }
     }
 
-    const { width: W, height: H } = size
+    // 원의 중심. 배너 오른쪽 바깥에 두어 왼쪽 자락만 보이게 한다.
+    // 맨 앞 카드(phi = 0)가 오른쪽 끝에서 FRONT_INSET 만큼 안쪽에 서도록 맞춘다.
+    const centerX = WHEEL_W - FRONT_INSET + RING_RADIUS
+    const centerY = height / 2
 
-    // 한 칸 물러난 카드가 놓일 자리와, 그보다 더 뒤로 갈 때마다 밀려나는 양.
-    const peekScale = W > 0 ? PEEK_WIDTH / W : 0
-    const peekX = W - PEEK_WIDTH * 0.22
-    const peekY = H * 0.23
-    const stepX = PEEK_WIDTH * 0.3
-    const stepY = H * 0.22
+    const cards = []
+    const slots = Math.ceil(VISIBLE_DEG / SLOT_DEG)
 
-    // 아직 그릇 크기를 재기 전에는 배치를 계산할 수 없다. 한 프레임 뒤에 그린다.
-    const cards = W === 0 ? [] : items.map((item, i) => {
-        // 이 카드가 지금 정면에서 몇 도 떨어져 있는지, -180~180 사이로 접어 넣는다.
-        // 양수면 아직 오지 않은(오른쪽에 걸쳐 있는) 카드, 음수면 막 지나간 카드다.
-        const fromFront = ((i * step - angle + 540) % 360) - 180
-        // 각도 대신 "몇 칸 뒤인지"로 보면 화면 배치를 계산하기 쉽다.
-        const back = fromFront / step
+    for (let k = -slots; k <= slots; k++) {
+        // 이 자리가 맨 앞(0도)에서 얼마나 돌아가 있는지.
+        const phi = angle - Math.round(angle / SLOT_DEG) * SLOT_DEG + k * SLOT_DEG
+        if (Math.abs(phi) > VISIBLE_DEG) continue
 
-        // 아직 올 카드는 오른쪽에, 막 지나간 카드는 왼쪽에 둔다. 가는 길은
-        // 좌우 대칭이라 방향만 뒤집어 같은 식을 쓴다.
-        const away = Math.abs(back)
-        const side = back >= 0 ? 1 : -1
+        const rad = (phi * Math.PI) / 180
+        // 원의 왼쪽 자락. phi 가 0 이면 가장 왼쪽(=맨 앞)에 선다.
+        const x = centerX - RING_RADIUS * Math.cos(rad)
+        const y = centerY - RING_RADIUS * Math.sin(rad)
 
-        // 지나간 카드는 한 칸을 다 가기 전에 사라지고, 너무 뒤엣것은 아예 안 그린다.
-        // 그래야 멈춰 있을 때 스케치처럼 오른쪽에만 카드가 걸쳐 보인다.
-        if (back <= -1 || back > PEEK_LIMIT) return null
+        // 뒤로 돌아갈수록 작아지고 흐려진다.
+        const depth = Math.cos(rad)
+        const scale = 0.55 + 0.45 * depth
+        const opacity = Math.min(1, Math.max(0, depth * 1.5))
 
-        const isFront = away < 0.5
-        // 한 칸까지는 배너 크기에서 작은 카드 크기로 이어지듯 줄고,
-        // 그 뒤로는 조금씩만 더 줄며 바깥 아래로 흘러간다.
-        const t = Math.min(away, 1)
-        const beyond = Math.max(away - 1, 0)
+        const index = Math.round(angle / SLOT_DEG) + k
+        const item = items[((index % n) + n) % n]
 
-        const scale = (1 + (peekScale - 1) * t) * (1 - beyond * 0.12)
-        const centerX = W / 2 + side * ((peekX - W / 2) * t + beyond * stepX)
-        const centerY = H / 2 + (peekY - H / 2) * t + beyond * stepY
-
-        // 넘어가는 동안에는 지나가는 카드와 들어오는 카드가 겹쳐 화면을 채워야
-        // 한다. 그래서 지나간 카드는 거의 다 갈 때까지 불투명하게 두고 막판에만 지운다.
-        const opacity =
-            back < 0
-                ? Math.min(1, Math.max(0, (1 - away) / 0.25))
-                : Math.min(1, Math.max(0, (PEEK_LIMIT - back) / 1))
-
-        return (
-            <div
-                key={item.id}
-                className={`hero-card${isFront ? ' hero-card--front' : ''}`}
+        cards.push(
+            <Link
+                key={k}
+                to={{ view: 'live', id: item.id }}
+                className={`wheel__card${Math.abs(phi) < SLOT_DEG / 2 ? ' wheel__card--front' : ''}`}
+                draggable="false"
                 style={{
+                    width: CARD_W,
+                    height: CARD_H,
                     opacity,
-                    // 뒤로 갈수록 위에 겹치게 둔다. 스케치처럼 앞 카드의 오른쪽
-                    // 모서리를 타고 넘어가는 모양이 된다.
-                    zIndex: Math.round(500 + back * 10),
-                    transform: [
-                        `translate(${centerX - W / 2}px, ${centerY - H / 2}px)`,
-                        `translateZ(${side * Math.min(away, PEEK_LIMIT) * LIFT_PER_STEP}px)`,
-                        `rotateY(${side * Math.min(away, PEEK_LIMIT) * TILT_PER_STEP}deg)`,
-                        `scale(${scale})`,
-                    ].join(' '),
-                    transition: dragging ? 'none' : 'transform 380ms ease, opacity 380ms ease',
+                    zIndex: Math.round(100 + depth * 100),
+                    transform: `translate(${x - CARD_W / 2}px, ${y - CARD_H / 2}px) scale(${scale})`,
+                    transition: dragging ? 'none' : 'transform 340ms ease, opacity 340ms ease',
                 }}
             >
-                {item.thumbnailUrl && (
-                    <img className="hero-card__bg" src={assetUrl(item.thumbnailUrl)} alt="" draggable="false" />
-                )}
-
-                {isFront ? (
-                    <Link to={{ view: 'live', id: item.id }} className="hero-card__link" draggable="false">
-                        <div className="hero-card__body">
-                            <div className="hero-card__badges">
-                                <span className="pill pill--live">LIVE</span>
-                                <span className="pill">시청자 {formatCount(item.viewerCount)}</span>
-                            </div>
-
-                            <h2 className="hero-card__title">{item.title}</h2>
-
-                            <span className="hero-card__channel">
-                                <span className="hero-card__avatar" aria-hidden="true">
-                                    {item.nickname?.slice(0, 1)}
-                                </span>
-                                {item.nickname}
-                            </span>
-
-                            <span className="hero-card__cta">▶ 지금 보기</span>
-                        </div>
-                    </Link>
+                {item.thumbnailUrl ? (
+                    <img src={assetUrl(item.thumbnailUrl)} alt="" draggable="false" />
                 ) : (
-                    <span
-                        className="hero-card__peek-title"
-                        // 카드 전체가 scale 로 줄어드니, 글자는 그만큼 키워야 원래 크기로 보인다.
-                        style={{ fontSize: 15 / scale, padding: `${40 / scale}px ${20 / scale}px ${16 / scale}px` }}
-                    >
-                        {item.title}
-                    </span>
+                    <span className="wheel__blank">LIVE</span>
                 )}
-            </div>
+                <span className="wheel__title">{item.title}</span>
+            </Link>
         )
-    })
+    }
 
     return (
         <div
-            className="hero-wrap"
-            ref={wrapRef}
+            className="wheel"
+            ref={ringRef}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
             onClickCapture={handleClickCapture}
         >
-            <div className="hero-stage">{cards}</div>
+            {cards}
+        </div>
+    )
+}
+
+/** 고정된 큰 배너. 여기는 돌지 않는다. */
+function HeroBanner({ live, others }) {
+    return (
+        <div className="hero-wrap">
+            {live.thumbnailUrl && (
+                <img className="hero-bg" src={assetUrl(live.thumbnailUrl)} alt="" draggable="false" />
+            )}
+
+            <Link to={{ view: 'live', id: live.id }} className="hero-body" draggable="false">
+                <div className="hero-badges">
+                    <span className="pill pill--live">LIVE</span>
+                    <span className="pill">시청자 {formatCount(live.viewerCount)}</span>
+                </div>
+
+                <h2 className="hero-title">{live.title}</h2>
+
+                <span className="hero-channel">
+                    <span className="hero-avatar" aria-hidden="true">
+                        {live.nickname?.slice(0, 1)}
+                    </span>
+                    {live.nickname}
+                </span>
+
+                <span className="hero-cta">▶ 지금 보기</span>
+            </Link>
+
+            {others.length > 0 && <LiveWheel items={others} />}
         </div>
     )
 }
