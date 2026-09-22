@@ -781,7 +781,8 @@ details li {
     justify-items: start;
     align-content: end;
     min-height: 420px;
-    max-width: 620px;
+    /* 바퀴가 도는 오른쪽 구역과 겹치지 않을 만큼만 쓴다. */
+    max-width: 560px;
     padding: 28px;
     color: #f4f7f5;
     text-decoration: none;
@@ -836,25 +837,27 @@ details li {
 }
 
 /* 배너 오른쪽 위에 얹힌 바퀴. 카드 자리는 JS 가 원 위에서 계산한다. */
+/* 바퀴는 배너 전체를 덮는다. 카드 자리는 JS 가 이 크기에 맞춰 타원 위에서 잰다.
+ * 왼쪽 절반(제목이 있는 쪽)은 카드가 흐려지며 숨으므로 글자를 가리지 않는다. */
 .wheel {
     position: absolute;
-    inset: 0 0 0 auto;
+    inset: 0;
     z-index: 2;
-    /* JS 의 WHEEL_W 와 같은 값이어야 카드 자리가 맞는다. */
-    width: 330px;
-    cursor: grab;
     touch-action: pan-y;
     user-select: none;
+    /* 배너 전체를 덮지만 빈 곳은 통과시킨다. 안 그러면 제목·버튼이 안 눌린다.
+     * 바퀴는 카드를 잡고 돌린다. */
+    pointer-events: none;
 }
 
-.wheel:active {
-    cursor: grabbing;
-}
+
 
 .wheel__card {
     position: absolute;
     top: 0;
     left: 0;
+    pointer-events: auto;
+    cursor: grab;
     border-radius: var(--corner-sm);
     overflow: hidden;
     background: #16201d;
@@ -862,6 +865,10 @@ details li {
     text-decoration: none;
     will-change: transform, opacity;
     -webkit-user-drag: none;
+}
+
+.wheel__card:active {
+    cursor: grabbing;
 }
 
 .wheel__card img {

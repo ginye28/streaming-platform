@@ -69,37 +69,42 @@ export default function HomePage() {
     )
 }
 
-// 오른쪽 바퀴에 놓인 작은 카드 한 장의 크기.
-const CARD_W = 200
-const CARD_H = 118
-// 카드들이 도는 원의 반지름. 원의 중심은 배너 바깥(오른쪽)에 있어서,
-// 화면에는 그 원의 왼쪽 자락만 세로로 휘어 보인다.
-const RING_RADIUS = 230
-// 바퀴가 차지하는 폭과, 맨 앞 카드 중심이 그 오른쪽 끝에서 얼마나 안쪽인지.
-const WHEEL_W = 330
-const FRONT_INSET = 120
-// 카드 사이의 각도. 원 둘레를 이 간격으로 나눠 자리를 잡는다.
-const SLOT_DEG = 30
-// 이 각도를 넘어가면 원의 뒤쪽으로 돌아간 것이라 그리지 않는다.
-const VISIBLE_DEG = 92
+// 맨 앞(가장 아래)까지 내려온 카드 한 장의 크기. 뒤로 갈수록 이보다 작아진다.
+const CARD_W = 184
+const CARD_H = 112
+// 카드가 도는 타원. 중심은 배너 안쪽 오른편에 있고, 눕혀진 원이라
+// 가로가 세로보다 넓다 — 위에서 비스듬히 내려다본 회전목마 모양이다.
+const RING_CX = 0.71
+const RING_CY = 0.46
+const RING_RX = 0.22
+const RING_RY = 0.30
+// 카드 사이의 각도. 보이는 반 바퀴(180도)에 여섯 장쯤 놓인다.
+const SLOT_DEG = 36
+// 맨 앞 카드가 서는 각도. 90 이 타원의 맨 아래다.
+const FRONT_DEG = 90
+// 이 각도 바깥은 타원의 뒤쪽(왼쪽 절반)이라 글자 뒤로 숨는다.
+const FADE_IN_DEG = -100
+const SOLID_FROM_DEG = -84
+const SOLID_TO_DEG = 88
+const FADE_OUT_DEG = 104
 // 드래그 픽셀을 각도로 바꾸는 비율.
 const DEG_PER_PX = 0.32
 
 /**
- * 큰 배너는 고정이고, 그 위 오른쪽에서 작은 카드들만 원을 그리며 돈다.
+ * 큰 배너는 고정이고, 그 위에서 작은 카드들만 눕혀진 타원을 따라 돈다.
  *
- * 원의 중심이 배너 바깥(오른쪽)에 있어서 화면에는 원의 왼쪽 자락만 보인다.
- * 그래서 카드들이 오른쪽 가장자리를 따라 세로로 휘어 늘어서고, 가장 왼쪽에
- * 있는(=배너 쪽으로 가장 나온) 카드가 맨 앞이 된다.
+ * 타원의 중심은 배너 안쪽 오른편에 있고, 카드는 그 타원의 오른쪽 절반을
+ * 지난다 — 오른쪽 위에서 작게 나타나 바깥으로 불룩하게 돌아 나갔다가,
+ * 왼쪽 아래로 내려오며 점점 커진다. 가장 아래까지 내려온 카드가 맨 앞이다.
+ * 왼쪽 절반은 제목이 있는 자리라 거기서는 흐려지며 숨는다.
  *
- * 오른쪽에서 왼쪽으로 끌면 바퀴가 돌아 맨 앞 카드가 위로 빠지고, 아래에서
- * 다음 카드가 올라와 맨 앞이 된다. 자리는 각도를 카드 수로 나눈 나머지로
- * 정하므로 끝까지 끌어도 처음 카드로 돌아온다.
+ * 자리는 각도를 카드 수로 나눈 나머지로 정하므로 끝까지 끌어도 처음
+ * 카드로 돌아온다. 도는 방향은 부호 하나로 뒤집을 수 있다.
  */
 function LiveWheel({ items }) {
     const ringRef = useRef(null)
     const dragRef = useRef(null)
-    const [height, setHeight] = useState(420)
+    const [size, setSize] = useState({ width: 0, height: 420 })
     const [angle, setAngle] = useState(0)
     const [dragging, setDragging] = useState(false)
 
@@ -107,7 +112,9 @@ function LiveWheel({ items }) {
         const el = ringRef.current
         if (!el) return
 
-        const observer = new ResizeObserver(([entry]) => setHeight(entry.contentRect.height))
+        const observer = new ResizeObserver(([entry]) => {
+            setSize({ width: entry.contentRect.width, height: entry.contentRect.height })
+        })
         observer.observe(el)
         return () => observer.disconnect()
     }, [])
@@ -147,42 +154,61 @@ function LiveWheel({ items }) {
         }
     }
 
-    // 원의 중심. 배너 오른쪽 바깥에 두어 왼쪽 자락만 보이게 한다.
-    // 맨 앞 카드(phi = 0)가 오른쪽 끝에서 FRONT_INSET 만큼 안쪽에 서도록 맞춘다.
-    const centerX = WHEEL_W - FRONT_INSET + RING_RADIUS
-    const centerY = height / 2
+    // 타원의 중심과 반지름. 배너 크기에 맞춰 함께 늘어난다.
+    const cx = size.width * RING_CX
+    const cy = size.height * RING_CY
+    const rx = size.width * RING_RX
+    const ry = size.height * RING_RY
 
+    // 각도 0 은 타원의 오른쪽 끝, 90 은 맨 아래(=맨 앞)다.
+    const slots = Math.ceil((FADE_OUT_DEG - FADE_IN_DEG) / SLOT_DEG)
+    const base = Math.round(angle / SLOT_DEG)
+
+    // 방송 수보다 자리가 많으면 같은 방송이 두 번 보인다. 그때는 맨 앞에 가까운
+    // 쪽만 남긴다. 그래서 자리를 앞에서부터(k = 0) 바깥으로 훑는다.
+    const order = [0]
+    for (let d = 1; d <= slots; d++) order.push(d, -d)
+
+    const taken = new Set()
     const cards = []
-    const slots = Math.ceil(VISIBLE_DEG / SLOT_DEG)
 
-    for (let k = -slots; k <= slots; k++) {
-        // 이 자리가 맨 앞(0도)에서 얼마나 돌아가 있는지.
-        const phi = angle - Math.round(angle / SLOT_DEG) * SLOT_DEG + k * SLOT_DEG
-        if (Math.abs(phi) > VISIBLE_DEG) continue
+    for (const k of order) {
+        // 슬롯 하나가 늘 정확히 맨 아래(FRONT_DEG)에 서도록 기준을 옮긴다.
+        const theta = FRONT_DEG + (angle - base * SLOT_DEG) + k * SLOT_DEG
+        if (theta < FADE_IN_DEG || theta > FADE_OUT_DEG) continue
 
-        const rad = (phi * Math.PI) / 180
-        // 원의 왼쪽 자락. phi 가 0 이면 가장 왼쪽(=맨 앞)에 선다.
-        const x = centerX - RING_RADIUS * Math.cos(rad)
-        const y = centerY - RING_RADIUS * Math.sin(rad)
+        const rad = (theta * Math.PI) / 180
+        const x = cx + rx * Math.cos(rad)
+        const y = cy + ry * Math.sin(rad)
 
-        // 뒤로 돌아갈수록 작아지고 흐려진다.
-        const depth = Math.cos(rad)
-        const scale = 0.55 + 0.45 * depth
-        const opacity = Math.min(1, Math.max(0, depth * 1.5))
+        // 아래로 내려올수록(=앞으로 나올수록) 커진다. 0 이 맨 위, 1 이 맨 아래.
+        const depth = (Math.sin(rad) + 1) / 2
+        const scale = 0.58 + 0.42 * depth
 
-        const index = Math.round(angle / SLOT_DEG) + k
-        const item = items[((index % n) + n) % n]
+        // 타원의 왼쪽 절반은 제목이 있는 자리라 거기로 넘어가며 흐려진다.
+        const opacity =
+            theta < SOLID_FROM_DEG
+                ? (theta - FADE_IN_DEG) / (SOLID_FROM_DEG - FADE_IN_DEG)
+                : theta > SOLID_TO_DEG
+                  ? (FADE_OUT_DEG - theta) / (FADE_OUT_DEG - SOLID_TO_DEG)
+                  : 1
+
+        const index = (((base + k) % n) + n) % n
+        if (taken.has(index)) continue
+        taken.add(index)
+
+        const item = items[index]
 
         cards.push(
             <Link
                 key={k}
                 to={{ view: 'live', id: item.id }}
-                className={`wheel__card${Math.abs(phi) < SLOT_DEG / 2 ? ' wheel__card--front' : ''}`}
+                className={`wheel__card${Math.abs(theta - FRONT_DEG) < SLOT_DEG / 2 ? ' wheel__card--front' : ''}`}
                 draggable="false"
                 style={{
                     width: CARD_W,
                     height: CARD_H,
-                    opacity,
+                    opacity: Math.min(1, Math.max(0, opacity)),
                     zIndex: Math.round(100 + depth * 100),
                     transform: `translate(${x - CARD_W / 2}px, ${y - CARD_H / 2}px) scale(${scale})`,
                     transition: dragging ? 'none' : 'transform 340ms ease, opacity 340ms ease',
