@@ -74,19 +74,20 @@ const CARD_W = 184
 const CARD_H = 112
 // 카드가 도는 타원. 중심은 배너 안쪽 오른편에 있고, 눕혀진 원이라
 // 가로가 세로보다 넓다 — 위에서 비스듬히 내려다본 회전목마 모양이다.
-const RING_CX = 0.71
-const RING_CY = 0.46
-const RING_RX = 0.22
-const RING_RY = 0.30
-// 카드 사이의 각도. 보이는 반 바퀴(180도)에 여섯 장쯤 놓인다.
-const SLOT_DEG = 36
+// 타원을 키우면 오른쪽으로 삐져나가므로 중심도 같이 왼쪽으로 조금 당긴다.
+const RING_CX = 0.67
+const RING_CY = 0.45
+const RING_RX = 0.26
+const RING_RY = 0.36
+// 카드 사이의 각도. 넓을수록 카드 사이가 벌어진다.
+const SLOT_DEG = 40
 // 맨 앞 카드가 서는 각도. 90 이 타원의 맨 아래다.
 const FRONT_DEG = 90
 // 이 각도 바깥은 타원의 뒤쪽(왼쪽 절반)이라 글자 뒤로 숨는다.
-const FADE_IN_DEG = -100
-const SOLID_FROM_DEG = -84
-const SOLID_TO_DEG = 88
-const FADE_OUT_DEG = 104
+const FADE_IN_DEG = -108
+const SOLID_FROM_DEG = -88
+const SOLID_TO_DEG = 96
+const FADE_OUT_DEG = 112
 // 드래그 픽셀을 각도로 바꾸는 비율.
 const DEG_PER_PX = 0.32
 
