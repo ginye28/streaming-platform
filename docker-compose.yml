@@ -93,6 +93,7 @@ services:
       args:
         # Vite 는 빌드할 때 값을 박아 넣는다. 주소를 바꾸려면 --build 로 다시 만들어야 한다.
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+        VITE_TOURNAMENT_CHANNEL_IDS: ${VITE_TOURNAMENT_CHANNEL_IDS:-}
     container_name: sp-web
     ports:
       - "3000:80"
