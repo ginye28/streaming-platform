@@ -12,6 +12,9 @@ COPY . .
 # Vite 는 빌드할 때 값을 코드에 박아 넣는다. 실행할 때 바꿀 수 없으니 여기서 정한다.
 ARG VITE_API_BASE_URL=http://localhost:8080
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+# 대회 중계 채널 id (쉼표로 여러 개). 비우면 대회 배너를 띄우지 않는다.
+ARG VITE_TOURNAMENT_CHANNEL_IDS=
+ENV VITE_TOURNAMENT_CHANNEL_IDS=$VITE_TOURNAMENT_CHANNEL_IDS
 
 RUN npm run build
 
