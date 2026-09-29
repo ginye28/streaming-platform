@@ -28,6 +28,10 @@
     /* SP 시그니처 모서리: 왼쪽위 · 오른쪽아래는 각지고, 오른쪽위 · 왼쪽아래만 둥글다.
      * 큰 면(배너)과 작은 면(썸네일)에 크기만 다르게 같은 비율로 쓴다. */
     --corner-lg: 0 44px 0 44px;
+    --corner-md: 0 22px 0 22px;
+    /* 버튼 · 입력칸 · 뱃지처럼 작은 네모도 같은 모양을 따른다. */
+    --corner-xs: 0 10px 0 10px;
+    --corner-pill: 0 14px 0 14px;
     --corner-sm: 0 18px 0 18px;
 }
 
@@ -88,21 +92,47 @@ h3 {
 
 /* ── 머리 ── */
 .nav {
+    position: sticky;
+    top: 0;
+    z-index: 500;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 16px;
-    padding: 12px 20px;
+    min-height: 64px;
+    padding: 10px 24px;
+    box-sizing: border-box;
     border-bottom: 1px solid var(--border);
     background: var(--surface);
 }
 
 .nav__brand {
-    color: var(--accent);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    width: 216px;
+    color: var(--text);
+    text-decoration: none;
+}
+
+/* SP 모서리를 그대로 쓴 로고 자리. */
+.nav__mark {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 0 14px 0 14px;
+    background: var(--accent);
+    color: var(--on-accent);
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+}
+
+.nav__name {
     font-size: 17px;
     font-weight: 800;
     letter-spacing: -0.02em;
-    text-decoration: none;
 }
 
 .nav__links,
@@ -110,6 +140,11 @@ h3 {
     display: flex;
     align-items: center;
     gap: 14px;
+}
+
+/* 넓은 화면에서는 사이드바가 메뉴를 맡는다. */
+.nav__links {
+    display: none;
 }
 
 .nav__links a,
@@ -129,20 +164,203 @@ h3 {
     flex: 1;
     gap: 6px;
     min-width: 200px;
+    max-width: 620px;
+}
+
+.nav__search-box {
+    display: flex;
+    flex: 1;
 }
 
 .nav__search input {
     flex: 1;
+    min-width: 0;
+    border-radius: 0 16px 0 16px;
+    background: var(--sunken);
 }
 
 .nav__account {
     margin-left: auto;
 }
 
+.nav__bell {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nav__badge {
+    min-width: 18px;
+    padding: 1px 6px;
+    border-radius: var(--corner-xs);
+    background: var(--danger);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 16px;
+    text-align: center;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* ── 몸통: 왼쪽 사이드바 + 본문 ── */
+.shell {
+    display: flex;
+    align-items: flex-start;
+}
+
+.side {
+    position: sticky;
+    top: 64px;
+    flex: 0 0 248px;
+    box-sizing: border-box;
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+    padding: 20px 16px;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+}
+
+.side__nav {
+    display: grid;
+    gap: 4px;
+}
+
+.side__link {
+    display: flex;
+    align-items: center;
+    height: 44px;
+    padding: 0 14px;
+    border-radius: 0 16px 0 16px;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.side__link:hover {
+    background: var(--sunken);
+}
+
+.side__link--on {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 800;
+}
+
+.side__section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+
+.side__title {
+    margin: 0 6px 8px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.side__channels {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.side__channel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px;
+    border-radius: 0 12px 0 12px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.side__channel:hover {
+    background: var(--sunken);
+}
+
+.side__face {
+    display: grid;
+    flex: 0 0 28px;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    overflow: hidden;
+    border-radius: 0 9px 0 9px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.side__face img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.side__face--live {
+    outline: 2px solid var(--danger);
+    outline-offset: 1px;
+}
+
+.side__channel-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.side__live {
+    padding: 0 6px;
+    border-radius: 0 6px 0 6px;
+    background: var(--danger);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    line-height: 18px;
+}
+
 .main {
-    max-width: 1100px;
+    flex: 1;
+    min-width: 0;
+    max-width: 1140px;
     margin: 0 auto;
     padding: 28px 20px 64px;
+}
+
+/* 좁은 화면: 사이드바를 접고, 머리에 메뉴 링크를 다시 보인다. */
+@media (max-width: 900px) {
+    .side {
+        display: none;
+    }
+
+    .nav__links {
+        display: flex;
+    }
+
+    .nav__brand {
+        width: auto;
+    }
+
+    .nav__name {
+        display: none;
+    }
 }
 
 .narrow {
@@ -188,7 +406,7 @@ textarea,
 button {
     padding: 9px 11px;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--corner-xs);
     background: var(--surface);
     color: var(--text);
     font: inherit;
@@ -290,7 +508,7 @@ button[type='submit']:hover:not(:disabled),
     margin: 12px 0;
     padding: 10px 12px;
     border: 1px solid var(--danger);
-    border-radius: var(--radius);
+    border-radius: var(--corner-xs);
     background: var(--danger-soft);
     color: var(--danger);
     font-size: 14px;
@@ -309,7 +527,7 @@ button[type='submit']:hover:not(:disabled),
 
 code {
     padding: 2px 6px;
-    border-radius: 4px;
+    border-radius: 0 6px 0 6px;
     background: var(--sunken);
     font-size: 14px;
     overflow-wrap: anywhere;
@@ -319,7 +537,7 @@ code {
 .player {
     width: 100%;
     max-height: 60vh;
-    border-radius: var(--radius);
+    border-radius: var(--corner-xs);
     background: #000;
 }
 
@@ -337,7 +555,7 @@ code {
     aspect-ratio: 16 / 9;
     overflow: hidden;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--corner-xs);
     background: var(--sunken);
 }
 
@@ -359,7 +577,7 @@ code {
 /* 크레딧 편집 — 한 줄에 맡은 일 · 이름 · 주소 · 삭제 */
 .credits {
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--corner-xs);
     padding: 12px;
 }
 
@@ -404,7 +622,7 @@ code {
 
 .identity__tag {
     padding: 2px 8px;
-    border-radius: 999px;
+    border-radius: var(--corner-pill);
     font-size: 12px;
     font-weight: 600;
 }
@@ -461,7 +679,7 @@ code {
 .intro__video {
     width: 100%;
     aspect-ratio: 16 / 9;
-    border-radius: var(--radius);
+    border-radius: var(--corner-xs);
     background: var(--sunken);
 }
 
@@ -472,7 +690,7 @@ code {
     gap: 10px;
     padding: 32px 24px;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--corner-xs);
     background: var(--sunken);
 }
 
@@ -536,7 +754,7 @@ code {
     aspect-ratio: 16 / 9;
     object-fit: cover;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--corner-xs);
     background: var(--sunken);
 }
 
@@ -650,7 +868,7 @@ a.card__meta:hover {
     height: 60vh;
     overflow: hidden;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--corner-xs);
     background: var(--surface);
     box-shadow: var(--shadow);
 }
@@ -697,7 +915,7 @@ details {
     margin: 12px 0;
     padding: 0 16px;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--corner-xs);
     background: var(--surface);
 }
 
@@ -825,7 +1043,7 @@ details li {
 .hero-cta {
     margin-top: 4px;
     padding: 11px 22px;
-    border-radius: 999px;
+    border-radius: var(--corner-pill);
     background: #f4f7f5;
     color: #12100f;
     font-size: 14px;
@@ -915,7 +1133,7 @@ details li {
     align-items: center;
     gap: 6px;
     padding: 5px 12px;
-    border-radius: 999px;
+    border-radius: var(--corner-pill);
     background: rgb(255 255 255 / 0.16);
     backdrop-filter: blur(6px);
     color: #f4f7f5;
@@ -952,7 +1170,7 @@ details li {
 .chip {
     padding: 7px 14px;
     border: 1px solid var(--border);
-    border-radius: 999px;
+    border-radius: var(--corner-pill);
     background: var(--surface);
     color: var(--muted);
     font: inherit;
@@ -1075,4 +1293,371 @@ details li {
     .wheel {
         display: none;
     }
+}
+
+/* ── 메인: 지금 방송 중 줄 · 도는 카드 ─────────────────────────── */
+.section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 12px;
+    margin-bottom: 14px;
+}
+
+.section-head h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.section-head__hint {
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.strip__row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.strip__arrow,
+.ring__arrows button {
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 0 14px 0 14px;
+    font-size: 22px;
+    line-height: 1;
+}
+
+.strip__track {
+    display: flex;
+    flex: 1;
+    gap: 10px;
+    min-width: 0;
+    margin: 0;
+    padding: 4px 2px;
+    overflow-x: auto;
+    list-style: none;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+}
+
+.strip__track::-webkit-scrollbar {
+    display: none;
+}
+
+.strip__track > li {
+    scroll-snap-align: start;
+}
+
+.strip__person {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 78px;
+    color: var(--text);
+    text-decoration: none;
+}
+
+/* 쉬는 채널은 흐리게 — 오른쪽으로 갈수록 오래 쉰 채널이다. */
+.strip__person--resting {
+    opacity: 0.55;
+}
+
+.strip__person--resting .strip__face {
+    filter: grayscale(1);
+}
+
+.strip__face {
+    display: grid;
+    place-items: center;
+    width: 58px;
+    height: 58px;
+    overflow: hidden;
+    border: 3px solid var(--surface);
+    border-radius: 50%;
+    background: var(--accent-soft);
+    box-shadow: 0 0 0 2px var(--border);
+    color: var(--accent);
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.strip__face img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.strip__face--live {
+    box-shadow: 0 0 0 2.5px var(--danger);
+}
+
+.strip__name {
+    max-width: 78px;
+    overflow: hidden;
+    font-size: 12px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.strip__meta {
+    margin-top: -4px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.strip__meta--live {
+    color: var(--danger);
+}
+
+.strip__divider {
+    display: flex;
+    flex: 0 0 64px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 64px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.strip__divider span {
+    width: 1px;
+    height: 26px;
+    background: var(--border-strong);
+}
+
+.ring__arrows {
+    display: inline-flex;
+    gap: 8px;
+    margin-left: auto;
+    align-self: center;
+}
+
+/* 카드 자리는 JS 가 기준 폭(1100)에서 잰 값을 실제 폭에 맞춰 줄여 준다. */
+.ring {
+    position: relative;
+    touch-action: pan-y;
+    user-select: none;
+}
+
+.ring__card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    box-sizing: border-box;
+    border: 1px solid var(--border);
+    border-radius: var(--corner-md);
+    background: var(--surface);
+    box-shadow: 0 6px 16px rgb(12 18 16 / 0.08);
+    cursor: grab;
+    /* 놓았을 때 살짝 튕기며 자리에 붙는다. */
+    transition:
+        transform 560ms cubic-bezier(0.34, 1.36, 0.64, 1),
+        width 560ms cubic-bezier(0.34, 1.36, 0.64, 1),
+        opacity 400ms ease;
+    will-change: transform, width;
+}
+
+.ring--dragging .ring__card {
+    transition: none;
+    cursor: grabbing;
+}
+
+.ring__card--front {
+    box-shadow: 0 18px 40px rgb(12 18 16 / 0.16);
+}
+
+.ring__card--hearted {
+    border: 3px solid var(--heart);
+}
+
+.ring__thumb {
+    position: relative;
+    display: block;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 0 20px 0 0;
+    background: var(--sunken);
+    text-decoration: none;
+    -webkit-user-drag: none;
+}
+
+.ring__card--hearted .ring__thumb {
+    background: color-mix(in srgb, var(--heart) 18%, var(--surface));
+}
+
+.ring__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+}
+
+.ring__blank {
+    display: grid;
+    place-items: center;
+    height: 100%;
+    color: var(--border-strong);
+    font-size: 40px;
+    font-weight: 800;
+}
+
+.ring__live,
+.ring__order {
+    position: absolute;
+    top: 8px;
+    padding: 1px 7px;
+    border-radius: 0 6px 0 6px;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    line-height: 18px;
+}
+
+.ring__live {
+    left: 8px;
+    background: var(--danger);
+}
+
+.ring__order {
+    left: 52px;
+    background: var(--heart);
+}
+
+.ring__info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 12px 12px 22px;
+    border-radius: 0 0 0 20px;
+}
+
+.ring__card--hearted .ring__info {
+    background: color-mix(in srgb, var(--heart) 9%, var(--surface));
+}
+
+.ring__name {
+    flex-shrink: 0;
+    max-width: 50%;
+    overflow: hidden;
+    font-size: 14px;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ring__title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ring__viewers {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.ring__card--lg .ring__name {
+    font-size: 16px;
+}
+
+/* 작은 카드는 제목까지 넣으면 뭉개진다. 이름과 시청자 수만. */
+.ring__card--sm .ring__title {
+    display: none;
+}
+
+.ring__card--sm .ring__name {
+    max-width: none;
+    flex: 1;
+    font-size: 12px;
+}
+
+.ring__go {
+    position: absolute;
+    top: -18px;
+    right: 12px;
+    padding: 8px 14px;
+    border-radius: 0 12px 0 12px;
+    background: var(--text);
+    color: var(--bg);
+    font-size: 13px;
+    font-weight: 800;
+    text-decoration: none;
+    box-shadow: 0 6px 16px rgb(0 0 0 / 0.18);
+}
+
+/* 카드 아래 가운데, 바퀴 자리에 하트가 걸린다. */
+.ring__heart {
+    position: absolute;
+    bottom: -22px;
+    left: 50%;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    margin-left: -22px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--surface);
+    transition: transform 0.15s ease;
+}
+
+.ring__heart:hover:not(:disabled) {
+    transform: scale(1.08);
+    background: var(--surface);
+}
+
+.ring__heart path {
+    fill: none;
+    stroke: var(--border-strong);
+    stroke-width: 2;
+    stroke-linejoin: round;
+}
+
+.ring__card--hearted .ring__heart {
+    border: 3px solid var(--heart);
+}
+
+.ring__card--hearted .ring__heart path {
+    fill: var(--heart);
+    stroke: var(--heart);
+}
+
+/* 좁은 화면: 겹쳐 도는 대신 가로 한 줄로 넘긴다. */
+.ring--flat {
+    display: flex;
+    gap: 16px;
+    padding-bottom: 28px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+}
+
+.ring--flat .ring__card {
+    position: relative;
+    flex: 0 0 min(78vw, 300px);
+    width: min(78vw, 300px);
+    min-width: 0;
+    scroll-snap-align: start;
+    transition: none;
+    cursor: default;
 }
