@@ -20,6 +20,7 @@ export default function ChannelIdentity({ profile }) {
     // 팬네임은 이 위 메타 줄이 이미 쓴다. 여기서 또 쓰면 같은 말이 두 번 나온다.
     const hasAnything =
         profile.oshiMarkUrl ||
+        profile.paidOshiMarkUrl ||
         profile.debutOn ||
         profile.graduatedOn ||
         profile.credits.length > 0
@@ -34,7 +35,16 @@ export default function ChannelIdentity({ profile }) {
                         className="identity__mark"
                         src={assetUrl(profile.oshiMarkUrl)}
                         alt="오시마크"
-                        title="구독하면 채팅에 이 표식이 붙습니다"
+                        title="구독하면 이름 옆에 이 표식이 붙습니다"
+                    />
+                )}
+
+                {profile.paidOshiMarkUrl && (
+                    <img
+                        className="identity__mark identity__mark--paid"
+                        src={assetUrl(profile.paidOshiMarkUrl)}
+                        alt="유료 구독자 오시마크"
+                        title="유료로 구독하면 이름 옆에 이 표식이 붙습니다"
                     />
                 )}
 

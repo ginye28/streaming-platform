@@ -1,11 +1,14 @@
 package com.sp.api.vtuber.service;
 
 import com.sp.api.common.exception.NotFoundException;
+import com.sp.api.subscribe.entity.SubscriptionTier;
 import com.sp.api.subscribe.repository.SubscribeRepository;
+import com.sp.api.subscribe.repository.SubscriberMark;
 import com.sp.api.user.entity.User;
 import com.sp.api.user.repository.UserRepository;
 import com.sp.api.vtuber.dto.ChannelProfileRequest;
 import com.sp.api.vtuber.dto.ChannelProfileResponse;
+import com.sp.api.vtuber.dto.OshiMark;
 import com.sp.api.vtuber.entity.ChannelProfile;
 import com.sp.api.vtuber.entity.ModelCredit;
 import com.sp.api.vtuber.repository.ChannelProfileRepository;
@@ -14,10 +17,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -60,6 +63,7 @@ public class ChannelProfileService {
 
         profile.update(
                 request.getOshiMarkUrl(),
+                request.getPaidOshiMarkUrl(),
                 request.getFanName(),
                 request.getDebutOn(),
                 request.getGraduatedOn());
@@ -89,29 +93,46 @@ public class ChannelProfileService {
     }
 
     /**
-     * 이 방송의 채널을 구독한 사람들에게 붙일 오시마크.
+     * 이 채널을 구독한 사람들의 이름 옆에 붙일 오시마크.
      *
-     * 구독하지 않은 사람에게는 붙지 않는다. 아무나 달 수 있으면 표식이 아니게 된다.
-     * 채팅 한 페이지를 한 번에 처리하려고 작성자 id 를 모아 받는다.
+     * 규칙은 한 곳에서만 정한다. 채팅과 댓글이 같은 함수를 쓰므로 둘이 어긋나지 않는다.
+     * - 구독하지 않은 사람에게는 붙지 않는다. 아무나 달 수 있으면 표식이 아니게 된다.
+     * - 구독자가 이 채널의 마크를 껐으면(markVisible = false) 붙지 않는다.
+     * - 유료 구독자는 유료 마크를 달고, 유료 마크가 없으면 일반 마크를 단다.
+     * 한 페이지를 한 번에 처리하려고 작성자 id 를 모아 받는다. 줄마다 물어보면 N+1 이 된다.
      *
-     * @return 오시마크를 붙일 사용자 id → 마크 주소. 마크가 없으면 빈 map.
+     * @return 오시마크를 붙일 사용자 id → 마크. 붙일 사람이 없으면 빈 map.
      */
-    public Map<Long, String> oshiMarksFor(Long channelId, Set<Long> authorIds) {
+    public Map<Long, OshiMark> oshiMarksFor(Long channelId, Set<Long> authorIds) {
 
         if (authorIds.isEmpty()) {
             return Map.of();
         }
 
-        String mark = profileRepository.findByUserId(channelId)
-                .map(ChannelProfile::getOshiMarkUrl)
-                .orElse(null);
+        ChannelProfile profile = profileRepository.findByUserId(channelId).orElse(null);
 
-        if (mark == null) {
+        if (profile == null) {
             return Map.of();
         }
 
-        return subscribeRepository.findSubscriberIdsAmong(channelId, authorIds).stream()
-                .collect(Collectors.toMap(id -> id, id -> mark));
+        Map<Long, OshiMark> marks = new HashMap<>();
+
+        for (SubscriberMark subscriber : subscribeRepository.findSubscriberMarksAmong(channelId, authorIds)) {
+
+            if (!subscriber.markVisible()) {
+                continue;
+            }
+
+            String url = subscriber.tier() == SubscriptionTier.PAID && profile.getPaidOshiMarkUrl() != null
+                    ? profile.getPaidOshiMarkUrl()
+                    : profile.getOshiMarkUrl();
+
+            if (url != null) {
+                marks.put(subscriber.subscriberId(), new OshiMark(url, subscriber.tier()));
+            }
+        }
+
+        return marks;
     }
 
     private User findUser(String email) {

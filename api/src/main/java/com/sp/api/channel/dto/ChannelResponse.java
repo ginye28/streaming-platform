@@ -1,5 +1,6 @@
 package com.sp.api.channel.dto;
 
+import com.sp.api.subscribe.entity.SubscriptionTier;
 import com.sp.api.user.entity.User;
 
 public record ChannelResponse(
@@ -11,7 +12,11 @@ public record ChannelResponse(
         /** 지금 방송 중인지. */
         boolean live,
         /** 요청한 사용자가 구독 중인지. 비로그인이면 항상 false. */
-        boolean subscribedByMe
+        boolean subscribedByMe,
+        /** 내 구독 등급. 구독 중이 아니면 null. */
+        SubscriptionTier myTier,
+        /** 내 이름 옆에 이 채널의 오시마크를 보일지. 구독 중이 아니면 false. */
+        boolean myMarkVisible
 ) {
 
     public static ChannelResponse of(
@@ -19,7 +24,9 @@ public record ChannelResponse(
             long subscriberCount,
             long streamCount,
             boolean live,
-            boolean subscribedByMe
+            boolean subscribedByMe,
+            SubscriptionTier myTier,
+            boolean myMarkVisible
     ) {
         return new ChannelResponse(
                 user.getId(),
@@ -28,7 +35,9 @@ public record ChannelResponse(
                 subscriberCount,
                 streamCount,
                 live,
-                subscribedByMe
+                subscribedByMe,
+                myTier,
+                myMarkVisible
         );
     }
 }

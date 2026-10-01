@@ -14,6 +14,8 @@ import com.sp.api.stream.entity.Stream;
 import com.sp.api.stream.repository.StreamRepository;
 import com.sp.api.user.entity.User;
 import com.sp.api.user.repository.UserRepository;
+import com.sp.api.vtuber.dto.OshiMark;
+import com.sp.api.vtuber.service.ChannelProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,6 +36,7 @@ public class CommentService {
     private final StreamRepository streamRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final ChannelProfileService channelProfileService;
 
     @Transactional
     public CommentResponse create(Long streamId, CreateCommentRequest request, String email) {
@@ -49,14 +53,16 @@ public class CommentService {
                 new Comment(request.getContent(), stream, user, parent)
         );
 
+        OshiMark mark = markOf(stream.getUser().getId(), user.getId());
+
         if (parent == null) {
             notificationService.notifyComment(saved);
-            return CommentResponse.withReplies(saved, List.of());
+            return CommentResponse.withReplies(saved, List.of(), mark);
         }
 
         notificationService.notifyReply(saved);
 
-        return CommentResponse.reply(saved, parent.getId());
+        return CommentResponse.reply(saved, parent.getId(), mark);
     }
 
     /**
@@ -67,11 +73,32 @@ public class CommentService {
 
         Page<Comment> roots = commentRepository.findByStreamIdAndParentIsNullOrderByCreatedAtDescIdDesc(streamId, pageable);
 
-        Map<Long, List<CommentResponse>> repliesByParent = findReplies(roots.getContent());
+        // 오시마크는 이 영상의 채널 기준이다. 페이지 전체 작성자를 모아 한 번에 가린다.
+        Long channelId = streamRepository.findById(streamId)
+                .map(stream -> stream.getUser().getId())
+                .orElse(null);
+
+        List<Comment> replies = roots.getContent().isEmpty()
+                ? List.of()
+                : commentRepository.findRepliesOf(
+                        roots.getContent().stream().map(Comment::getId).toList());
+
+        Map<Long, OshiMark> marks = marksOfAuthors(channelId, roots.getContent(), replies);
+
+        Map<Long, List<CommentResponse>> repliesByParent = replies.stream()
+                .collect(Collectors.groupingBy(
+                        Comment::getParentId,
+                        Collectors.mapping(
+                                reply -> CommentResponse.reply(
+                                        reply, reply.getParentId(), marks.get(reply.getUser().getId())),
+                                Collectors.toList())
+                ));
 
         List<CommentResponse> content = roots.getContent().stream()
                 .map(root -> CommentResponse.withReplies(
-                        root, repliesByParent.getOrDefault(root.getId(), List.of())))
+                        root,
+                        repliesByParent.getOrDefault(root.getId(), List.of()),
+                        marks.get(root.getUser().getId())))
                 .toList();
 
         return PageResponse.of(roots, content);
@@ -89,7 +116,9 @@ public class CommentService {
 
         comment.updateContent(request.getContent());
 
-        return CommentResponse.of(comment);
+        return CommentResponse.of(
+                comment,
+                markOf(comment.getStream().getUser().getId(), comment.getUser().getId()));
     }
 
     @Transactional
@@ -102,22 +131,25 @@ public class CommentService {
         commentRepository.deleteById(commentId);
     }
 
-    /** 답글들을 쿼리 한 번으로 가져와 원 댓글 id 별로 묶는다. */
-    private Map<Long, List<CommentResponse>> findReplies(List<Comment> roots) {
+    /** 이 페이지 댓글·답글 작성자들 가운데 오시마크를 달 사람. 쿼리 한 번으로 가린다. */
+    private Map<Long, OshiMark> marksOfAuthors(
+            Long channelId, List<Comment> roots, List<Comment> replies
+    ) {
 
-        if (roots.isEmpty()) {
+        if (channelId == null) {
             return Map.of();
         }
 
-        List<Long> rootIds = roots.stream().map(Comment::getId).toList();
+        Set<Long> authorIds = java.util.stream.Stream.concat(roots.stream(), replies.stream())
+                .map(comment -> comment.getUser().getId())
+                .collect(Collectors.toSet());
 
-        return commentRepository.findRepliesOf(rootIds).stream()
-                .collect(Collectors.groupingBy(
-                        Comment::getParentId,
-                        Collectors.mapping(
-                                reply -> CommentResponse.reply(reply, reply.getParentId()),
-                                Collectors.toList())
-                ));
+        return channelProfileService.oshiMarksFor(channelId, authorIds);
+    }
+
+    /** 방금 쓴 댓글 한 건의 오시마크. */
+    private OshiMark markOf(Long channelId, Long authorId) {
+        return channelProfileService.oshiMarksFor(channelId, Set.of(authorId)).get(authorId);
     }
 
     /** 답글의 답글은 만들지 않는다. 화면에서도 답글에는 답글 버튼을 두지 않는다. */

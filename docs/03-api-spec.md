@@ -135,6 +135,7 @@ Authorization: Bearer <accessToken>
 | GET | `/api/channels/{channelId}` | 공개 | 채널 정보 |
 | GET | `/api/channels/{channelId}/streams` | 공개 | 채널의 영상 목록 (페이지) |
 | POST | `/api/channels/{channelId}/subscribe` | 필요 | 구독 토글 |
+| PUT | `/api/channels/{channelId}/subscription` | 필요 | 내 구독 설정 변경 — 등급 · 오시마크 표시 |
 
 채널 정보 응답
 ```json
@@ -144,14 +145,37 @@ Authorization: Bearer <accessToken>
   "profileImage": null,
   "subscriberCount": 12,
   "streamCount": 4,
-  "subscribedByMe": true
+  "subscribedByMe": true,
+  "myTier": "BASIC",
+  "myMarkVisible": true
 }
 ```
 
 `subscribedByMe` 는 비로그인으로 조회하면 항상 `false` 입니다.
+`myTier`(`BASIC` · `PAID`)와 `myMarkVisible` 은 내 구독 설정입니다.
+구독 중이 아니면 `myTier` 는 `null`, `myMarkVisible` 은 `false` 입니다.
+`GET /api/users/me/subscriptions` 의 각 채널에도 같은 값이 들어 있습니다.
 
 구독 토글 응답: `{ "subscribed": true, "subscriberCount": 13 }`
 자기 자신을 구독하면 400.
+
+### 내 구독 설정 — `PUT /api/channels/{channelId}/subscription`
+
+```json
+{ "tier": "PAID", "markVisible": false }
+```
+
+**보낸 값만 바꿉니다.** 둘 다 없으면 400, `tier` 에 `BASIC`·`PAID` 가 아닌 값을 주면 400,
+**구독 중이 아닌 채널이면 400** 입니다. 응답은 `{ "subscribed": true, "tier": "PAID", "markVisible": false }`.
+
+| 값 | 뜻 |
+|---|---|
+| `tier` | `BASIC`(일반 구독) · `PAID`(유료 구독). 유료 구독자는 채널의 유료 오시마크를 단다. |
+| `markVisible` | 이 채널의 오시마크를 내 이름 옆에 달지. 기본은 `true`. 구독했다고 강제로 달지 않는다. |
+
+- 구독을 해제하면 등급과 표시 설정도 함께 초기화됩니다. 다시 구독하면 `BASIC` · `markVisible: true` 입니다.
+- **유료 전환은 아직 결제와 이어져 있지 않습니다.** 지금은 누구나 `PAID` 로 바꿀 수 있습니다.
+  결제를 붙일 때는 이 자리를 결제 완료 처리로 바꾸고 직접 `PAID` 를 요청하지 못하게 막아야 합니다.
 
 ---
 
@@ -275,15 +299,20 @@ Authorization: Bearer <accessToken>
   "content": [
     {
       "id": 12, "content": "원 댓글", "nickname": "긴예",
+      "oshiMarkUrl": "/uploads/mark.png", "oshiTier": "BASIC",
       "parentId": null,
       "replies": [
-        { "id": 13, "content": "답글", "nickname": "도라", "parentId": 12, "replies": [] }
+        { "id": 13, "content": "답글", "nickname": "도라",
+          "oshiMarkUrl": null, "oshiTier": null, "parentId": 12, "replies": [] }
       ]
     }
   ],
   "page": 0, "size": 20, "totalElements": 1, "totalPages": 1, "last": true
 }
 ```
+
+`oshiMarkUrl` · `oshiTier` 는 [오시마크](#오시마크) 규칙으로 붙습니다. 이 영상의 채널을 구독한 사람만 받고,
+아니면 둘 다 `null` 입니다. 댓글 등록·수정 응답에도 같이 옵니다.
 
 `totalElements` 는 원 댓글 수입니다. 영상의 `commentCount` 는 답글까지 센 수라 서로 다를 수 있습니다.
 
@@ -417,6 +446,7 @@ STOMP over WebSocket 을 씁니다.
 {
   "channelId": 1, "nickname": "하늘별", "profileImage": null,
   "oshiMarkUrl": "/uploads/mark.png",
+  "paidOshiMarkUrl": "/uploads/mark-paid.png",
   "fanName": "별무리", "subscriberCount": 1,
   "debutOn": "2026-09-10", "daysUntilDebut": 14,
   "graduatedOn": null, "graduated": false,
@@ -431,17 +461,35 @@ STOMP over WebSocket 을 씁니다.
 
 ### 오시마크
 
-`/api/files/upload` 로 이미지를 올리고 그 주소를 `oshiMarkUrl` 에 넣습니다.
-**그 채널을 구독한 사람의 채팅에만** 붙습니다 — 아무나 달 수 있으면 표식이 아니게 됩니다.
+채널이 `/api/files/upload` 로 이미지를 올리고 그 주소를 넣습니다.
+이미지는 두 장까지 정할 수 있습니다.
 
-채팅 응답에 `oshiMarkUrl` 이 함께 옵니다. 구독자가 아니면 `null` 입니다.
+| 필드 | 누가 다나 |
+|---|---|
+| `oshiMarkUrl` | 이 채널을 구독한 사람 |
+| `paidOshiMarkUrl` | 유료로 구독한 사람. 비워 두면 유료 구독자도 `oshiMarkUrl` 을 단다 |
+
+**이름 옆(채팅과 댓글)에 붙는 규칙** — 채팅과 댓글이 같은 함수를 써서 어긋나지 않습니다.
+
+1. 그 채널을 구독하지 않은 사람에게는 붙지 않습니다. 아무나 달 수 있으면 표식이 아니게 됩니다.
+2. 구독자가 그 채널의 마크를 껐으면(`markVisible: false`) 붙지 않습니다.
+3. 유료 구독자는 유료 마크를, 일반 구독자는 일반 마크를 답니다.
+4. 마크는 **그 방송·영상의 채널 기준**입니다. A 채널을 구독했어도 B 채널 영상 댓글에는 A 마크가 붙지 않습니다.
+5. 채널 주인 본인은 구독자가 아니므로 붙지 않습니다.
+
+채팅과 댓글 응답에 `oshiMarkUrl` 과 `oshiTier` 가 함께 옵니다. 붙지 않으면 둘 다 `null` 입니다.
+`oshiTier` 는 마크 이미지가 아니라 **그 사람의 실제 구독 등급**입니다(유료 마크가 없어 일반 마크를 달아도 `PAID`).
+화면은 이 값으로 유료 구독자의 마크에 테두리를 둘러 구분합니다.
 
 ```json
 { "id": 1, "nickname": "열혈팬", "content": "오시 최고",
-  "oshiMarkUrl": "/uploads/mark.png", "createdAt": "..." }
+  "oshiMarkUrl": "/uploads/mark-paid.png", "oshiTier": "PAID", "createdAt": "..." }
 ```
 
-채팅 한 페이지의 마크는 **한 번에 가려냅니다.** 줄마다 물어보면 N+1 이 됩니다.
+시청자는 [`PUT /api/channels/{channelId}/subscription`](#내-구독-설정--put-apichannelschannelidsubscription) 으로
+채널마다 마크를 달지 말지, 유료 구독으로 올릴지를 정합니다.
+
+한 페이지의 마크는 **한 번에 가려냅니다.** 줄마다 물어보면 N+1 이 됩니다.
 
 ### 팬네임
 

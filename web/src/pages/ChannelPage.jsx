@@ -11,6 +11,7 @@ import {
 import { useAuth } from '../useAuth.js'
 import ChannelIdentity from '../components/ChannelIdentity.jsx'
 import Pager from '../components/Pager.jsx'
+import SubscriptionControls from '../components/SubscriptionControls.jsx'
 import StreamList from '../components/StreamList.jsx'
 import Link from '../components/Link.jsx'
 import { useAsyncData } from '../useAsyncData.js'
@@ -82,6 +83,16 @@ export default function ChannelPage({ id }) {
                     </button>
                     <button onClick={handleBlock}>차단</button>
                 </div>
+            )}
+
+            {me && !mine && channel.subscribedByMe && (
+                <SubscriptionControls
+                    channelId={channel.id}
+                    tier={channel.myTier}
+                    markVisible={channel.myMarkVisible}
+                    onChanged={reload}
+                    onFail={fail}
+                />
             )}
 
             {live && (

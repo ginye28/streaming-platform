@@ -14,8 +14,11 @@ import java.util.List;
 @NoArgsConstructor
 public class ChannelProfileRequest {
 
-    /** 팬이 채팅에서 달고 다닐 표식. 이미지 주소 (/api/files/upload 로 올린 것). */
+    /** 구독자가 이름 옆에 달고 다닐 표식. 이미지 주소 (/api/files/upload 로 올린 것). */
     private String oshiMarkUrl;
+
+    /** 유료 구독자가 달 표식. 비워 두면 유료 구독자도 oshiMarkUrl 을 단다. */
+    private String paidOshiMarkUrl;
 
     @Size(max = 30, message = "팬네임은 30자 이하여야 합니다.")
     private String fanName;

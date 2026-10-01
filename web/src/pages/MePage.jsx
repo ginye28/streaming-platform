@@ -19,6 +19,7 @@ import { assetUrl } from '../assets.js'
 import { useAuth } from '../useAuth.js'
 import { CREDIT_ROLES } from '../components/ChannelIdentity.jsx'
 import Link from '../components/Link.jsx'
+import SubscriptionControls from '../components/SubscriptionControls.jsx'
 import { useAsyncData } from '../useAsyncData.js'
 
 export default function MePage() {
@@ -390,6 +391,7 @@ function ChannelProfileForm() {
 
 function ChannelProfileFields({ profile, onFail }) {
     const [oshiMarkUrl, setOshiMarkUrl] = useState(profile.oshiMarkUrl ?? '')
+    const [paidOshiMarkUrl, setPaidOshiMarkUrl] = useState(profile.paidOshiMarkUrl ?? '')
     const [fanName, setFanName] = useState(profile.fanName ?? '')
     const [debutOn, setDebutOn] = useState(profile.debutOn ?? '')
     const [graduatedOn, setGraduatedOn] = useState(profile.graduatedOn ?? '')
@@ -397,21 +399,24 @@ function ChannelProfileFields({ profile, onFail }) {
     const [message, setMessage] = useState(null)
     const [busy, setBusy] = useState(false)
 
-    async function handleMarkUpload(event) {
-        const file = event.target.files?.[0]
+    /** 고른 이미지를 올리고, 돌려받은 주소를 setUrl 로 넘기는 핸들러를 만든다. */
+    function markUploader(setUrl) {
+        return async (event) => {
+            const file = event.target.files?.[0]
 
-        if (!file) return
+            if (!file) return
 
-        setBusy(true)
-        setMessage(null)
+            setBusy(true)
+            setMessage(null)
 
-        try {
-            const uploaded = await uploadFile(file)
-            setOshiMarkUrl(uploaded.url)
-        } catch (e) {
-            onFail(e)
-        } finally {
-            setBusy(false)
+            try {
+                const uploaded = await uploadFile(file)
+                setUrl(uploaded.url)
+            } catch (e) {
+                onFail(e)
+            } finally {
+                setBusy(false)
+            }
         }
     }
 
@@ -426,6 +431,7 @@ function ChannelProfileFields({ profile, onFail }) {
         try {
             await updateMyChannelProfile({
                 oshiMarkUrl: oshiMarkUrl || null,
+                paidOshiMarkUrl: paidOshiMarkUrl || null,
                 fanName: fanName || null,
                 debutOn: debutOn || null,
                 graduatedOn: graduatedOn || null,
@@ -443,22 +449,21 @@ function ChannelProfileFields({ profile, onFail }) {
             {message && <p className="meta">{message}</p>}
 
             <form className="form" onSubmit={handleSubmit}>
-                <label>
-                    오시마크
-                    <input type="file" accept="image/*" onChange={handleMarkUpload} />
-                </label>
-                <p className="meta">
-                    구독한 사람의 채팅에 이 표식이 붙습니다. 작게 보이니 단순한 그림이 좋습니다.
-                </p>
-                {oshiMarkUrl && (
-                    <p className="meta">
-                        <img className="identity__mark" src={assetUrl(oshiMarkUrl)} alt="" />{' '}
-                        {oshiMarkUrl}{' '}
-                        <button type="button" onClick={() => setOshiMarkUrl('')}>
-                            지우기
-                        </button>
-                    </p>
-                )}
+                <MarkField
+                    label="오시마크"
+                    hint="구독한 사람의 이름 옆(채팅·댓글)에 이 표식이 붙습니다. 작게 보이니 단순한 그림이 좋습니다."
+                    value={oshiMarkUrl}
+                    onUpload={markUploader(setOshiMarkUrl)}
+                    onClear={() => setOshiMarkUrl('')}
+                />
+
+                <MarkField
+                    label="유료 구독자용 오시마크"
+                    hint="유료로 구독한 사람에게는 위 표식 대신 이 표식이 붙습니다. 비워 두면 유료 구독자도 위 표식을 답니다."
+                    value={paidOshiMarkUrl}
+                    onUpload={markUploader(setPaidOshiMarkUrl)}
+                    onClear={() => setPaidOshiMarkUrl('')}
+                />
 
                 <label>
                     팬네임
@@ -549,8 +554,29 @@ function ChannelProfileFields({ profile, onFail }) {
     )
 }
 
+/** 오시마크 이미지 한 장을 고르는 칸. 일반용과 유료용이 같은 모양이다. */
+function MarkField({ label, hint, value, onUpload, onClear }) {
+    return (
+        <>
+            <label>
+                {label}
+                <input type="file" accept="image/*" onChange={onUpload} />
+            </label>
+            <p className="meta">{hint}</p>
+            {value && (
+                <p className="meta">
+                    <img className="identity__mark" src={assetUrl(value)} alt="" /> {value}{' '}
+                    <button type="button" onClick={onClear}>
+                        지우기
+                    </button>
+                </p>
+            )}
+        </>
+    )
+}
+
 function SubscriptionList() {
-    const { data: page, error } = useAsyncData(() => getMySubscriptions(0), [])
+    const { data: page, error, reload, fail } = useAsyncData(() => getMySubscriptions(0), [])
 
     return (
         <details>
@@ -564,6 +590,13 @@ function SubscriptionList() {
                     <li key={channel.id}>
                         <Link to={{ view: 'channel', id: channel.id }}>{channel.nickname}</Link>
                         {channel.live && <span className="meta"> · 방송 중</span>}
+                        <SubscriptionControls
+                            channelId={channel.id}
+                            tier={channel.myTier}
+                            markVisible={channel.myMarkVisible}
+                            onChanged={reload}
+                            onFail={fail}
+                        />
                     </li>
                 ))}
             </ul>
