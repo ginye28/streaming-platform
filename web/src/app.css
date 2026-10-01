@@ -767,6 +767,12 @@ code {
 }
 
 /* 스킵을 처음부터 열어 둔다. 갇혀 있다고 느끼면 그때부터 광고로 읽힌다. */
+.intro__countdown {
+    margin: 12px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+}
+
 .intro__actions {
     display: flex;
     justify-content: center;
