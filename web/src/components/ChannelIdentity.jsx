@@ -35,7 +35,7 @@ export default function ChannelIdentity({ profile }) {
                         className="identity__mark"
                         src={assetUrl(profile.oshiMarkUrl)}
                         alt="오시마크"
-                        title="구독하면 이름 옆에 이 표식이 붙습니다"
+                        title="무료로 구독하면 이름 옆(채팅·댓글)에 이 표식이 붙습니다"
                     />
                 )}
 

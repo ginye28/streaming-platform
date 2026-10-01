@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { getChatHistory, getLive, getLiveIntro } from '../api.js'
 import { useAuth } from '../useAuth.js'
 import HlsPlayer from '../components/HlsPlayer.jsx'
+import ChannelSubscribe from '../components/ChannelSubscribe.jsx'
 import IntroGate from '../components/IntroGate.jsx'
 import OshiMark from '../components/OshiMark.jsx'
 import Link from '../components/Link.jsx'
@@ -48,6 +49,8 @@ export default function LivePage({ id }) {
                     <Link to={{ view: 'channel', id: live.channelId }}>{live.nickname}</Link>
                     {live.status === 'ENDED' && ' · 종료된 방송'}
                 </p>
+
+                <ChannelSubscribe channelId={live.channelId} />
 
                 {live.description && <p className="description">{live.description}</p>}
             </div>

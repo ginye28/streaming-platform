@@ -6,12 +6,11 @@ import {
     getChannelLiveHistory,
     getChannelStreams,
     toggleBlock,
-    toggleSubscribe,
 } from '../api.js'
 import { useAuth } from '../useAuth.js'
 import ChannelIdentity from '../components/ChannelIdentity.jsx'
 import Pager from '../components/Pager.jsx'
-import SubscriptionControls from '../components/SubscriptionControls.jsx'
+import SubscribeBar from '../components/SubscribeBar.jsx'
 import StreamList from '../components/StreamList.jsx'
 import Link from '../components/Link.jsx'
 import { useAsyncData } from '../useAsyncData.js'
@@ -38,15 +37,6 @@ export default function ChannelPage({ id }) {
     )
 
     const { data: history } = useAsyncData(() => getChannelLiveHistory(id, 0), [id])
-
-    async function handleSubscribe() {
-        try {
-            await toggleSubscribe(id)
-            reload()
-        } catch (e) {
-            fail(e)
-        }
-    }
 
     async function handleBlock() {
         if (!window.confirm('이 채널을 차단할까요? 목록에서 보이지 않게 됩니다.')) return
@@ -76,23 +66,12 @@ export default function ChannelPage({ id }) {
 
             <ChannelIdentity profile={profile} />
 
+            <SubscribeBar channel={channel} onChanged={reload} onFail={fail} />
+
             {me && !mine && (
                 <div className="toolbar">
-                    <button onClick={handleSubscribe}>
-                        {channel.subscribedByMe ? '구독 중' : '구독'}
-                    </button>
                     <button onClick={handleBlock}>차단</button>
                 </div>
-            )}
-
-            {me && !mine && channel.subscribedByMe && (
-                <SubscriptionControls
-                    channelId={channel.id}
-                    tier={channel.myTier}
-                    markVisible={channel.myMarkVisible}
-                    onChanged={reload}
-                    onFail={fail}
-                />
             )}
 
             {live && (

@@ -9,6 +9,7 @@ import {
     toggleLike,
 } from '../api.js'
 import { useAuth } from '../useAuth.js'
+import ChannelSubscribe from '../components/ChannelSubscribe.jsx'
 import OshiMark from '../components/OshiMark.jsx'
 import Pager from '../components/Pager.jsx'
 import { assetUrl } from '../assets.js'
@@ -140,6 +141,8 @@ export default function StreamPage({ id }) {
                 {' · '}조회 {stream.viewCount}
                 {stream.categoryName && ` · ${stream.categoryName}`}
             </p>
+
+            <ChannelSubscribe channelId={stream.userId} />
 
             <div className="toolbar">
                 <button onClick={handleLike} disabled={!me}>
