@@ -234,6 +234,21 @@ export const confirmPayment = ({ paymentKey, orderId, amount }) =>
 
 export const getMyPayments = (page = 0) => authorized(`/api/users/me/payments${query({ page })}`)
 
+/** 내 결제를 환불한다. 승인 뒤 환불 가능 기간 안에만 된다. */
+export const cancelPayment = (id, reason) =>
+    authorized(`/api/payments/${id}/cancel`, { method: 'POST', body: { reason } })
+
+/** 채널 주인의 수익 장부. */
+export const getMyEarnings = () => authorized('/api/users/me/earnings')
+
+// ---- 관리자: 결제 ----
+
+export const getAdminPayments = (status, page = 0) =>
+    authorized(`/api/admin/payments${query({ status, page })}`)
+
+export const adminCancelPayment = (id, reason) =>
+    authorized(`/api/admin/payments/${id}/cancel`, { method: 'POST', body: { reason } })
+
 export const getChannelLive = (channelId) =>
     maybeAuthorized(`/api/channels/${channelId}/live`).catch(() => null)
 

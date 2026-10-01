@@ -68,6 +68,11 @@ public class Payment {
     @Column(length = 500)
     private String failureMessage;
 
+    private LocalDateTime canceledAt;
+
+    @Column(length = 200)
+    private String cancelReason;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -97,6 +102,17 @@ public class Payment {
         this.status = PaymentStatus.FAILED;
         this.failureCode = truncate(code, 100);
         this.failureMessage = truncate(message, 500);
+    }
+
+    public void markCanceled(String reason, LocalDateTime at) {
+        this.status = PaymentStatus.CANCELED;
+        this.canceledAt = at;
+        this.cancelReason = truncate(reason, 200);
+    }
+
+    /** 승인된 뒤 days 일이 아직 안 지났는지. 사용자 환불이 가능한 기간이다. */
+    public boolean isWithinRefundWindow(int days, LocalDateTime now) {
+        return approvedAt != null && approvedAt.plusDays(days).isAfter(now);
     }
 
     public boolean isDone() {

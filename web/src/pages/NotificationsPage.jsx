@@ -77,7 +77,12 @@ function NotificationText({ notification }) {
     return <Link to={target}>{notification.message}</Link>
 }
 
-function linkTarget({ type, targetId }) {
+function linkTarget({ type, targetId, channelId }) {
+    // 유료 만료 임박은 대상 방송이 아니라 연장할 채널로 보낸다.
+    if (type === 'PAID_EXPIRING') {
+        return channelId ? { view: 'channel', id: channelId } : null
+    }
+
     if (!targetId) return null
 
     switch (type) {

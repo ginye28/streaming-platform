@@ -2,12 +2,16 @@ package com.sp.api.payment.controller;
 
 import com.sp.api.common.response.ApiResponse;
 import com.sp.api.common.response.PageResponse;
+import com.sp.api.payment.dto.CancelPaymentRequest;
 import com.sp.api.payment.dto.ConfirmPaymentRequest;
+import com.sp.api.payment.dto.EarningsResponse;
 import com.sp.api.payment.dto.MembershipOrderResponse;
 import com.sp.api.payment.dto.MembershipResultResponse;
 import com.sp.api.payment.dto.PaymentConfigResponse;
 import com.sp.api.payment.dto.PaymentHistoryResponse;
+import com.sp.api.payment.service.EarningsService;
 import com.sp.api.payment.service.MembershipService;
+import com.sp.api.payment.service.PaymentRefundService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +33,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class PaymentController {
 
     private final MembershipService membershipService;
+    private final PaymentRefundService refundService;
+    private final EarningsService earningsService;
 
     /** 화면이 결제 흐름을 열지 말지 알려면 로그인 전에도 읽을 수 있어야 한다. */
     @GetMapping("/api/payments/config")
@@ -58,6 +64,24 @@ public class PaymentController {
         return ResponseEntity.ok(ApiResponse.ok(
                 membershipService.confirm(authentication.getName(), request)
         ));
+    }
+
+    /** 내 결제를 환불한다. 승인 뒤 환불 가능 기간(기본 7일) 안에만 직접 할 수 있다. */
+    @PostMapping("/api/payments/{paymentId}/cancel")
+    public ResponseEntity<ApiResponse<PaymentHistoryResponse>> cancel(
+            @PathVariable Long paymentId,
+            @Valid @RequestBody(required = false) CancelPaymentRequest request,
+            Authentication authentication
+    ) {
+
+        return ResponseEntity.ok(ApiResponse.ok(refundService.cancelByUser(
+                authentication.getName(), paymentId, request == null ? null : request.getReason())));
+    }
+
+    /** 채널 주인의 수익 장부. 달별 결제 금액·환불·수수료·정산 예정액. */
+    @GetMapping("/api/users/me/earnings")
+    public ResponseEntity<ApiResponse<EarningsResponse>> earnings(Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.ok(earningsService.earnings(authentication.getName())));
     }
 
     @GetMapping("/api/users/me/payments")

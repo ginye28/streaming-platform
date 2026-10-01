@@ -58,6 +58,21 @@ public class TossPaymentGateway implements PaymentGateway {
                 .body(MAP_TYPE));
     }
 
+    @Override
+    public GatewayPayment cancel(String paymentKey, String reason) {
+
+        String cancelReason = reason.length() > 200 ? reason.substring(0, 200) : reason;
+
+        return call(() -> client().post()
+                .uri("/v1/payments/{paymentKey}/cancel", paymentKey)
+                // 같은 결제를 두 번 취소하지 않도록 결제 키로 멱등 키를 만든다.
+                .header("Idempotency-Key", "cancel-" + paymentKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("cancelReason", cancelReason))
+                .retrieve()
+                .body(MAP_TYPE));
+    }
+
     private GatewayPayment call(java.util.function.Supplier<Map<String, Object>> request) {
 
         try {
@@ -91,7 +106,10 @@ public class TossPaymentGateway implements PaymentGateway {
 
     private RestClient client() {
 
+        // HTTP/1.1 로 고정한다. 평문 http 주소(로컬 시험용 가짜 서버 등)에서 HTTP/2 업그레이드를
+        // 시도하다 어긋나는 일을 막으려는 것이다. 토스는 1.1 도 그대로 받는다.
         HttpClient httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(5))
                 .build();
 

@@ -17,4 +17,9 @@ public record GatewayPayment(
     public boolean isDone() {
         return "DONE".equals(status);
     }
+
+    /** 전액 취소된 결제. 부분 취소(PARTIAL_CANCELED)는 취소로 보지 않는다. */
+    public boolean isCanceled() {
+        return "CANCELED".equals(status);
+    }
 }

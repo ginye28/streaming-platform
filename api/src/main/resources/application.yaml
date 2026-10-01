@@ -46,11 +46,19 @@ app:
       client-key: ${TOSS_CLIENT_KEY:}
       secret-key: ${TOSS_SECRET_KEY:}
       base-url: https://api.tosspayments.com
+      # 웹훅 주소에 ?token=... 으로 붙이는 비밀 값. 비워 두면 검사하지 않는다.
+      webhook-token: ${TOSS_WEBHOOK_TOKEN:}
 
   membership:
     # 유료 구독 한 번에 내는 금액(원)과 이용 기간(일).
     price-krw: ${MEMBERSHIP_PRICE_KRW:4900}
     period-days: ${MEMBERSHIP_PERIOD_DAYS:30}
+    # 사용자가 직접 환불할 수 있는 기간(일). 승인된 날부터 센다. 관리자는 기간과 상관없이 환불한다.
+    refund-window-days: ${MEMBERSHIP_REFUND_WINDOW_DAYS:7}
+    # 채널 주인 수익 장부에서 떼는 서비스 수수료율(%). 장부일 뿐 실제 송금은 하지 않는다.
+    platform-fee-percent: ${MEMBERSHIP_PLATFORM_FEE_PERCENT:0}
+    # 유료 구독이 끝나기 며칠 전부터 알릴지.
+    expiry-notice-days: ${MEMBERSHIP_EXPIRY_NOTICE_DAYS:3}
 
   admin:
     # 기동 시 ADMIN 권한을 부여할 계정 이메일 (쉼표로 구분).

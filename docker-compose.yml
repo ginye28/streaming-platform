@@ -80,6 +80,8 @@ services:
       # 토스페이먼츠 키. 둘 다 있어야 유료 구독 결제가 켜진다. 비워 두면 결제는 꺼진다.
       TOSS_CLIENT_KEY: ${TOSS_CLIENT_KEY:-}
       TOSS_SECRET_KEY: ${TOSS_SECRET_KEY:-}
+      # 토스 웹훅 주소에 ?token= 으로 붙이는 비밀 값. 비워 두면 검사하지 않는다.
+      TOSS_WEBHOOK_TOKEN: ${TOSS_WEBHOOK_TOKEN:-}
     depends_on:
       mysql:
         condition: service_healthy

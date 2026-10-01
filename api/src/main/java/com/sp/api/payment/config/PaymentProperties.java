@@ -35,6 +35,25 @@ public class PaymentProperties {
     @Value("${app.membership.period-days:30}")
     private int periodDays;
 
+    /**
+     * 웹훅 주소에 붙이는 비밀 값. 토스 개발자센터에 웹훅 주소를 등록할 때 ?token=... 으로 함께 적는다.
+     * 비어 있으면 검사하지 않는다(그래도 본문은 믿지 않고 토스에 다시 조회한다).
+     */
+    @Value("${app.payments.toss.webhook-token:}")
+    private String webhookToken;
+
+    /** 사용자가 직접 환불할 수 있는 기간(일). 승인된 날부터 센다. */
+    @Value("${app.membership.refund-window-days:7}")
+    private int refundWindowDays;
+
+    /** 채널 주인 수익 장부에서 떼는 서비스 수수료율(%). */
+    @Value("${app.membership.platform-fee-percent:0}")
+    private int platformFeePercent;
+
+    /** 유료 구독이 끝나기 며칠 전부터 알릴지. */
+    @Value("${app.membership.expiry-notice-days:3}")
+    private int expiryNoticeDays;
+
     public boolean isEnabled() {
         return clientKey != null && !clientKey.isBlank()
                 && secretKey != null && !secretKey.isBlank();

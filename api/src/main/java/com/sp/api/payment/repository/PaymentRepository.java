@@ -11,6 +11,8 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
@@ -26,7 +28,30 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @Query("select p from Payment p where p.orderId = :orderId")
     Optional<Payment> findByOrderIdForUpdate(@Param("orderId") String orderId);
 
-    /** 내 결제 내역. 완료된 것만 최신순으로. */
+    @EntityGraph(attributePaths = {"user", "channel"})
+    @Query("select p from Payment p where p.id = :id")
+    Optional<Payment> findWithUsersById(@Param("id") Long id);
+
+    /** 내 결제 내역. 승인된 것과 환불된 것을 최신순으로. */
     @EntityGraph(attributePaths = "channel")
-    Page<Payment> findByUserIdAndStatusOrderByIdDesc(Long userId, PaymentStatus status, Pageable pageable);
+    Page<Payment> findByUserIdAndStatusInOrderByIdDesc(
+            Long userId, Collection<PaymentStatus> statuses, Pageable pageable);
+
+    /** 관리자 목록. */
+    @EntityGraph(attributePaths = {"user", "channel"})
+    Page<Payment> findAllByOrderByIdDesc(Pageable pageable);
+
+    @EntityGraph(attributePaths = {"user", "channel"})
+    Page<Payment> findByStatusOrderByIdDesc(PaymentStatus status, Pageable pageable);
+
+    /** 내 채널로 들어온 결제를 승인된 달·상태별로 합산한다. 수익 장부용. */
+    @Query("""
+            select new com.sp.api.payment.repository.MonthlyTotal(
+                year(p.approvedAt), month(p.approvedAt), p.status, count(p), sum(p.amount))
+            from Payment p
+            where p.channel.id = :channelId and p.status in :statuses and p.approvedAt is not null
+            group by year(p.approvedAt), month(p.approvedAt), p.status
+            """)
+    List<MonthlyTotal> monthlyTotals(
+            @Param("channelId") Long channelId, @Param("statuses") Collection<PaymentStatus> statuses);
 }

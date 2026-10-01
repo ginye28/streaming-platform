@@ -15,4 +15,11 @@ public interface PaymentGateway {
 
     /** 이미 승인된 결제를 다시 확인한다. 승인 응답을 놓친 경우에 쓴다. */
     GatewayPayment find(String paymentKey);
+
+    /**
+     * 승인된 결제를 전액 취소(환불)한다.
+     *
+     * @throws PaymentGatewayException 이미 취소된 결제면 코드가 ALREADY_CANCELED_PAYMENT
+     */
+    GatewayPayment cancel(String paymentKey, String reason);
 }

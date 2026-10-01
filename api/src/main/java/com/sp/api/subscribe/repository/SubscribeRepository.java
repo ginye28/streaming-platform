@@ -42,6 +42,20 @@ public interface SubscribeRepository extends JpaRepository<Subscribe, Long> {
     List<SubscriberMark> findSubscriberMarksAmong(
             @Param("channelId") Long channelId, @Param("userIds") Collection<Long> userIds);
 
+    /**
+     * 유료 기간이 now ~ until 사이에 끝나고, 그 만료에 대해 아직 알리지 않은 구독.
+     * 연장하면 paidUntil 이 바뀌어 expiryNotifiedFor 와 달라지므로 다음 만료 때 다시 잡힌다.
+     */
+    @EntityGraph(attributePaths = {"subscriber", "channel"})
+    @Query("""
+            select s from Subscribe s
+            where s.tier = com.sp.api.subscribe.entity.SubscriptionTier.PAID
+              and s.paidUntil > :now and s.paidUntil <= :until
+              and (s.expiryNotifiedFor is null or s.expiryNotifiedFor <> s.paidUntil)
+            """)
+    List<Subscribe> findExpiringPaid(
+            @Param("now") java.time.LocalDateTime now, @Param("until") java.time.LocalDateTime until);
+
     /** 구독 피드용 채널 id 목록. */
     @Query("select s.channel.id from Subscribe s where s.subscriber.id = :subscriberId")
     List<Long> findChannelIdsBySubscriberId(@Param("subscriberId") Long subscriberId);

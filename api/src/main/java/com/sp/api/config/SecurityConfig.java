@@ -97,6 +97,9 @@ public class SecurityConfig {
                         // (결제 승인·주문은 아래 anyRequest 규칙으로 로그인이 필요하다)
                         .requestMatchers(HttpMethod.GET, "/api/payments/config").permitAll()
 
+                        // 토스 웹훅은 토스가 부르므로 로그인이 없다. 토큰과 "본문을 믿지 않고 토스에 다시 조회" 로 막는다.
+                        .requestMatchers(HttpMethod.POST, "/api/payments/webhook").permitAll()
+
                         // 카테고리 목록 조회는 공개. 생성은 관리자만(아래 /api/categories 규칙).
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
 

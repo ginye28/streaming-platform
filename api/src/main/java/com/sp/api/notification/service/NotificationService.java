@@ -7,6 +7,7 @@ import com.sp.api.live.entity.LiveStream;
 import com.sp.api.notification.dto.NotificationResponse;
 import com.sp.api.notification.entity.Notification;
 import com.sp.api.notification.repository.NotificationRepository;
+import com.sp.api.subscribe.entity.Subscribe;
 import com.sp.api.subscribe.repository.SubscribeRepository;
 import com.sp.api.user.entity.User;
 import com.sp.api.user.repository.UserRepository;
@@ -52,6 +53,22 @@ public class NotificationService {
         notificationRepository.saveAll(notifications);
 
         return notifications.size();
+    }
+
+    /** 유료 구독이 곧 끝나는 구독자에게 연장을 권하는 알림을 남긴다. */
+    @Transactional
+    public void notifyPaidExpiring(Subscribe subscribe, long hoursLeft) {
+
+        long days = (hoursLeft + 23) / 24;
+        String when = days <= 1 ? "하루 안에" : days + "일 뒤";
+
+        notificationRepository.save(new Notification(
+                subscribe.getSubscriber(),
+                Notification.Type.PAID_EXPIRING,
+                subscribe.getChannel().getNickname() + " 유료 구독이 " + when + " 끝납니다. 연장하면 이어서 이용할 수 있어요.",
+                subscribe.getChannel().getId(),
+                null
+        ));
     }
 
     /**
