@@ -3,7 +3,9 @@ import {
     changePassword,
     getLiveSetting,
     getMyBlocks,
+    cancelPayment,
     getMyChannelProfile,
+    getMyEarnings,
     getMyIntro,
     getMyPayments,
     getMySubscriptions,
@@ -43,6 +45,7 @@ export default function MePage() {
             <ChannelProfileForm />
             <SubscriptionList />
             <PaymentHistory />
+            <EarningsPanel />
             <BlockList />
         </section>
     )
@@ -608,9 +611,27 @@ function SubscriptionList() {
     )
 }
 
-/** 유료 구독 결제 내역. 승인된 결제만 보이고, 영수증은 토스가 열어 준다. */
+/**
+ * 유료 구독 결제 내역. 승인된 결제와 환불된 결제가 보이고, 영수증은 토스가 열어 준다.
+ * 승인 뒤 환불 가능 기간(서버가 정한다) 안이면 직접 환불할 수 있다.
+ */
 function PaymentHistory() {
-    const { data: page, error } = useAsyncData(() => getMyPayments(0), [])
+    const { data: page, error, reload, fail } = useAsyncData(() => getMyPayments(0), [])
+
+    async function handleRefund(payment) {
+        const message =
+            `${payment.channelNickname} 유료 구독 ${won(payment.amount)} 을 환불할까요? ` +
+            '이 결제로 늘어난 유료 기간이 줄어듭니다.'
+
+        if (!window.confirm(message)) return
+
+        try {
+            await cancelPayment(payment.id, '고객 요청 환불')
+            reload()
+        } catch (e) {
+            fail(e)
+        }
+    }
 
     return (
         <details>
@@ -629,6 +650,9 @@ function PaymentHistory() {
                             {' '}
                             · {won(payment.amount)} · {payment.method} · {dateOnly(payment.approvedAt)}
                         </span>
+                        {payment.status === 'CANCELED' && (
+                            <span className="meta"> · 환불됨 {dateOnly(payment.canceledAt)}</span>
+                        )}
                         {payment.receiptUrl && (
                             <>
                                 {' '}
@@ -637,9 +661,82 @@ function PaymentHistory() {
                                 </a>
                             </>
                         )}
+                        {payment.refundable && (
+                            <>
+                                {' '}
+                                <button type="button" onClick={() => handleRefund(payment)}>
+                                    환불
+                                </button>
+                                <span className="meta">
+                                    {' '}
+                                    {dateOnly(payment.refundDeadline)}까지
+                                </span>
+                            </>
+                        )}
                     </li>
                 ))}
             </ul>
+        </details>
+    )
+}
+
+/**
+ * 채널 주인의 수익 장부. 달별 결제·환불·수수료·정산 예정액.
+ * 장부일 뿐이라 송금은 하지 않는다. 결제한 사람은 보이지 않는다.
+ */
+function EarningsPanel() {
+    const { data: earnings, error } = useAsyncData(getMyEarnings, [])
+
+    return (
+        <details>
+            <summary>수익 현황</summary>
+
+            {error && <p className="error">{error}</p>}
+            {earnings?.months.length === 0 && (
+                <p className="empty">아직 받은 유료 구독 결제가 없습니다.</p>
+            )}
+
+            {earnings?.months.length > 0 && (
+                <>
+                    <p>
+                        정산 예정액 <strong>{won(earnings.total.net)}</strong>
+                        <span className="meta">
+                            {' '}
+                            · 결제 {won(earnings.total.gross)} − 환불 {won(earnings.total.refunded)} −
+                            수수료 {won(earnings.total.fee)} ({earnings.feePercent}%)
+                        </span>
+                    </p>
+
+                    <table className="earnings">
+                        <thead>
+                            <tr>
+                                <th>달</th>
+                                <th>결제</th>
+                                <th>환불</th>
+                                <th>수수료</th>
+                                <th>정산 예정</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {earnings.months.map((month) => (
+                                <tr key={month.month}>
+                                    <td>{month.month}</td>
+                                    <td>
+                                        {won(month.gross)} ({month.count}건)
+                                    </td>
+                                    <td>{won(month.refunded)}</td>
+                                    <td>{won(month.fee)}</td>
+                                    <td>{won(month.net)}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+
+                    <p className="meta">
+                        이 표는 장부입니다. 실제 송금은 서비스 운영자가 따로 처리합니다.
+                    </p>
+                </>
+            )}
         </details>
     )
 }

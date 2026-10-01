@@ -79,6 +79,8 @@ public class Notification {
     public enum Type {
         LIVE_START,
         STREAM_COMMENT,
-        COMMENT_REPLY
+        COMMENT_REPLY,
+        /** 유료 구독이 곧 끝난다. channelId 는 연장할 채널이다. */
+        PAID_EXPIRING
     }
 }

@@ -51,6 +51,9 @@ public class Subscribe {
      */
     private LocalDateTime paidUntil;
 
+    /** 이 만료 시각에 대해 "곧 끝납니다" 알림을 이미 보냈다는 표시. 연장해서 만료가 바뀌면 다시 보낸다. */
+    private LocalDateTime expiryNotifiedFor;
+
     public Subscribe(User subscriber, User channel) {
         this.subscriber = subscriber;
         this.channel = channel;
@@ -75,6 +78,28 @@ public class Subscribe {
 
         this.tier = SubscriptionTier.PAID;
         this.paidUntil = start.plusDays(days);
+    }
+
+    /**
+     * 환불로 결제 하나만큼의 유료 기간을 되돌린다. 남은 기간이 그보다 짧으면 일반으로 내려간다.
+     * 기한 없는 유료(paidUntil 없음)에는 되돌릴 기간이 없어 아무것도 하지 않는다.
+     */
+    public void revokePaid(LocalDateTime now, int days) {
+
+        if (paidUntil == null) {
+            return;
+        }
+
+        paidUntil = paidUntil.minusDays(days);
+
+        if (!paidUntil.isAfter(now)) {
+            changeTier(SubscriptionTier.BASIC);
+        }
+    }
+
+    /** 지금의 만료 시각에 대해 알림을 보냈다고 적어 둔다. */
+    public void markExpiryNotified() {
+        this.expiryNotifiedFor = this.paidUntil;
     }
 
     public SubscriptionTier effectiveTier(LocalDateTime now) {

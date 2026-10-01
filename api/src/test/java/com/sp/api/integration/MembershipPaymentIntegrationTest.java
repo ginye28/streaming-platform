@@ -78,14 +78,20 @@ class MembershipPaymentIntegrationTest extends IntegrationTestSupport {
 
         int confirmCalls;
         int findCalls;
+        int cancelCalls;
 
         /** 승인 요청이 들어왔을 때 돌려줄 결과를 정한다. 예외를 던져 거절·장애를 흉내 낸다. */
         Function<String[], GatewayPayment> onConfirm;
         Function<String, GatewayPayment> onFind;
+        /** 취소 요청이 들어왔을 때 돌려줄 결과. 기본은 취소 성공. */
+        Function<String, GatewayPayment> onCancel;
 
         void reset() {
             confirmCalls = 0;
             findCalls = 0;
+            cancelCalls = 0;
+            onCancel = paymentKey -> new GatewayPayment(paymentKey, "ignored", "CANCELED", 0, "카드", null,
+                    LocalDateTime.now());
             onConfirm = args -> done(args[0], args[1], Long.parseLong(args[2]));
             onFind = paymentKey -> {
                 throw new IllegalStateException("조회하면 안 되는 테스트");
@@ -107,6 +113,12 @@ class MembershipPaymentIntegrationTest extends IntegrationTestSupport {
         public GatewayPayment find(String paymentKey) {
             findCalls++;
             return onFind.apply(paymentKey);
+        }
+
+        @Override
+        public GatewayPayment cancel(String paymentKey, String reason) {
+            cancelCalls++;
+            return onCancel.apply(paymentKey);
         }
     }
 

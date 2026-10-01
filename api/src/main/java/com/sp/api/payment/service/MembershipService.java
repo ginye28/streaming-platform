@@ -30,6 +30,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -136,14 +137,17 @@ public class MembershipService {
         return inTransaction(() -> apply(request.getOrderId(), approved));
     }
 
-    /** 내 결제 내역. 완료된 결제만. */
+    /** 내 결제 내역. 승인된 결제와 환불된 결제. */
     public PageResponse<PaymentHistoryResponse> history(String email, Pageable pageable) {
 
         User user = findUser(email);
 
+        LocalDateTime now = LocalDateTime.now();
+
         return PageResponse.from(
-                paymentRepository.findByUserIdAndStatusOrderByIdDesc(user.getId(), PaymentStatus.DONE, pageable)
-                        .map(PaymentHistoryResponse::from)
+                paymentRepository.findByUserIdAndStatusInOrderByIdDesc(
+                                user.getId(), List.of(PaymentStatus.DONE, PaymentStatus.CANCELED), pageable)
+                        .map(payment -> PaymentHistoryResponse.from(payment, properties.getRefundWindowDays(), now))
         );
     }
 
@@ -203,6 +207,14 @@ public class MembershipService {
         return result;
     }
 
+    /**
+     * 토스가 승인했다고 확인된 결제를 반영한다. 웹훅이 결제창 복귀를 놓친 주문을 구제할 때 쓴다.
+     * 같은 주문이 이미 반영됐다면 다시 반영하지 않는다.
+     */
+    public MembershipResultResponse applyApproved(String orderId, GatewayPayment approved) {
+        return inTransaction(() -> apply(orderId, approved));
+    }
+
     private MembershipResultResponse apply(String orderId, GatewayPayment approved) {
 
         Payment payment = paymentRepository.findByOrderIdForUpdate(orderId)
@@ -211,6 +223,11 @@ public class MembershipService {
         // 잠금을 기다리는 동안 다른 요청이 먼저 반영했다면 기간을 또 늘리지 않는다.
         if (payment.isDone()) {
             return resultOf(payment);
+        }
+
+        // 취소됐거나 실패로 끝난 주문을 다시 살리지 않는다.
+        if (payment.getStatus() != PaymentStatus.READY) {
+            throw new BadRequestException("처리할 수 없는 주문입니다.");
         }
 
         payment.markDone(

@@ -1725,3 +1725,23 @@ details li {
     max-width: 560px;
     margin: 24px auto;
 }
+
+/* 수익 현황 표 */
+.earnings {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+.earnings th,
+.earnings td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+    text-align: right;
+}
+
+.earnings th:first-child,
+.earnings td:first-child {
+    text-align: left;
+}

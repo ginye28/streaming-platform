@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { getAccessToken, getMe, logout } from '../api.js'
 import CategoriesTab from './CategoriesTab.jsx'
 import LoginForm from './LoginForm.jsx'
+import PaymentsTab from './PaymentsTab.jsx'
 import ReportsTab from './ReportsTab.jsx'
 import UsersTab from './UsersTab.jsx'
 import ThemeToggle from '../components/ThemeToggle.jsx'
@@ -11,6 +12,7 @@ const TABS = [
     { key: 'reports', label: '신고' },
     { key: 'categories', label: '카테고리' },
     { key: 'users', label: '사용자' },
+    { key: 'payments', label: '결제' },
 ]
 
 export default function AdminApp() {
@@ -111,6 +113,7 @@ export default function AdminApp() {
             {tab === 'reports' && <ReportsTab />}
             {tab === 'categories' && <CategoriesTab />}
             {tab === 'users' && <UsersTab myId={me.id} />}
+            {tab === 'payments' && <PaymentsTab />}
         </div>
     )
 }
