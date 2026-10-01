@@ -29,12 +29,17 @@ public interface SubscribeRepository extends JpaRepository<Subscribe, Long> {
     @Query("select s.subscriber from Subscribe s where s.channel.id = :channelId")
     List<User> findSubscribersOfChannel(@Param("channelId") Long channelId);
 
-    /** 주어진 사람들 중 이 채널을 구독한 사람. 채팅 한 페이지의 오시마크를 한 번에 가린다. */
+    /**
+     * 주어진 사람들 중 이 채널을 구독한 사람의 등급과 마크 표시 여부.
+     * 채팅·댓글 한 페이지의 오시마크를 한 번에 가린다.
+     */
     @Query("""
-            select s.subscriber.id from Subscribe s
+            select new com.sp.api.subscribe.repository.SubscriberMark(
+                s.subscriber.id, s.tier, s.markVisible)
+            from Subscribe s
             where s.channel.id = :channelId and s.subscriber.id in :userIds
             """)
-    List<Long> findSubscriberIdsAmong(
+    List<SubscriberMark> findSubscriberMarksAmong(
             @Param("channelId") Long channelId, @Param("userIds") Collection<Long> userIds);
 
     /** 구독 피드용 채널 id 목록. */

@@ -16,6 +16,8 @@ public record ChannelProfileResponse(
         String nickname,
         String profileImage,
         String oshiMarkUrl,
+        /** 유료 구독자용 오시마크. 없으면 null. */
+        String paidOshiMarkUrl,
         /** 팬덤 이름. 없으면 화면은 "구독자" 라고 쓴다. */
         String fanName,
         long subscriberCount,
@@ -45,6 +47,7 @@ public record ChannelProfileResponse(
                 channel.getNickname(),
                 channel.getProfileImage(),
                 profile == null ? null : profile.getOshiMarkUrl(),
+                profile == null ? null : profile.getPaidOshiMarkUrl(),
                 profile == null ? null : profile.getFanName(),
                 subscriberCount,
                 profile == null ? null : profile.getDebutOn(),

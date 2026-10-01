@@ -9,6 +9,7 @@ import {
     toggleLike,
 } from '../api.js'
 import { useAuth } from '../useAuth.js'
+import OshiMark from '../components/OshiMark.jsx'
 import Pager from '../components/Pager.jsx'
 import { assetUrl } from '../assets.js'
 import { navigate } from '../router.js'
@@ -235,6 +236,7 @@ function CommentLine({ comment, me, onReply, onDelete }) {
 
     return (
         <>
+            <OshiMark url={comment.oshiMarkUrl} tier={comment.oshiTier} />
             <strong>{comment.nickname}</strong>{' '}
             <span className="meta">{formatDateTime(comment.createdAt)}</span>
             <p>{comment.content}</p>

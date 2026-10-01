@@ -6,6 +6,7 @@ import com.sp.api.common.response.PageResponse;
 import com.sp.api.live.entity.LiveStream;
 import com.sp.api.live.repository.LiveStreamRepository;
 import com.sp.api.stream.repository.StreamRepository;
+import com.sp.api.subscribe.entity.Subscribe;
 import com.sp.api.subscribe.repository.SubscribeRepository;
 import com.sp.api.user.entity.User;
 import com.sp.api.user.repository.UserRepository;
@@ -29,12 +30,16 @@ public class ChannelService {
         User channel = userRepository.findById(channelId)
                 .orElseThrow(() -> new NotFoundException("채널을 찾을 수 없습니다."));
 
+        Subscribe mine = subscriptionOf(viewerEmail, channelId);
+
         return ChannelResponse.of(
                 channel,
                 subscribeRepository.countByChannelId(channelId),
                 streamRepository.countByUserId(channelId),
                 liveStreamRepository.existsByUserIdAndStatus(channelId, LiveStream.Status.LIVE),
-                isSubscribedBy(viewerEmail, channelId)
+                mine != null,
+                mine == null ? null : mine.getTier(),
+                mine != null && mine.isMarkVisible()
         );
     }
 
@@ -54,21 +59,24 @@ public class ChannelService {
                                     streamRepository.countByUserId(channel.getId()),
                                     liveStreamRepository.existsByUserIdAndStatus(
                                             channel.getId(), LiveStream.Status.LIVE),
-                                    true
+                                    true,
+                                    subscribe.getTier(),
+                                    subscribe.isMarkVisible()
                             );
                         })
         );
     }
 
-    private boolean isSubscribedBy(String viewerEmail, Long channelId) {
+    /** 보는 사람의 이 채널 구독. 비로그인이거나 구독 중이 아니면 null. */
+    private Subscribe subscriptionOf(String viewerEmail, Long channelId) {
 
         if (viewerEmail == null) {
-            return false;
+            return null;
         }
 
         return userRepository.findByEmail(viewerEmail)
-                .map(viewer -> subscribeRepository
-                        .existsBySubscriberIdAndChannelId(viewer.getId(), channelId))
-                .orElse(false);
+                .flatMap(viewer -> subscribeRepository
+                        .findBySubscriberIdAndChannelId(viewer.getId(), channelId))
+                .orElse(null);
     }
 }

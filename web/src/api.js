@@ -215,6 +215,10 @@ export const toggleSubscribe = (channelId) =>
     authorized(`/api/channels/${channelId}/subscribe`, { method: 'POST' })
 
 /** 방송 중이 아니면 404 라 null 로 바꿔 돌려준다. */
+/** 내 구독 설정 변경. { tier: 'BASIC' | 'PAID', markVisible: boolean } 중 바꿀 것만 보낸다. */
+export const updateSubscription = (channelId, payload) =>
+    authorized(`/api/channels/${channelId}/subscription`, { method: 'PUT', body: payload })
+
 export const getChannelLive = (channelId) =>
     maybeAuthorized(`/api/channels/${channelId}/live`).catch(() => null)
 

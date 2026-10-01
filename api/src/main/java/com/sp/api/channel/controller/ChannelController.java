@@ -10,6 +10,8 @@ import com.sp.api.live.service.LiveStreamService;
 import com.sp.api.stream.dto.StreamResponse;
 import com.sp.api.stream.service.StreamService;
 import com.sp.api.subscribe.dto.SubscribeResponse;
+import com.sp.api.subscribe.dto.SubscriptionSettingResponse;
+import com.sp.api.subscribe.dto.UpdateSubscriptionRequest;
 import com.sp.api.subscribe.service.SubscribeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +22,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -86,6 +90,19 @@ public class ChannelController {
 
         return ResponseEntity.ok(ApiResponse.ok(
                 subscribeService.toggle(channelId, authentication.getName())
+        ));
+    }
+
+    /** 내 구독 설정 변경 — 구독 등급(BASIC/PAID)과 오시마크 표시 여부. 구독 중인 채널만. */
+    @PutMapping("/{channelId}/subscription")
+    public ResponseEntity<ApiResponse<SubscriptionSettingResponse>> updateSubscription(
+            @PathVariable Long channelId,
+            @RequestBody UpdateSubscriptionRequest request,
+            Authentication authentication
+    ) {
+
+        return ResponseEntity.ok(ApiResponse.ok(
+                subscribeService.update(channelId, authentication.getName(), request)
         ));
     }
 }

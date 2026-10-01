@@ -10,6 +10,7 @@ import com.sp.api.live.entity.LiveStream;
 import com.sp.api.live.repository.LiveStreamRepository;
 import com.sp.api.user.entity.User;
 import com.sp.api.user.repository.UserRepository;
+import com.sp.api.vtuber.dto.OshiMark;
 import com.sp.api.vtuber.service.ChannelProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -66,7 +67,7 @@ public class ChatService {
                 .map(message -> message.getUser().getId())
                 .collect(Collectors.toSet());
 
-        Map<Long, String> marks = channelId == null
+        Map<Long, OshiMark> marks = channelId == null
                 ? Map.of()
                 : channelProfileService.oshiMarksFor(channelId, authorIds);
 
@@ -77,7 +78,7 @@ public class ChatService {
     }
 
     /** 실시간 한 건. 이미 방송 정보를 들고 있으므로 다시 찾지 않는다. */
-    private String oshiMarkOf(LiveStream live, Long authorId) {
+    private OshiMark oshiMarkOf(LiveStream live, Long authorId) {
         return channelProfileService
                 .oshiMarksFor(live.getUser().getId(), Set.of(authorId))
                 .get(authorId);

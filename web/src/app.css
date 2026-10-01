@@ -650,13 +650,39 @@ code {
     font-size: 13px;
 }
 
-/* 채팅에서 구독자 옆에 붙는 표식. 글자 높이에 맞춘다. */
-.chat__mark {
+/* 이름 옆에 붙는 오시마크(채팅·댓글). 글자 높이에 맞춘다. 유료 구독자는 테두리로 구분한다. */
+.oshi-mark {
     width: 16px;
     height: 16px;
     object-fit: contain;
     vertical-align: -2px;
-    margin-right: 2px;
+    margin-right: 4px;
+    border-radius: 50%;
+}
+
+.oshi-mark--paid {
+    box-shadow: 0 0 0 1.5px var(--accent);
+}
+
+/* 채널 정보 쪽 유료 마크도 같은 테두리로 보여 준다. */
+.identity__mark--paid {
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px var(--accent);
+}
+
+/* 구독 중인 채널에 대한 내 설정 — 오시마크 달기, 유료 구독 전환 */
+.subscription-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    margin: 8px 0;
+}
+
+.subscription-controls__mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
 /* 방송에 처음 들어온 사람에게 먼저 보이는 자기소개.

@@ -148,8 +148,10 @@ nginx-rtmp 의 `on_publish` 로 한 줄이 생기고, `on_publish_done` 으로 `
 | id | bigint | PK | |
 | subscriber_id | bigint | FK → users | 구독하는 사람 |
 | channel_id | bigint | FK → users | 구독당하는 사람 |
+| tier | enum('BASIC','PAID') | NOT NULL, 기본 BASIC | 구독 등급. 유료 구독자는 채널의 유료 오시마크를 단다 |
+| mark_visible | bit(1) | NOT NULL, 기본 1 | 이 채널의 오시마크를 내 이름 옆에 보일지. 시청자가 채널마다 고른다 |
 
-`(subscriber_id, channel_id)` UNIQUE.
+`(subscriber_id, channel_id)` UNIQUE. 구독을 해제하면 행이 지워져 등급과 표시 설정도 사라진다.
 
 ---
 
@@ -231,7 +233,8 @@ ENUM 으로 두면 종류를 하나 늘릴 때 기존 칸을 넓혀 주지 못�
 |---|---|---|---|
 | id | bigint | PK | |
 | user_id | bigint | FK → users, **UNIQUE** | 사람당 한 줄 |
-| oshi_mark_url | varchar(255) | null 허용 | 팬이 채팅에서 달고 다니는 표식 |
+| oshi_mark_url | varchar(255) | null 허용 | 구독자가 이름 옆에 달고 다니는 표식 |
+| paid_oshi_mark_url | varchar(255) | null 허용 | 유료 구독자가 다는 표식. 비어 있으면 유료 구독자도 oshi_mark_url 을 단다 |
 | fan_name | varchar(30) | null 허용 | 팬덤 이름 |
 | debut_on | date | null 허용 | 데뷔일. 아직 안 왔으면 화면에서 남은 날을 센다 |
 | graduated_on | date | null 허용 | 졸업일. 넣으면 졸업으로 표시된다 |

@@ -28,8 +28,11 @@ public class ChannelProfile {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-    /** 팬이 채팅에서 달고 다니는 표식. 이미지를 직접 올린다. */
+    /** 구독자가 이름 옆에 달고 다니는 표식. 이미지를 직접 올린다. */
     private String oshiMarkUrl;
+
+    /** 유료 구독자가 달 표식. 비어 있으면 유료 구독자도 oshiMarkUrl 을 단다. */
+    private String paidOshiMarkUrl;
 
     /** 팬덤 이름. "구독자 1,234명" 대신 "별무리 1,234명" 으로 보인다. */
     @Column(length = 30)
@@ -45,8 +48,15 @@ public class ChannelProfile {
         this.user = user;
     }
 
-    public void update(String oshiMarkUrl, String fanName, LocalDate debutOn, LocalDate graduatedOn) {
+    public void update(
+            String oshiMarkUrl,
+            String paidOshiMarkUrl,
+            String fanName,
+            LocalDate debutOn,
+            LocalDate graduatedOn
+    ) {
         this.oshiMarkUrl = blankToNull(oshiMarkUrl);
+        this.paidOshiMarkUrl = blankToNull(paidOshiMarkUrl);
         this.fanName = blankToNull(fanName);
         this.debutOn = debutOn;
         this.graduatedOn = graduatedOn;
