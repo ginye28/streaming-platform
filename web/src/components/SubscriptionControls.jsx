@@ -39,11 +39,11 @@ export default function SubscriptionControls({ channelId, tier, markVisible, onC
                 disabled={busy}
                 onClick={() => change({ tier: paid ? 'BASIC' : 'PAID' })}
             >
-                {paid ? '유료 구독 해지' : '유료 구독으로 전환'}
+                {paid ? '무료 구독으로 변경' : '유료 구독으로 변경'}
             </button>
 
             <span className="meta">
-                {paid ? '유료 구독 중' : '일반 구독 중'} · 결제 연동 전이라 바로 바뀝니다
+                {paid ? '유료 구독 중' : '무료 구독 중'} · 결제 연동 전이라 바로 바뀝니다
             </span>
         </div>
     )

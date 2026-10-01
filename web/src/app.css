@@ -670,6 +670,25 @@ code {
     box-shadow: 0 0 0 2px var(--accent);
 }
 
+/* 구독 — 무료 구독 / 유료 구독을 고르는 막대 */
+.subscribe-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    margin: 8px 0;
+}
+
+.subscribe-bar .subscription-controls {
+    margin: 0;
+}
+
+/* 유료는 마크 테두리와 같은 색으로 구분한다. */
+.subscribe-bar__paid {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
 /* 구독 중인 채널에 대한 내 설정 — 오시마크 달기, 유료 구독 전환 */
 .subscription-controls {
     display: flex;
@@ -748,6 +767,12 @@ code {
 }
 
 /* 스킵을 처음부터 열어 둔다. 갇혀 있다고 느끼면 그때부터 광고로 읽힌다. */
+.intro__countdown {
+    margin: 12px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+}
+
 .intro__actions {
     display: flex;
     justify-content: center;
