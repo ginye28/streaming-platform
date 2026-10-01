@@ -2,10 +2,12 @@ package com.sp.api.subscribe.service;
 
 import com.sp.api.common.exception.BadRequestException;
 import com.sp.api.common.exception.NotFoundException;
+import com.sp.api.payment.config.PaymentProperties;
 import com.sp.api.subscribe.dto.SubscribeResponse;
 import com.sp.api.subscribe.dto.SubscriptionSettingResponse;
 import com.sp.api.subscribe.dto.UpdateSubscriptionRequest;
 import com.sp.api.subscribe.entity.Subscribe;
+import com.sp.api.subscribe.entity.SubscriptionTier;
 import com.sp.api.subscribe.repository.SubscribeRepository;
 import com.sp.api.user.entity.User;
 import com.sp.api.user.repository.UserRepository;
@@ -20,6 +22,7 @@ public class SubscribeService {
 
     private final SubscribeRepository subscribeRepository;
     private final UserRepository userRepository;
+    private final PaymentProperties paymentProperties;
 
     @Transactional
     public SubscribeResponse toggle(Long channelId, String email) {
@@ -56,8 +59,9 @@ public class SubscribeService {
     /**
      * 내 구독 설정(등급, 마크 표시 여부)을 바꾼다. 구독 중인 채널만 바꿀 수 있다.
      *
-     * 유료(PAID) 전환은 아직 결제와 이어져 있지 않다. 결제를 붙이면 이 자리를
-     * 결제 완료 처리로 바꾸고, 사용자가 직접 PAID 를 요청하지 못하게 막으면 된다.
+     * 유료(PAID) 전환은 결제가 켜져 있으면(토스 키가 있으면) 이 API 로 할 수 없고 결제로만 된다.
+     * 결제가 꺼져 있을 때만 결제 없이 바뀌는 자리표시로 남는다(개발·데모용).
+     * 일반(BASIC)으로 내리는 것은 언제든 되며, 남은 유료 기간은 없어진다.
      * 구독을 해제하면 행이 지워지므로 등급과 표시 설정도 함께 초기화된다.
      */
     @Transactional
@@ -75,6 +79,10 @@ public class SubscribeService {
         Subscribe subscribe = subscribeRepository
                 .findBySubscriberIdAndChannelId(subscriber.getId(), channelId)
                 .orElseThrow(() -> new BadRequestException("구독 중인 채널만 설정할 수 있습니다."));
+
+        if (request.getTier() == SubscriptionTier.PAID && paymentProperties.isEnabled()) {
+            throw new BadRequestException("유료 구독은 결제로만 시작할 수 있습니다.");
+        }
 
         if (request.getTier() != null) {
             subscribe.changeTier(request.getTier());

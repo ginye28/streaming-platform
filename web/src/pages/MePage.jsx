@@ -5,6 +5,7 @@ import {
     getMyBlocks,
     getMyChannelProfile,
     getMyIntro,
+    getMyPayments,
     getMySubscriptions,
     getStreamKey,
     regenerateStreamKey,
@@ -20,6 +21,7 @@ import { useAuth } from '../useAuth.js'
 import { CREDIT_ROLES } from '../components/ChannelIdentity.jsx'
 import Link from '../components/Link.jsx'
 import SubscriptionControls from '../components/SubscriptionControls.jsx'
+import { dateOnly, won } from '../payments.js'
 import { useAsyncData } from '../useAsyncData.js'
 
 export default function MePage() {
@@ -40,6 +42,7 @@ export default function MePage() {
             <IntroForm />
             <ChannelProfileForm />
             <SubscriptionList />
+            <PaymentHistory />
             <BlockList />
         </section>
     )
@@ -593,10 +596,47 @@ function SubscriptionList() {
                         <SubscriptionControls
                             channelId={channel.id}
                             tier={channel.myTier}
+                            paidUntil={channel.myPaidUntil}
                             markVisible={channel.myMarkVisible}
                             onChanged={reload}
                             onFail={fail}
                         />
+                    </li>
+                ))}
+            </ul>
+        </details>
+    )
+}
+
+/** 유료 구독 결제 내역. 승인된 결제만 보이고, 영수증은 토스가 열어 준다. */
+function PaymentHistory() {
+    const { data: page, error } = useAsyncData(() => getMyPayments(0), [])
+
+    return (
+        <details>
+            <summary>결제 내역</summary>
+
+            {error && <p className="error">{error}</p>}
+            {page?.content.length === 0 && <p className="empty">결제 내역이 없습니다.</p>}
+
+            <ul>
+                {page?.content.map((payment) => (
+                    <li key={payment.id}>
+                        <Link to={{ view: 'channel', id: payment.channelId }}>
+                            {payment.channelNickname}
+                        </Link>
+                        <span className="meta">
+                            {' '}
+                            · {won(payment.amount)} · {payment.method} · {dateOnly(payment.approvedAt)}
+                        </span>
+                        {payment.receiptUrl && (
+                            <>
+                                {' '}
+                                <a href={payment.receiptUrl} target="_blank" rel="noreferrer">
+                                    영수증
+                                </a>
+                            </>
+                        )}
                     </li>
                 ))}
             </ul>

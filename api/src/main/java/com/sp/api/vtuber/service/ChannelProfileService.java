@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,18 +118,22 @@ public class ChannelProfileService {
 
         Map<Long, OshiMark> marks = new HashMap<>();
 
+        LocalDateTime now = LocalDateTime.now();
+
         for (SubscriberMark subscriber : subscribeRepository.findSubscriberMarksAmong(channelId, authorIds)) {
 
             if (!subscriber.markVisible()) {
                 continue;
             }
 
-            String url = subscriber.tier() == SubscriptionTier.PAID && profile.getPaidOshiMarkUrl() != null
+            SubscriptionTier tier = subscriber.effectiveTier(now);
+
+            String url = tier == SubscriptionTier.PAID && profile.getPaidOshiMarkUrl() != null
                     ? profile.getPaidOshiMarkUrl()
                     : profile.getOshiMarkUrl();
 
             if (url != null) {
-                marks.put(subscriber.subscriberId(), new OshiMark(url, subscriber.tier()));
+                marks.put(subscriber.subscriberId(), new OshiMark(url, tier));
             }
         }
 

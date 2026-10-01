@@ -35,7 +35,7 @@ public interface SubscribeRepository extends JpaRepository<Subscribe, Long> {
      */
     @Query("""
             select new com.sp.api.subscribe.repository.SubscriberMark(
-                s.subscriber.id, s.tier, s.markVisible)
+                s.subscriber.id, s.tier, s.markVisible, s.paidUntil)
             from Subscribe s
             where s.channel.id = :channelId and s.subscriber.id in :userIds
             """)

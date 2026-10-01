@@ -7,6 +7,7 @@ import com.sp.api.live.entity.LiveStream;
 import com.sp.api.live.repository.LiveStreamRepository;
 import com.sp.api.stream.repository.StreamRepository;
 import com.sp.api.subscribe.entity.Subscribe;
+import com.sp.api.subscribe.entity.SubscriptionTier;
 import com.sp.api.subscribe.repository.SubscribeRepository;
 import com.sp.api.user.entity.User;
 import com.sp.api.user.repository.UserRepository;
@@ -14,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -38,8 +41,9 @@ public class ChannelService {
                 streamRepository.countByUserId(channelId),
                 liveStreamRepository.existsByUserIdAndStatus(channelId, LiveStream.Status.LIVE),
                 mine != null,
-                mine == null ? null : mine.getTier(),
-                mine != null && mine.isMarkVisible()
+                mine == null ? null : mine.effectiveTier(LocalDateTime.now()),
+                mine != null && mine.isMarkVisible(),
+                paidUntilOf(mine)
         );
     }
 
@@ -60,11 +64,23 @@ public class ChannelService {
                                     liveStreamRepository.existsByUserIdAndStatus(
                                             channel.getId(), LiveStream.Status.LIVE),
                                     true,
-                                    subscribe.getTier(),
-                                    subscribe.isMarkVisible()
+                                    subscribe.effectiveTier(LocalDateTime.now()),
+                                    subscribe.isMarkVisible(),
+                                    paidUntilOf(subscribe)
                             );
                         })
         );
+    }
+
+    /** 유료로 이용 중일 때만 만료 시각을 알려 준다. 이미 끝났거나 일반이면 null. */
+    private LocalDateTime paidUntilOf(Subscribe subscribe) {
+
+        if (subscribe == null
+                || subscribe.effectiveTier(LocalDateTime.now()) != SubscriptionTier.PAID) {
+            return null;
+        }
+
+        return subscribe.getPaidUntil();
     }
 
     /** 보는 사람의 이 채널 구독. 비로그인이거나 구독 중이 아니면 null. */

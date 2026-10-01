@@ -6,6 +6,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -43,6 +45,12 @@ public class Subscribe {
     @Column(nullable = false)
     private boolean markVisible = true;
 
+    /**
+     * 유료 구독이 끝나는 때. 결제로 늘어난다. 비어 있으면 기한이 없다(결제가 꺼져 있을 때의 전환).
+     * 기한이 지나면 tier 가 PAID 로 남아 있어도 effectiveTier 는 BASIC 이다.
+     */
+    private LocalDateTime paidUntil;
+
     public Subscribe(User subscriber, User channel) {
         this.subscriber = subscriber;
         this.channel = channel;
@@ -50,6 +58,27 @@ public class Subscribe {
 
     public void changeTier(SubscriptionTier tier) {
         this.tier = tier;
+
+        // 일반으로 내리면 남은 유료 기간도 함께 없어진다.
+        if (tier == SubscriptionTier.BASIC) {
+            this.paidUntil = null;
+        }
+    }
+
+    /**
+     * 결제가 끝났을 때 유료 기간을 days 일 늘린다.
+     * 아직 남은 기간이 있으면 그 뒤에 이어 붙이고, 이미 끝났으면 지금부터 센다.
+     */
+    public void grantPaid(LocalDateTime now, int days) {
+
+        LocalDateTime start = paidUntil != null && paidUntil.isAfter(now) ? paidUntil : now;
+
+        this.tier = SubscriptionTier.PAID;
+        this.paidUntil = start.plusDays(days);
+    }
+
+    public SubscriptionTier effectiveTier(LocalDateTime now) {
+        return SubscriptionTier.effective(tier, paidUntil, now);
     }
 
     public void showMark(boolean visible) {

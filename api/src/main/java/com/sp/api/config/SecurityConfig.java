@@ -93,6 +93,10 @@ public class SecurityConfig {
                         // 채널 페이지 조회도 공개 (구독 토글은 아래 anyRequest 규칙으로 인증 필요)
                         .requestMatchers(HttpMethod.GET, "/api/channels/**").permitAll()
 
+                        // 화면이 결제 흐름을 열지 말지 알아야 하므로 결제 설정 조회는 공개.
+                        // (결제 승인·주문은 아래 anyRequest 규칙으로 로그인이 필요하다)
+                        .requestMatchers(HttpMethod.GET, "/api/payments/config").permitAll()
+
                         // 카테고리 목록 조회는 공개. 생성은 관리자만(아래 /api/categories 규칙).
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
 

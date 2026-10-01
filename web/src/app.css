@@ -1712,3 +1712,16 @@ details li {
     transition: none;
     cursor: default;
 }
+
+/* 유료 구독 결제 — 결제 버튼 묶음과 결제 결과 화면 */
+.paid-membership {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.pay-result {
+    max-width: 560px;
+    margin: 24px auto;
+}
