@@ -39,6 +39,19 @@ file:
     timeout-seconds: 20
 
 app:
+  payments:
+    toss:
+      # 토스페이먼츠 "API 개별 연동 키"(test_ck_/test_sk_). 둘 다 있어야 결제가 켜지고, 하나라도 비면 결제는 꺼진다.
+      # 시크릿 키는 서버 밖으로 나가지 않는다. 코드나 이미지에 넣지 말고 환경변수로만 준다.
+      client-key: ${TOSS_CLIENT_KEY:}
+      secret-key: ${TOSS_SECRET_KEY:}
+      base-url: https://api.tosspayments.com
+
+  membership:
+    # 유료 구독 한 번에 내는 금액(원)과 이용 기간(일).
+    price-krw: ${MEMBERSHIP_PRICE_KRW:4900}
+    period-days: ${MEMBERSHIP_PERIOD_DAYS:30}
+
   admin:
     # 기동 시 ADMIN 권한을 부여할 계정 이메일 (쉼표로 구분).
     # 최초 관리자를 만드는 유일한 통로다. 여기 적은 계정은 먼저 회원가입돼 있어야 한다.

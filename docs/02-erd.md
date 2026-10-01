@@ -1,6 +1,6 @@
 # ERD
 
-표 17개. 스키마는 `api/src/main/resources/db/migration/` 의 SQL 이 만듭니다.
+표 18개. 스키마는 `api/src/main/resources/db/migration/` 의 SQL 이 만듭니다.
 아래는 실제로 만들어진 MySQL 8.0 스키마를 그대로 옮긴 것입니다.
 
 ```
@@ -10,6 +10,7 @@ users ─┬─< streams ─┬─< comments ─┐
        ├─< live_streams ─< chat_messages
        ├─ live_settings (1:1)
        ├─< subscriptions >─ users
+       ├─< payments (user_id, channel_id)
        ├─< blocks >─ users
        ├─< notifications
        ├─< reports
@@ -150,8 +151,30 @@ nginx-rtmp 의 `on_publish` 로 한 줄이 생기고, `on_publish_done` 으로 `
 | channel_id | bigint | FK → users | 구독당하는 사람 |
 | tier | enum('BASIC','PAID') | NOT NULL, 기본 BASIC | 구독 등급. 유료 구독자는 채널의 유료 오시마크를 단다 |
 | mark_visible | bit(1) | NOT NULL, 기본 1 | 이 채널의 오시마크를 내 이름 옆에 보일지. 시청자가 채널마다 고른다 |
+| paid_until | datetime(6) | null 허용 | 유료 구독이 끝나는 때. 결제로 늘어난다. 지나면 tier 가 PAID 여도 일반으로 본다. NULL 은 기한 없음 |
 
 `(subscriber_id, channel_id)` UNIQUE. 구독을 해제하면 행이 지워져 등급과 표시 설정도 사라진다.
+
+---
+
+## payments — 유료 구독 결제
+
+| 컬럼 | 타입 | | |
+|---|---|---|---|
+| id | bigint | PK | |
+| order_id | varchar(64) | **UNIQUE**, NOT NULL | 토스에 보내는 주문번호. 서버가 만든 무작위 값 |
+| payment_key | varchar(200) | UNIQUE, null 허용 | 승인 뒤 토스가 주는 결제 키. 승인 전에는 비어 있다 |
+| user_id | bigint | FK → users | 결제한 사람 |
+| channel_id | bigint | FK → users | 구독 대상 채널 |
+| amount | int | NOT NULL | 서버가 정한 금액(원) |
+| status | enum('READY','DONE','FAILED') | NOT NULL | 주문 · 승인 완료 · 실패 |
+| method | varchar(50) | null 허용 | 카드 · 간편결제 · 계좌이체 등 |
+| receipt_url | varchar(500) | null 허용 | 토스 영수증 주소 |
+| approved_at | datetime(6) | null 허용 | 승인 시각 |
+| failure_code · failure_message | varchar | null 허용 | 실패 사유 |
+| created_at | datetime(6) | NOT NULL | 주문을 만든 때 |
+
+돈이 오간 기록이라 지우지 않습니다. 인덱스: `(user_id, id)` — 내 결제 내역용.
 
 ---
 

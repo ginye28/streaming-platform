@@ -219,6 +219,21 @@ export const toggleSubscribe = (channelId) =>
 export const updateSubscription = (channelId, payload) =>
     authorized(`/api/channels/${channelId}/subscription`, { method: 'PUT', body: payload })
 
+// ---- 유료 구독 결제 (토스페이먼츠) ----
+
+/** 결제가 켜져 있는지, 금액·기간은 얼마인지. 로그인 없이 읽는다. */
+export const getPaymentConfig = async () => unwrap(await request('/api/payments/config'))
+
+/** 1단계 — 유료 구독 주문을 만든다. 돌려받은 값으로 결제창을 연다. */
+export const createMembershipOrder = (channelId) =>
+    authorized(`/api/channels/${channelId}/membership/orders`, { method: 'POST' })
+
+/** 3단계 — 결제창에서 돌아온 값으로 승인하고 유료 구독을 시작한다. */
+export const confirmPayment = ({ paymentKey, orderId, amount }) =>
+    authorized('/api/payments/confirm', { method: 'POST', body: { paymentKey, orderId, amount } })
+
+export const getMyPayments = (page = 0) => authorized(`/api/users/me/payments${query({ page })}`)
+
 export const getChannelLive = (channelId) =>
     maybeAuthorized(`/api/channels/${channelId}/live`).catch(() => null)
 

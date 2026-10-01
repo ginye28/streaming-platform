@@ -8,6 +8,8 @@ import LivePage from './pages/LivePage.jsx'
 import LivesPage from './pages/LivesPage.jsx'
 import MePage from './pages/MePage.jsx'
 import NotificationsPage from './pages/NotificationsPage.jsx'
+import PayFailPage from './pages/PayFailPage.jsx'
+import PayResultPage from './pages/PayResultPage.jsx'
 import SearchPage from './pages/SearchPage.jsx'
 import StreamPage from './pages/StreamPage.jsx'
 import SubscribedPage from './pages/SubscribedPage.jsx'
@@ -39,6 +41,10 @@ function Routes() {
             return <MePage />
         case 'auth':
             return <AuthPage />
+        case 'pay-result':
+            return <PayResultPage />
+        case 'pay-fail':
+            return <PayFailPage />
         default:
             return <HomePage />
     }
