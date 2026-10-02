@@ -77,6 +77,9 @@ public class SecurityConfig {
                         // 방송 설정은 본인만. 아래 공개 규칙보다 먼저 선언한다.
                         .requestMatchers("/api/lives/settings").authenticated()
 
+                        // 내 방송 예약도 본인만. 아래 공개 규칙(GET /api/lives/**)보다 먼저 선언한다.
+                        .requestMatchers("/api/lives/schedules/mine").authenticated()
+
                         // 라이브 목록·상세·채팅 내역은 비로그인도 볼 수 있어야 한다.
                         .requestMatchers(HttpMethod.GET, "/api/lives/**").permitAll()
 

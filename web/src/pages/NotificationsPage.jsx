@@ -86,7 +86,13 @@ function linkTarget({ type, targetId, channelId }) {
     if (!targetId) return null
 
     switch (type) {
+        // 방송 예약 알림은 대기실로 간다.
+        case 'LIVE_SCHEDULED':
+        case 'LIVE_REMINDER':
+            return { view: 'schedule', id: targetId }
+        // 후원 알림은 후원이 들어온 방송으로 간다.
         case 'LIVE_START':
+        case 'DONATION':
             return { view: 'live', id: targetId }
         case 'STREAM_COMMENT':
         case 'COMMENT_REPLY':

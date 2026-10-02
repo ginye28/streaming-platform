@@ -20,7 +20,9 @@ public record PaymentHistoryResponse(
         /** 지금 직접 환불할 수 있는지. 승인된 결제이고 환불 가능 기간 안일 때만 true. */
         boolean refundable,
         /** 직접 환불할 수 있는 마지막 때. 승인된 결제에만 있다. */
-        LocalDateTime refundDeadline
+        LocalDateTime refundDeadline,
+        /** SUBSCRIPTION(유료 구독) 또는 DONATION(후원). */
+        String kind
 ) {
 
     public static PaymentHistoryResponse from(Payment payment, int refundWindowDays, LocalDateTime now) {
@@ -37,8 +39,12 @@ public record PaymentHistoryResponse(
                 payment.getApprovedAt(),
                 payment.getCanceledAt(),
                 payment.getReceiptUrl(),
-                done && payment.isWithinRefundWindow(refundWindowDays, now),
-                done && payment.getApprovedAt() != null ? payment.getApprovedAt().plusDays(refundWindowDays) : null
+                // 후원은 사용자가 직접 환불하지 못한다.
+                done && !payment.isDonation() && payment.isWithinRefundWindow(refundWindowDays, now),
+                done && !payment.isDonation() && payment.getApprovedAt() != null
+                        ? payment.getApprovedAt().plusDays(refundWindowDays)
+                        : null,
+                payment.getKind().name()
         );
     }
 }

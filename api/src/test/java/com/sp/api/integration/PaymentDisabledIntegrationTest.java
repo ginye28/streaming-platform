@@ -43,4 +43,20 @@ class PaymentDisabledIntegrationTest extends IntegrationTestSupport {
                                 {"paymentKey":"k","orderId":"sub-1-x","amount":4900}"""))
                 .andExpect(status().isServiceUnavailable());
     }
+
+    @Test
+    @DisplayName("키가 없으면 후원 주문도 503 이다")
+    void donationOrderIsUnavailable() throws Exception {
+
+        String owner = signupAndLogin("off-don-owner@test.com", "후원꺼짐주인");
+        String fan = signupAndLogin("off-don-fan@test.com", "후원꺼짐팬");
+
+        startBroadcast(owner);
+
+        mockMvc.perform(post("/api/lives/" + currentLiveId(myUserId(owner)) + "/donations/orders")
+                        .header("Authorization", "Bearer " + fan)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"amount\":1000}"))
+                .andExpect(status().isServiceUnavailable());
+    }
 }

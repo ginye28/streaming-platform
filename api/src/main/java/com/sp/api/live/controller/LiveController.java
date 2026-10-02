@@ -74,7 +74,13 @@ public class LiveController {
     }
 
     @GetMapping("/{liveId}")
-    public ResponseEntity<ApiResponse<LiveStreamResponse>> findById(@PathVariable Long liveId) {
-        return ResponseEntity.ok(ApiResponse.ok(liveStreamService.findById(liveId)));
+    public ResponseEntity<ApiResponse<LiveStreamResponse>> findById(
+            @PathVariable Long liveId,
+            Authentication authentication
+    ) {
+
+        return ResponseEntity.ok(ApiResponse.ok(
+                liveStreamService.findById(liveId, AuthUtils.emailOrNull(authentication))
+        ));
     }
 }

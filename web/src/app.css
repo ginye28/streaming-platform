@@ -916,7 +916,9 @@ a.card__meta:hover {
 .chat {
     display: flex;
     flex-direction: column;
-    height: 60vh;
+    /* 후원 칸·고정 메시지·운영 도구가 붙어도 채팅이 보일 만큼 높이를 준다. */
+    height: 72vh;
+    min-height: 460px;
     overflow: hidden;
     border: 1px solid var(--border);
     border-radius: var(--corner-xs);
@@ -1744,4 +1746,323 @@ details li {
 .earnings th:first-child,
 .earnings td:first-child {
     text-align: left;
+}
+
+/* ── 채팅 운영 · 후원 · 고정 ── */
+
+/* 후원 단계 색. 1(작은 후원) ~ 5(큰 후원). */
+.chat-line--t1,
+.chat-donation--t1,
+.donate__amount--t1 {
+    --tier: #2b7fd1;
+}
+
+.chat-line--t2,
+.chat-donation--t2,
+.donate__amount--t2 {
+    --tier: #14909f;
+}
+
+.chat-line--t3,
+.chat-donation--t3,
+.donate__amount--t3 {
+    --tier: #c98a00;
+}
+
+.chat-line--t4,
+.chat-donation--t4,
+.donate__amount--t4 {
+    --tier: #d9690a;
+}
+
+.chat-line--t5,
+.chat-donation--t5,
+.donate__amount--t5 {
+    --tier: #d1342b;
+}
+
+.chat__tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+
+.chat__tools select {
+    padding: 2px 6px;
+}
+
+.chat__banner {
+    margin: 0;
+    padding: 6px 14px;
+    background: var(--sunken);
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.chat__pinned {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--accent-soft);
+    font-size: 13px;
+}
+
+.chat__pinned-label {
+    flex: none;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--accent);
+    color: var(--on-accent);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.chat__pinned-text {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.chat__pinned button {
+    flex: none;
+    padding: 2px 8px;
+    font-size: 12px;
+}
+
+.chat__donations {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-bottom: 1px solid var(--border);
+}
+
+.chat-donation {
+    padding: 6px 14px;
+    border-left: 4px solid var(--tier);
+    background: color-mix(in srgb, var(--tier) 16%, transparent);
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+
+.chat-line {
+    position: relative;
+}
+
+.chat-line--donation {
+    padding: 6px 8px;
+    border-left: 4px solid var(--tier);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--tier) 14%, transparent);
+}
+
+.chat-line__amount {
+    color: var(--tier);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.chat-badge {
+    display: inline-block;
+    margin-right: 4px;
+    padding: 0 5px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    vertical-align: 1px;
+}
+
+.chat-badge--owner {
+    background: var(--accent);
+    color: var(--on-accent);
+}
+
+.chat-badge--manager {
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+.chat-line__more {
+    margin-left: 4px;
+    padding: 0 6px;
+    border-color: transparent;
+    background: transparent;
+    color: var(--muted);
+    line-height: 1.2;
+}
+
+.chat-line__menu {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.chat-line__menu button {
+    padding: 2px 8px;
+    font-size: 12px;
+}
+
+.chat__notice {
+    margin: 0;
+    padding: 6px 14px;
+    border-top: 1px solid var(--border);
+    background: var(--danger-soft);
+    color: var(--danger);
+    font-size: 13px;
+}
+
+/* 후원 칸 */
+.donate {
+    padding: 8px 14px 0;
+    border-top: 1px solid var(--border);
+}
+
+.donate--open {
+    display: grid;
+    gap: 8px;
+    padding-bottom: 10px;
+}
+
+.donate--open input {
+    width: 100%;
+}
+
+.donate__open {
+    width: 100%;
+}
+
+.donate__amounts,
+.donate__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.donate__amount {
+    border-color: var(--tier);
+    font-size: 13px;
+}
+
+.donate__amount[aria-pressed='true'] {
+    background: var(--tier);
+    color: #fff;
+}
+
+.donate .meta {
+    margin: 0;
+    font-size: 12px;
+}
+
+/* ── 멤버십 전용 방송 · 대기실 · 예약 목록 ── */
+.locked-live__box {
+    margin: 20px 0;
+    padding: 24px;
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--corner-xs);
+    background: var(--sunken);
+}
+
+.waiting-room__clock {
+    margin: 20px 0;
+    padding: 28px 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--corner-xs);
+    background: var(--surface);
+    text-align: center;
+    font-size: 18px;
+}
+
+.waiting-room__clock strong {
+    font-size: 36px;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+}
+
+.schedule-list {
+    display: grid;
+    gap: 10px;
+    margin: 0 0 24px;
+    padding: 0;
+    list-style: none;
+}
+
+.schedule-list__item {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--corner-xs);
+    background: var(--surface);
+}
+
+.schedule-list__thumb {
+    flex: none;
+    display: block;
+    width: 96px;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 4px;
+    background: var(--sunken);
+}
+
+.schedule-list__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.schedule-list__blank {
+    display: grid;
+    place-items: center;
+    height: 100%;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.schedule-list__title {
+    font-weight: 700;
+}
+
+.schedule-list__body .meta {
+    margin: 2px 0 0;
+}
+
+/* 금칙어 칩 */
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0;
+    list-style: none;
+}
+
+.chips li {
+    padding: 2px 4px 2px 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--sunken);
+    font-size: 13px;
+}
+
+.chips button {
+    padding: 0 6px;
+    border: none;
+    background: transparent;
+}
+
+.form--inline {
+    display: flex;
+    gap: 6px;
+}
+
+.form--inline input {
+    flex: 1;
+    min-width: 0;
 }

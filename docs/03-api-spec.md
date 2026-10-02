@@ -374,10 +374,11 @@ VOD 는 `videoUrl` 로 재생하고, 라이브는 `hlsUrl` 로 재생합니다.
 | 메서드 | 경로 | 인증 | 설명 |
 |---|---|---|---|
 | GET | `/api/lives` | 공개 | 지금 방송 중인 목록 (페이지) |
-| GET | `/api/lives/{liveId}` | 공개 | 방송 상세 |
-| GET | `/api/lives/{liveId}/chats` | 공개 | 채팅 내역 (페이지, 최신순) |
+| GET | `/api/lives/{liveId}` | 공개 | 방송 상세 (고정 메시지·내 역할 포함) |
+| GET | `/api/lives/{liveId}/chats` | 공개 | 채팅 내역 (페이지, 최신순). 영상을 볼 수 없는 방송이면 403 |
+| GET | `/api/lives/{liveId}/chats/replay` | 공개 | **다시보기 채팅** (끝난 방송만, 오래된 순, `afterId` 로 이어받기) |
 | GET | `/api/lives/settings` | 필요 | 다음 방송에 쓸 설정 |
-| PUT | `/api/lives/settings` | 필요 | 방송 제목·설명·썸네일 저장 |
+| PUT | `/api/lives/settings` | 필요 | 방송 제목·설명·썸네일·공개 대상·채팅 대상·슬로우 모드 저장 |
 | GET | `/api/channels/{channelId}/live` | 공개 | 그 채널의 현재 방송 (아니면 404) |
 | GET | `/api/channels/{channelId}/live-history` | 공개 | 그 채널의 지난 방송 (페이지) |
 
@@ -395,15 +396,93 @@ VOD 는 `videoUrl` 로 재생하고, 라이브는 `hlsUrl` 로 재생합니다.
   "viewerCount": 3,
   "peakViewerCount": 12,
   "startedAt": "2026-08-21T09:00:00",
-  "endedAt": null
+  "endedAt": null,
+  "audience": "ALL",
+  "chatAudience": "ALL",
+  "slowModeSeconds": 0,
+  "locked": false,
+  "vodUrl": null,
+  "pinnedMessage": null,
+  "myRole": null,
+  "chatLocked": false
 }
 ```
 
 `status` 는 `LIVE` 또는 `ENDED`. 방송이 끝나면 지난 방송 목록으로 넘어갑니다.
 
+| 필드 | 뜻 |
+|---|---|
+| `audience` | 영상을 볼 수 있는 사람. `ALL`(누구나) · `SUBSCRIBERS`(구독자) · `PAID`(유료 구독자) |
+| `locked` | **이 시청자는 영상을 볼 수 없다.** true 면 `hlsUrl`·`vodUrl` 이 비어 있다 |
+| `chatAudience` · `chatLocked` | 채팅할 수 있는 사람 · 이 시청자가 채팅할 수 없는지(방송 하나를 조회할 때만 채워진다) |
+| `slowModeSeconds` | 슬로우 모드 대기 시간(초). 0 이면 꺼짐 |
+| `vodUrl` | 끝난 방송의 다시보기 주소(스트리밍 서버가 녹화하는 경우, 볼 수 있는 시청자에게만) |
+| `pinnedMessage` · `myRole` | 채팅창 위에 고정된 메시지 · 이 채널에서의 내 역할(`OWNER`·`MANAGER`). 방송 하나를 조회할 때만 채워진다 |
+
 > OBS 는 방송 제목을 보내주지 않으므로, 송출 전에 `PUT /api/lives/settings` 로
 > 제목을 저장해 두면 송출 시작 시 그 값이 쓰입니다. 저장하지 않으면
-> "{닉네임} 님의 방송" 이 기본 제목이 됩니다.
+> "{닉네임} 님의 방송" 이 기본 제목이 됩니다. 가까운 **방송 예약**이 있으면 설정보다 예약이 먼저 쓰입니다.
+
+### 멤버십 전용 방송
+
+방송을 시작할 때의 `audience` 로 영상을 볼 수 있는 사람을 정합니다(`PUT /api/lives/settings` 나 방송 예약에 적어 둔다).
+**방송이 시작된 뒤에는 바꿀 수 없습니다.** 재생 주소가 이미 나갔기 때문입니다.
+
+- 영상을 볼 수 없는 시청자에게는 `hlsUrl`·`vodUrl` 이 **내려가지 않습니다**(`locked: true`). 목록(`GET /api/lives`)도 같습니다.
+- 재생 이름이 **방송마다 새로 만든 UUID** 라서, 주소를 모르면 볼 수 없습니다. 다만 주소를 받은 구독자가 남에게 전달하면
+  볼 수 있습니다 — 이 서버는 서명된 주소(만료되는 토큰)까지는 하지 않습니다. 더 강하게 막으려면 스트리밍 서버(nginx)에서
+  `secure_link` 같은 서명 검증을 붙여야 합니다.
+- 채널 주인은 구독하지 않아도 언제나 볼 수 있습니다. 유료 구독은 기간이 끝났으면 일반 구독으로 칩니다.
+- 영상을 볼 수 없는 방송의 **채팅 내역·다시보기 채팅도 403** 이고, 채팅방 구독(WebSocket SUBSCRIBE)도 거절됩니다.
+- `chatAudience` 는 방송 중에도 주인이 `PUT /api/lives/{liveId}/chat-audience` 로 바꿀 수 있습니다.
+
+### 다시보기
+
+스트리밍 서버(`streaming/nginx.conf` 의 `vod` 애플리케이션)가 방송을 녹화하는 경우, 서버 설정 `VOD_ENABLED=true` 이면
+방송이 끝날 때 `vodUrl` 이 생깁니다. 주소는 `{VOD_BASE_URL}/{재생 이름}.m3u8` 입니다.
+
+- 녹화는 실시간 HLS 와 따로 6초 조각으로 쌓이고, 방송이 끝나면 재생목록 끝에 `#EXT-X-ENDLIST` 가 붙어 **처음부터 건너뛰며** 볼 수 있습니다.
+  (nginx-rtmp 는 끝 표시를 직접 붙이지 않아서 `exec_publish_done` 으로 붙입니다.)
+- **서버는 녹화가 실제로 됐는지 확인하지 않습니다.** 녹화를 안 하는 스트리밍 서버에서 `VOD_ENABLED` 를 켜면 없는 주소를 가리킵니다.
+- 조각 파일은 지우지 않습니다. 오래된 것을 정리하는 일은 운영자가 합니다(`docs/06-deployment.md`).
+
+`GET /api/lives/{liveId}/chats/replay?afterId=&size=` — 방송이 끝난 뒤에만 됩니다(방송 중이면 400).
+지운 메시지는 빠지고, 각 메시지의 `offsetSeconds`(방송 시작 뒤 몇 초째) 로 영상 재생 위치에 맞춥니다.
+
+```json
+{ "messages": [ { "id": 10, "nickname": "채팅유저", "content": "안녕하세요", "offsetSeconds": 79 } ],
+  "nextAfterId": 10 }
+```
+
+`size` 는 기본 200, 최대 500. `nextAfterId` 가 없으면 끝입니다. 화면은 이어서 받으며 재생 위치까지만 보여 줍니다.
+
+### 방송 예약 (`/api/lives/schedules`)
+
+방송 전에 "언제 한다" 를 올려 두면 구독자에게 알림이 가고, 시청자는 **대기실**(카운트다운)에서 기다립니다.
+
+| 메서드 | 경로 | 인증 | 설명 |
+|---|---|---|---|
+| GET | `/api/lives/schedules` | 공개 | 앞으로의 방송 예약, 가까운 순 (페이지). 내가 차단한 채널은 뺀다 |
+| GET | `/api/lives/schedules/{id}` | 공개 | 예약 하나 (대기실이 읽는다. 취소·만료된 것도 읽힌다) |
+| GET | `/api/lives/schedules/mine` | 필요 | 내 예약 (방송 전인 것) |
+| POST | `/api/lives/schedules` | 필요 | 예약 만들기 (201) |
+| PUT | `/api/lives/schedules/{id}` | 필요 | 예약 고치기 (방송 전인 것만) |
+| DELETE | `/api/lives/schedules/{id}` | 필요 | 예약 취소 |
+| GET | `/api/channels/{channelId}/schedules` | 공개 | 그 채널의 앞으로의 예약 |
+
+```json
+{ "title": "내일의 방송", "description": "설명", "scheduledAt": "2026-10-05T20:00:00+09:00",
+  "audience": "SUBSCRIBERS", "chatAudience": "ALL" }
+```
+
+- **`scheduledAt` 은 시간대가 붙은 시각이어야 합니다.** 시간대 없이 받으면(400) 서버가 도는 곳의 시간대(무료 서버는 UTC)로 읽혀서
+  한국에서 20시에 한 예약이 9시간 어긋납니다. 응답도 시간대가 붙어 나갑니다. 알림 문구의 시각은 한국 시간입니다.
+- 시각은 지금보다 뒤이고 90일 안이어야 하며, 한 채널이 걸어 둘 수 있는 예약은 20개입니다.
+- 만들면 구독자에게 `LIVE_SCHEDULED` 알림, **시각이 바뀌면** 다시 알립니다(제목·설명만 고치면 알리지 않습니다). 취소해도 알립니다.
+- 시작 **10분 전부터** `LIVE_REMINDER`("곧 시작합니다")를 한 번 보냅니다. 1분마다 도는 작업이라 서버가 잠들면 쉽니다.
+- 송출이 시작되면 **방송 시각이 가장 가까운 예약**(시작 90분 전 ~ 6시간 후 범위) 하나가 그 방송에 이어집니다. 예약에 적은 제목·설명·
+  공개 대상·채팅 대상이 방송에 쓰이고, 예약은 `STARTED` + `liveId` 가 됩니다. 대기실이 이걸 보고 방송 화면으로 넘어갑니다.
+- 시각이 6시간 넘게 지나도 방송하지 않은 예약은 `EXPIRED` 로 내려갑니다.
 
 ---
 
@@ -417,10 +496,15 @@ STOMP over WebSocket 을 씁니다.
 | 인증 | CONNECT 프레임에 `Authorization: Bearer {토큰}` |
 | 보내기 | `/app/lives/{liveId}/chat` — `{ "content": "안녕하세요" }` |
 | 받기 | `/topic/lives/{liveId}` 구독 |
+| 방 안의 변화 | `/topic/lives/{liveId}/events` 구독 — 삭제·고정·슬로우 모드 |
 | 시청자 수 | `/topic/lives/{liveId}/viewers` 구독 |
+| 못 보낸 이유 | `/user/queue/chat-errors` 구독 — **보낸 사람에게만** 온다 (`{ "message": "슬로우 모드예요. 4초 뒤에…" }`) |
 
 - 토큰 없이도 **연결과 구독은 가능**합니다(읽기 전용). 채팅 전송은 무시됩니다.
+  단 영상을 볼 수 없는 방송(멤버십 전용)의 채팅방은 구독 자체가 거절됩니다(STOMP ERROR).
 - 종료된 방송에는 채팅을 보낼 수 없습니다.
+- 검사 순서: **제한(일시 정지·강퇴) → 채팅 대상 → 금칙어 → 슬로우 모드.** 슬로우 모드를 맨 뒤에 두는 것은 다른 이유로 거절된 글이
+  대기 시간을 쓰지 않게 하려는 것입니다. 채널 주인과 매니저는 전부 건너뜁니다.
 - 채팅방 구독 수가 곧 시청자 수로 집계됩니다. 서버를 여러 대로 늘리면
   인스턴스별로 따로 세어지므로 Redis 등으로 옮겨야 합니다.
 - 접속 직후 채팅창은 `GET /api/lives/{liveId}/chats` 로 채웁니다.
@@ -430,9 +514,55 @@ STOMP over WebSocket 을 씁니다.
 {
   "id": 10, "liveId": 1, "userId": 5,
   "nickname": "채팅유저", "content": "안녕하세요",
+  "oshiMarkUrl": null, "oshiTier": null,
+  "role": "MANAGER",
+  "donationAmount": null, "donationTier": null, "donationPinRemainingSeconds": null,
+  "deleted": false, "offsetSeconds": null,
   "createdAt": "2026-08-21T09:01:00"
 }
 ```
+
+`role` 은 이 채널에서의 역할(`OWNER`·`MANAGER`, 일반 시청자는 null). 지운 메시지는 `content` 가 null 이고 `deleted: true` 입니다.
+후원 메시지는 `donationAmount`(원)·`donationTier`(1~5)가 붙고, `donationPinRemainingSeconds` 는 후원 띠가 채팅창 위에 더 남는 시간입니다.
+
+방 안의 변화(`/events`)
+```json
+{ "type": "DELETE", "messageId": 10 }
+{ "type": "PURGE",  "userId": 7 }
+{ "type": "PIN",    "message": { "...": "고정된 메시지. null 이면 고정을 푼다" } }
+{ "type": "SETTINGS", "slowModeSeconds": 10, "chatAudience": "SUBSCRIBERS" }
+```
+
+바깥으로 나가는 메시지는 **DB 커밋이 끝난 뒤에** 나갑니다(롤백됐는데 화면에는 이미 나간 일이 없도록).
+
+### 채팅 운영
+
+방송 안에서(채널 주인·매니저, 로그인 필요)
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| DELETE | `/api/lives/{liveId}/chats/{messageId}` | 메시지 삭제. 쓴 사람 본인도 자기 것은 지울 수 있다 |
+| PUT | `/api/lives/{liveId}/pin` | `{ "messageId": 10 }` 채팅창 위에 고정. 한 번에 하나, 새로 고정하면 이전 것은 풀린다 |
+| DELETE | `/api/lives/{liveId}/pin` | 고정 해제 |
+| PUT | `/api/lives/{liveId}/slow-mode` | `{ "seconds": 10 }` — `0`·`3`·`5`·`10`·`30`·`60` 중에서만 |
+| PUT | `/api/lives/{liveId}/chat-audience` | `{ "chatAudience": "SUBSCRIBERS" }` — **채널 주인만** |
+| POST | `/api/lives/{liveId}/restrictions` | `{ "userId": 7, "minutes": 10, "reason": "도배", "purge": false }` — `minutes` 가 없으면 **강퇴**, `purge` 면 그 방송에서 쓴 메시지도 지운다 |
+| DELETE | `/api/lives/{liveId}/restrictions/{userId}` | 제한 풀기 |
+
+- **제한은 방송이 아니라 채널에 걸려서** 다음 방송에도 이어집니다. 일시 정지는 최대 7일, 그보다 길게는 강퇴를 씁니다.
+- 주인은 제한할 수 없고, 매니저는 **주인만** 제한할 수 있습니다(매니저끼리·주인 제한은 403).
+
+내 채널의 채팅 도구(`/api/users/me`, 본인만)
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| GET · POST · DELETE | `/api/users/me/moderators`, `/{userId}` | 매니저 목록·지정(201, 이미 매니저면 그대로)·해제. 최대 10명 |
+| GET · POST · DELETE | `/api/users/me/banned-words`, `/{wordId}` | 금칙어 목록·추가(201, 중복 409)·삭제. 최대 100개 |
+| GET | `/api/users/me/chat-restrictions` | 지금 채팅이 막혀 있는 사람 |
+| DELETE | `/api/users/me/chat-restrictions/{userId}` | 제한 풀기 |
+
+금칙어는 **대소문자와 공백을 무시하고** 비교합니다(`Bad Word` 를 등록하면 `b a d w o r d` 도 막힙니다). 단어가 하나라도 들어 있으면 거절하고,
+가리는 방식은 아닙니다.
 
 ---
 
@@ -515,7 +645,7 @@ STOMP over WebSocket 을 씁니다.
 
 ---
 
-## 유료 구독 결제 — 토스페이먼츠
+## 결제 — 유료 구독 · 방송 후원 (토스페이먼츠)
 
 유료 구독은 **30일 이용권**을 한 번 결제하는 방식입니다. 자동으로 갱신되지 않고, 끝나기 전에
 다시 결제하면 **남은 기간 뒤에 30일이 이어 붙습니다.** 기간이 지나면 일반(`BASIC`) 구독으로 돌아갑니다.
@@ -523,7 +653,8 @@ STOMP over WebSocket 을 씁니다.
 
 | 메서드 | 경로 | 인증 | 설명 |
 |---|---|---|---|
-| GET | `/api/payments/config` | 공개 | 결제가 켜져 있는지, 클라이언트 키·금액·기간 |
+| GET | `/api/payments/config` | 공개 | 결제가 켜져 있는지, 클라이언트 키·금액·기간, 후원 금액 목록(`donationAmounts`) |
+| POST | `/api/lives/{liveId}/donations/orders` | 필요 | **후원 1단계** 주문 만들기 (201). 승인은 같은 `/api/payments/confirm` |
 | POST | `/api/channels/{channelId}/membership/orders` | 필요 | **1단계** 주문 만들기 (201). 결제창에 넘길 값을 돌려준다 |
 | POST | `/api/payments/confirm` | 필요 | **3단계** 승인하고 유료 구독 시작 |
 | GET | `/api/users/me/payments` | 필요 | 내 결제 내역 (승인된 것과 환불된 것, 최신순) |
@@ -629,11 +760,12 @@ STOMP over WebSocket 을 씁니다.
 ```json
 {
   "feePercent": 10,
-  "total":  { "gross": 9800, "refunded": 4900, "fee": 490, "net": 4410, "count": 2 },
-  "months": [ { "month": "2026-10", "gross": 9800, "refunded": 4900, "fee": 490, "net": 4410, "count": 2 } ]
+  "total":  { "gross": 9800, "refunded": 4900, "fee": 490, "net": 4410, "count": 2, "membership": 0, "donation": 4900 },
+  "months": [ { "month": "2026-10", "gross": 9800, "refunded": 4900, "fee": 490, "net": 4410, "count": 2, "membership": 0, "donation": 4900 } ]
 }
 ```
 
+- `membership`·`donation` 은 유료 구독으로 들어온 금액과 후원으로 들어온 금액이다(환불된 것은 뺀다).
 - `fee` 는 `(gross - refunded)` 에 수수료율(`MEMBERSHIP_PLATFORM_FEE_PERCENT`, 기본 0%)을 곱한 값, `net` 은 정산 예정액이다.
 - **장부일 뿐이다. 실제 송금은 하지 않는다.** 결제 금액은 서비스(가맹점)로 들어오므로 `net` 을 채널 주인에게 보내는 일은 따로 해야 한다.
 - **결제한 사람은 어디에도 나오지 않는다.** 채널 주인이 알 필요가 없는 개인 정보라서 금액과 건수만 준다.
@@ -643,6 +775,26 @@ STOMP over WebSocket 을 씁니다.
 자동 갱신이 없으므로, 유료 구독이 끝나기 **3일 전부터**(`MEMBERSHIP_EXPIRY_NOTICE_DAYS`) 알림 `PAID_EXPIRING` 을 보낸다.
 눌러서 갈 곳은 연장할 채널 페이지(`channelId`)다. 한 시간마다 서버가 확인하며, **같은 만료 시각에 대해서는 한 번만** 보낸다.
 연장해서 만료가 바뀌면 다음 만료 때 다시 보낸다. 서버가 잠들어 있으면 확인도 쉬므로, 무료 호스팅이라면 주기적으로 깨워 두는 것이 좋다.
+
+### 방송 후원 (슈퍼챗)
+
+유료 구독과 **같은 결제 흐름**(주문 → 토스 결제창 → 승인)을 씁니다. 주문 종류는 `payments.kind`(`SUBSCRIPTION`·`DONATION`)로 가르고,
+`POST /api/payments/confirm` 이 주문의 종류를 보고 승인 뒤에 할 일을 정합니다. 결제가 꺼져 있으면(키 없음) 후원 주문은 503 입니다.
+
+```json
+POST /api/lives/{liveId}/donations/orders
+{ "amount": 5000, "message": "응원합니다!" }
+```
+
+- **금액은 서버가 허용한 목록에서만**(`DONATION_AMOUNTS`, 기본 1,000·3,000·5,000·10,000·30,000·50,000원). 메시지는 100자까지, 비워도 된다.
+- **돈을 내기 전에 걸러냅니다.** 주문을 만드는 단계에서 방송 중인지, 자기 방송이 아닌지, 채팅이 막혔거나 채팅 대상에서 빠지지 않았는지,
+  금칙어가 없는지를 확인합니다(슬로우 모드만 적용하지 않습니다). 막힌 사람이 결제한 뒤에야 거절되는 일이 없습니다.
+- **승인되면** 채팅에 후원 메시지(`donationAmount`)가 올라가고 방송 주인에게 `DONATION` 알림이 갑니다. 구독 기간은 건드리지 않습니다.
+  후원 단계(1~5)는 금액으로 정해지며 단계가 높을수록 채팅창 위의 띠로 오래 남습니다(30초 ~ 10분).
+- 같은 주문을 다시 승인해도(새로고침) 후원 메시지는 한 번만 올라갑니다.
+- **사용자는 후원을 직접 환불할 수 없습니다**(400). 이미 방송에 전달된 메시지라 받고 돌려받는 일이 쉬워지기 때문입니다.
+  **관리자가 환불하면** 채팅에서 후원 메시지가 지워지고(고정돼 있었다면 고정도 풀림) 수익 장부에서 빠집니다.
+- 내 결제 내역과 관리자 결제 목록에는 `kind` 가 있습니다.
 
 ### 아직 없는 것
 
@@ -732,6 +884,9 @@ STOMP over WebSocket 을 씁니다.
 | `STREAM_COMMENT` | 내 영상에 댓글이 달림 | 영상 주인 | 댓글 쓴 사람 id | 영상 id |
 | `COMMENT_REPLY` | 내 댓글에 답글이 달림 | 원 댓글 작성자 | 답글 쓴 사람 id | 영상 id |
 | `PAID_EXPIRING` | 유료 구독이 곧 끝남 | 그 유료 구독자 | 연장할 채널 id | 없음 |
+| `DONATION` | 내 방송에 후원이 들어옴 | 방송 주인 | 내 채널 id | 방송 id |
+| `LIVE_SCHEDULED` | 구독한 채널이 방송을 예약하거나 시간을 바꾸거나 취소 | 구독자 전원 | 방송인 id | 방송 예약 id |
+| `LIVE_REMINDER` | 예약한 방송이 곧 시작(10분 전) | 구독자 전원 | 방송인 id | 방송 예약 id |
 
 **자기가 자기한테 보내는 알림은 남기지 않습니다** — 자기 영상에 자기가 단 댓글,
 자기 댓글에 자기가 단 답글 모두 알림이 없습니다.
@@ -750,7 +905,8 @@ STOMP over WebSocket 을 씁니다.
 ```
 
 `targetId` 로 어디를 가리키는지는 `type` 마다 다릅니다 (위 표 참고).
-화면에서는 `LIVE_START` 는 방송 화면, `STREAM_COMMENT` · `COMMENT_REPLY` 는 영상 화면, `PAID_EXPIRING` 은 연장할 채널 페이지로 넘깁니다.
+화면에서는 `LIVE_START` · `DONATION` 은 방송 화면, `STREAM_COMMENT` · `COMMENT_REPLY` 는 영상 화면, `LIVE_SCHEDULED` · `LIVE_REMINDER` 는 방송 대기실,
+`PAID_EXPIRING` 은 연장할 채널 페이지로 넘깁니다.
 
 > 알림 종류를 새로 더할 때는 **이미 만들어진 DB 의 `notifications.type` 칸을 넓혀야** 합니다.
 > 자세한 건 README 의 [이미 쓰던 DB 가 있다면 한 줄만 바꿔 주세요](../README.md#이미-쓰던-db-가-있다면-한-줄만-바꿔-주세요) 참고.
@@ -836,7 +992,7 @@ nginx-rtmp 가 호출하는 콜백. JWT 가 아니라 스트림 키로 인증하
 
 | 메서드 | 경로 | 설명 |
 |---|---|---|
-| POST | `/api/internal/rtmp/publish` | `name`=스트림 키. 검증 후 방송을 열고 공개 이름으로 **302 리다이렉트**. 키가 틀리면 403 |
+| POST | `/api/internal/rtmp/publish` | `name`=스트림 키. 검증 후 방송을 열고 재생 이름으로 **302 리다이렉트**. 키가 틀리면 403 |
 | POST | `/api/internal/rtmp/publish-done` | 송출 종료. 방송을 ENDED 로 바꾼다 |
 
 송출이 시작되면 구독자 전원에게 `LIVE_START` 알림이 생성됩니다.
@@ -850,17 +1006,18 @@ nginx-rtmp 가 호출하는 콜백. JWT 가 아니라 스트림 키로 인증하
 - 재생(HLS): `GET /api/lives` 또는 `GET /api/channels/{id}/live` 가 돌려주는 `hlsUrl`
 
 **스트림 키는 재생 URL 에 노출되지 않습니다.** `on_publish` 가 302 리다이렉트로
-송출을 공개 이름(계정마다 다른 UUID)으로 넘기기 때문입니다.
+송출을 재생 이름(**방송마다 새로 만든 UUID**)으로 넘기기 때문입니다. 이름이 방송마다 달라서 멤버십 전용 방송의 주소를 볼 수 있는
+사람에게만 내려 줄 수 있고, 다시보기도 방송끼리 덮어쓰지 않습니다.
 실제 OBS 로 송출해 확인했습니다.
 
 #### 리다이렉트는 이름을 바꾸는 게 아니라 세션을 하나 더 만든다
 
-nginx-rtmp 는 `on_publish` 가 3xx 를 주면 **공개 이름으로 두 번째 송출 세션을 새로 만듭니다.**
+nginx-rtmp 는 `on_publish` 가 3xx 를 주면 **재생 이름으로 두 번째 송출 세션을 새로 만듭니다.**
 스트림 키로 들어온 원래 세션도 그대로 살아 있습니다.
 
 ```
 publish: name='bd4e1d90-…'   ← 스트림 키   (세션 1)
-publish: name='8c6c7c99-…'   ← 공개 이름   (세션 2)
+publish: name='8c6c7c99-…'   ← 재생 이름   (세션 2)
 ```
 
 그래서 송출을 받는 application 에 `hls` 를 켜 두면 재생목록이 **두 벌** 생기고,
@@ -871,7 +1028,7 @@ publish: name='8c6c7c99-…'   ← 공개 이름   (세션 2)
 | | 포트 | 하는 일 |
 |---|---|---|
 | `live` application | 1935 (공개) | 송출을 받아 **인증만** 한다. HLS 없음 |
-| `hls` application | 127.0.0.1:1936 | 리다이렉트로 넘어온 공개 이름만 **HLS 로 만든다** |
+| `hls` application | 127.0.0.1:1936 | 리다이렉트로 넘어온 재생 이름만 **HLS 로 만든다** |
 
 1936 은 루프백에만 열려 있고 `docker-compose.yml` 에서도 공개하지 않으므로,
 컨테이너 밖에서는 닿지 않습니다. `app.rtmp.redirect-base` 가 이 주소를 가리킵니다.

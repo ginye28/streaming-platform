@@ -4,6 +4,8 @@ import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 /**
  * 유료 구독 결제 설정.
  *
@@ -53,6 +55,10 @@ public class PaymentProperties {
     /** 유료 구독이 끝나기 며칠 전부터 알릴지. */
     @Value("${app.membership.expiry-notice-days:3}")
     private int expiryNoticeDays;
+
+    /** 후원으로 보낼 수 있는 금액(원). 이 목록에 없는 금액은 서버가 주문을 만들어 주지 않는다. */
+    @Value("${app.donation.amounts:1000,3000,5000,10000,30000,50000}")
+    private List<Integer> donationAmounts;
 
     public boolean isEnabled() {
         return clientKey != null && !clientKey.isBlank()

@@ -81,6 +81,12 @@ public class Notification {
         STREAM_COMMENT,
         COMMENT_REPLY,
         /** 유료 구독이 곧 끝난다. channelId 는 연장할 채널이다. */
-        PAID_EXPIRING
+        PAID_EXPIRING,
+        /** 내 방송에 후원이 들어왔다. channelId 는 내 채널, targetId 는 방송이다. */
+        DONATION,
+        /** 구독한 채널이 방송을 예약했거나 일정이 바뀌었다. targetId 는 예약이다. */
+        LIVE_SCHEDULED,
+        /** 예약한 방송이 곧 시작된다. targetId 는 예약이다. */
+        LIVE_REMINDER
     }
 }

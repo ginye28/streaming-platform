@@ -54,6 +54,9 @@ services:
     # Linux 에서는 host-gateway 매핑이 필요하다.
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    volumes:
+      # 다시보기 녹화. 컨테이너를 지워도 남는다. 자동으로 지우지 않으니 오래된 것은 직접 정리한다(docs/06-deployment.md).
+      - streaming-vod:/tmp/vod
     restart: unless-stopped
 
   api:
@@ -82,6 +85,8 @@ services:
       TOSS_SECRET_KEY: ${TOSS_SECRET_KEY:-}
       # 토스 웹훅 주소에 ?token= 으로 붙이는 비밀 값. 비워 두면 검사하지 않는다.
       TOSS_WEBHOOK_TOKEN: ${TOSS_WEBHOOK_TOKEN:-}
+      # streaming 서비스가 방송을 다시보기로 녹화하므로 켠다. 주소는 HLS_BASE_URL 옆의 /vod 가 된다.
+      VOD_ENABLED: ${VOD_ENABLED:-true}
     depends_on:
       mysql:
         condition: service_healthy
@@ -109,3 +114,4 @@ services:
 volumes:
   mysql-data:
   api-uploads:
+  streaming-vod:

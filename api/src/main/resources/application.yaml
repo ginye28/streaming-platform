@@ -60,6 +60,21 @@ app:
     # 유료 구독이 끝나기 며칠 전부터 알릴지.
     expiry-notice-days: ${MEMBERSHIP_EXPIRY_NOTICE_DAYS:3}
 
+  donation:
+    # 후원으로 보낼 수 있는 금액(원). 쉼표로 구분한다. 이 목록에 없는 금액은 주문을 만들어 주지 않는다.
+    amounts: ${DONATION_AMOUNTS:1000,3000,5000,10000,30000,50000}
+
+  live:
+    # 방송 예약의 "곧 시작" 알림과 지난 예약 정리를 1분마다 돌린다.
+    schedule-scheduler:
+      enabled: true
+
+  vod:
+    # 스트리밍 서버가 방송을 다시보기로 남기는지(streaming/nginx.conf 의 vod 애플리케이션). 녹화하지 않는 서버에서는 false.
+    enabled: ${VOD_ENABLED:false}
+    # 다시보기 재생 주소의 앞부분. 비우면 HLS 주소 옆의 /vod 를 쓴다.
+    base-url: ${VOD_BASE_URL:}
+
   admin:
     # 기동 시 ADMIN 권한을 부여할 계정 이메일 (쉼표로 구분).
     # 최초 관리자를 만드는 유일한 통로다. 여기 적은 계정은 먼저 회원가입돼 있어야 한다.

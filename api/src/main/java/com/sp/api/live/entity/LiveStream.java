@@ -2,6 +2,8 @@ package com.sp.api.live.entity;
 
 import com.sp.api.user.entity.User;
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -57,7 +59,38 @@ public class LiveStream {
     @Column(nullable = false)
     private long peakViewerCount = 0L;
 
+    /**
+     * 영상을 볼 수 있는 사람. 제한이 있으면 재생 주소는 볼 수 있는 사람에게만 내려간다.
+     * 방송을 시작할 때 정해지고 방송 중에는 바뀌지 않는다(주소가 이미 나갔기 때문이다).
+     */
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(nullable = false, length = 20)
+    private Audience audience = Audience.ALL;
+
+    /** 채팅을 쓸 수 있는 사람. 방송 중에도 바꿀 수 있다. */
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(nullable = false, length = 20)
+    private Audience chatAudience = Audience.ALL;
+
+    /** 한 사람이 채팅을 다시 보내기까지 기다려야 하는 시간(초). 0 이면 끔. */
+    @Column(nullable = false)
+    private int slowModeSeconds = 0;
+
+    /** 채팅창 위에 고정한 메시지. 없으면 null. */
+    private Long pinnedMessageId;
+
+    /** 이 방송이 다시보기로 남았는지. 스트리밍 서버가 녹화를 켜 둔 경우에만 true. */
+    @Column(nullable = false)
+    private boolean vodAvailable = false;
+
     public LiveStream(User user, String title, String description, String thumbnailUrl, String streamName) {
+        this(user, title, description, thumbnailUrl, streamName, Audience.ALL, Audience.ALL, 0);
+    }
+
+    public LiveStream(User user, String title, String description, String thumbnailUrl, String streamName,
+                      Audience audience, Audience chatAudience, int slowModeSeconds) {
         this.user = user;
         this.title = title;
         this.description = description;
@@ -66,11 +99,37 @@ public class LiveStream {
         this.status = Status.LIVE;
         this.startedAt = LocalDateTime.now();
         this.peakViewerCount = 0L;
+        this.audience = Audience.orAll(audience);
+        this.chatAudience = Audience.orAll(chatAudience);
+        this.slowModeSeconds = Math.max(0, slowModeSeconds);
     }
 
-    public void end() {
+    /** @param vodAvailable 스트리밍 서버가 이 방송을 다시보기로 남겼다고 보는지 */
+    public void end(boolean vodAvailable) {
         this.status = Status.ENDED;
         this.endedAt = LocalDateTime.now();
+        this.vodAvailable = vodAvailable;
+        this.pinnedMessageId = null;
+    }
+
+    public void changeSlowMode(int seconds) {
+        this.slowModeSeconds = Math.max(0, seconds);
+    }
+
+    public void changeChatAudience(Audience audience) {
+        this.chatAudience = Audience.orAll(audience);
+    }
+
+    public void pin(Long messageId) {
+        this.pinnedMessageId = messageId;
+    }
+
+    public void unpin() {
+        this.pinnedMessageId = null;
+    }
+
+    public boolean isOwnedBy(Long userId) {
+        return user.getId().equals(userId);
     }
 
     public boolean isLive() {
