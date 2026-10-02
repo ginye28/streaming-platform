@@ -2,12 +2,10 @@ package com.sp.api.payment.repository;
 
 import com.sp.api.payment.entity.Payment;
 import com.sp.api.payment.entity.PaymentStatus;
-import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -23,9 +21,12 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     /**
      * 승인 결과를 반영할 때 쓴다. 같은 주문의 승인 요청이 동시에 두 번 들어와도
      * 구독 기간이 두 번 늘어나지 않도록, 먼저 잡은 쪽이 끝날 때까지 다른 쪽이 기다린다.
+     *
+     * JPQL 의 PESSIMISTIC_WRITE 를 쓰지 않고 직접 쓴 SQL 로 잠근다. Hibernate 가 만드는
+     * "for update of {별칭}" 은 MySQL 에서는 되지만 TiDB 는 별칭을 표 이름으로 읽어
+     * "Table 'streaming.p1_0' doesn't exist" 로 실패한다(운영 DB 가 TiDB 다). 이 문장은 둘 다 된다.
      */
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select p from Payment p where p.orderId = :orderId")
+    @Query(value = "select * from payments where order_id = :orderId for update", nativeQuery = true)
     Optional<Payment> findByOrderIdForUpdate(@Param("orderId") String orderId);
 
     @EntityGraph(attributePaths = {"user", "channel", "liveStream"})
