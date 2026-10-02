@@ -3,6 +3,7 @@ import {
     getChannel,
     getChannelLive,
     getChannelProfile,
+    getChannelSchedules,
     getChannelLiveHistory,
     getChannelStreams,
     toggleBlock,
@@ -11,6 +12,7 @@ import { useAuth } from '../useAuth.js'
 import ChannelIdentity from '../components/ChannelIdentity.jsx'
 import Pager from '../components/Pager.jsx'
 import SubscribeBar from '../components/SubscribeBar.jsx'
+import ScheduleList from '../components/ScheduleList.jsx'
 import StreamList from '../components/StreamList.jsx'
 import Link from '../components/Link.jsx'
 import { useAsyncData } from '../useAsyncData.js'
@@ -37,6 +39,8 @@ export default function ChannelPage({ id }) {
     )
 
     const { data: history } = useAsyncData(() => getChannelLiveHistory(id, 0), [id])
+
+    const { data: schedules } = useAsyncData(() => getChannelSchedules(id), [id])
 
     async function handleBlock() {
         if (!window.confirm('이 채널을 차단할까요? 목록에서 보이지 않게 됩니다.')) return
@@ -82,6 +86,13 @@ export default function ChannelPage({ id }) {
                 </p>
             )}
 
+            {schedules?.length > 0 && (
+                <>
+                    <h3>방송 예정</h3>
+                    <ScheduleList schedules={schedules} showChannel={false} />
+                </>
+            )}
+
             <h3>영상</h3>
             <StreamList streams={streams?.content} />
             <Pager page={streams} onChange={setPageNumber} />
@@ -96,6 +107,8 @@ export default function ChannelPage({ id }) {
                                 <span className="meta">
                                     {' '}
                                     · 최고 시청자 {past.peakViewerCount}명
+                                    {past.vodUrl && ' · 다시보기'}
+                                    {past.locked && ' · 구독자 전용'}
                                 </span>
                             </li>
                         ))}

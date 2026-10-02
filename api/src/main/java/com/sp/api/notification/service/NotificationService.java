@@ -4,6 +4,7 @@ import com.sp.api.comment.entity.Comment;
 import com.sp.api.common.exception.NotFoundException;
 import com.sp.api.common.response.PageResponse;
 import com.sp.api.live.entity.LiveStream;
+import com.sp.api.live.schedule.LiveSchedule;
 import com.sp.api.notification.dto.NotificationResponse;
 import com.sp.api.notification.entity.Notification;
 import com.sp.api.notification.repository.NotificationRepository;
@@ -16,6 +17,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -53,6 +56,80 @@ public class NotificationService {
         notificationRepository.saveAll(notifications);
 
         return notifications.size();
+    }
+
+    private static final DateTimeFormatter SCHEDULE_TIME = DateTimeFormatter.ofPattern("M월 d일 HH:mm");
+
+    /** 알림에 적는 시각은 한국 시간이다. 서버가 UTC 로 돌아도 시청자가 보는 시각은 한국 시각이어야 한다. */
+    private static final ZoneId KOREA = ZoneId.of("Asia/Seoul");
+
+    private static String when(LiveSchedule schedule) {
+        return schedule.getScheduledAt().atZone(ZoneId.systemDefault()).withZoneSameInstant(KOREA).format(SCHEDULE_TIME);
+    }
+
+    /** 채널이 방송을 예약했다. 구독자 전원에게 알린다. */
+    @Transactional
+    public int notifyScheduleCreated(LiveSchedule schedule) {
+        return notifySchedule(schedule, Notification.Type.LIVE_SCHEDULED,
+                " 님이 " + when(schedule) + " 방송을 예약했습니다. " + schedule.getTitle());
+    }
+
+    /** 예약한 방송의 시간이 바뀌었다. */
+    @Transactional
+    public int notifyScheduleChanged(LiveSchedule schedule) {
+        return notifySchedule(schedule, Notification.Type.LIVE_SCHEDULED,
+                " 님이 방송 시간을 " + when(schedule) + " 으로 바꿨습니다. " + schedule.getTitle());
+    }
+
+    /** 예약한 방송이 취소됐다. */
+    @Transactional
+    public int notifyScheduleCanceled(LiveSchedule schedule) {
+        return notifySchedule(schedule, Notification.Type.LIVE_SCHEDULED,
+                " 님이 " + when(schedule) + " 방송 예약을 취소했습니다.");
+    }
+
+    /** 예약한 방송이 곧 시작된다. */
+    @Transactional
+    public int notifyScheduleReminder(LiveSchedule schedule) {
+        return notifySchedule(schedule, Notification.Type.LIVE_REMINDER,
+                " 님의 방송이 곧 시작됩니다. (" + when(schedule) + ") " + schedule.getTitle());
+    }
+
+    private int notifySchedule(LiveSchedule schedule, Notification.Type type, String suffix) {
+
+        User channel = schedule.getUser();
+
+        List<User> subscribers = subscribeRepository.findSubscribersOfChannel(channel.getId());
+
+        if (subscribers.isEmpty()) {
+            return 0;
+        }
+
+        String message = limit(channel.getNickname() + suffix);
+
+        notificationRepository.saveAll(subscribers.stream()
+                .map(subscriber -> new Notification(subscriber, type, message, channel.getId(), schedule.getId()))
+                .toList());
+
+        return subscribers.size();
+    }
+
+    /** 후원이 들어오면 방송 주인에게 알린다. */
+    @Transactional
+    public void notifyDonation(User channel, User donor, LiveStream live, int amount) {
+
+        notificationRepository.save(new Notification(
+                channel,
+                Notification.Type.DONATION,
+                limit(donor.getNickname() + " 님이 " + String.format("%,d", amount) + "원을 후원했습니다."),
+                channel.getId(),
+                live.getId()
+        ));
+    }
+
+    /** 알림 메시지는 200자까지다. 제목이 길어도 알림 저장이 실패하지 않게 자른다. */
+    private static String limit(String message) {
+        return message.length() <= 200 ? message : message.substring(0, 199) + "…";
     }
 
     /** 유료 구독이 곧 끝나는 구독자에게 연장을 권하는 알림을 남긴다. */

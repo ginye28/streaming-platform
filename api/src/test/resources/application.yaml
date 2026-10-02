@@ -32,6 +32,10 @@ app:
     # 백그라운드 알림 작업이 테스트 DB 를 건드리지 않도록 끈다.
     expiry-scheduler:
       enabled: false
+  live:
+    # 방송 예약 알림 작업도 테스트 DB 를 건드리지 않도록 끈다.
+    schedule-scheduler:
+      enabled: false
   cors:
     allowed-origins: http://localhost:5173
 

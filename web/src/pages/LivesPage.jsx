@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { getLives } from '../api.js'
+import { getLives, getSchedules } from '../api.js'
 import Pager from '../components/Pager.jsx'
 import { assetUrl } from '../assets.js'
 import Link from '../components/Link.jsx'
+import ScheduleList from '../components/ScheduleList.jsx'
 import { useAsyncData } from '../useAsyncData.js'
 
 export default function LivesPage() {
@@ -10,8 +11,17 @@ export default function LivesPage() {
 
     const { data: page, error, loading } = useAsyncData(() => getLives(pageNumber), [pageNumber])
 
+    const { data: schedules } = useAsyncData(() => getSchedules(0), [])
+
     return (
         <section>
+            {schedules?.content.length > 0 && (
+                <>
+                    <h2>방송 예정</h2>
+                    <ScheduleList schedules={schedules.content} />
+                </>
+            )}
+
             <h2>지금 방송 중</h2>
 
             {error && <p className="error">{error}</p>}
@@ -44,7 +54,11 @@ export default function LivesPage() {
                                 {live.nickname}
                             </Link>
 
-                            <p className="card__meta">시청자 {live.viewerCount}명</p>
+                            <p className="card__meta">
+                                시청자 {live.viewerCount}명
+                                {live.audience === 'SUBSCRIBERS' && ' · 구독자 전용'}
+                                {live.audience === 'PAID' && ' · 유료 구독자 전용'}
+                            </p>
                         </div>
                     </li>
                 ))}

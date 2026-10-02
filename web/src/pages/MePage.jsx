@@ -20,8 +20,11 @@ import {
 } from '../api.js'
 import { assetUrl } from '../assets.js'
 import { useAuth } from '../useAuth.js'
+import { AUDIENCE_OPTIONS, SLOW_MODE_CHOICES } from '../audience.js'
 import { CREDIT_ROLES } from '../components/ChannelIdentity.jsx'
+import ChatTools from '../components/ChatTools.jsx'
 import Link from '../components/Link.jsx'
+import ScheduleManager from '../components/ScheduleManager.jsx'
 import SubscriptionControls from '../components/SubscriptionControls.jsx'
 import { dateOnly, won } from '../payments.js'
 import { useAsyncData } from '../useAsyncData.js'
@@ -41,6 +44,8 @@ export default function MePage() {
             <PasswordForm />
             <StreamKeyPanel />
             <LiveSettingForm />
+            <ScheduleManager />
+            <ChatTools />
             <IntroForm />
             <ChannelProfileForm />
             <SubscriptionList />
@@ -216,6 +221,9 @@ function LiveSettingFields({ setting, onFail }) {
     const [title, setTitle] = useState(setting.title ?? '')
     const [description, setDescription] = useState(setting.description ?? '')
     const [thumbnailUrl, setThumbnailUrl] = useState(setting.thumbnailUrl ?? '')
+    const [audience, setAudience] = useState(setting.audience ?? 'ALL')
+    const [chatAudience, setChatAudience] = useState(setting.chatAudience ?? 'ALL')
+    const [slowModeSeconds, setSlowModeSeconds] = useState(setting.slowModeSeconds ?? 0)
     const [message, setMessage] = useState(null)
 
     async function handleSubmit(event) {
@@ -227,6 +235,9 @@ function LiveSettingFields({ setting, onFail }) {
                 title,
                 description: description || null,
                 thumbnailUrl: thumbnailUrl || null,
+                audience,
+                chatAudience,
+                slowModeSeconds,
             })
             setMessage('저장했습니다. 다음 방송부터 적용됩니다.')
         } catch (e) {
@@ -260,6 +271,42 @@ function LiveSettingFields({ setting, onFail }) {
                         onChange={(e) => setThumbnailUrl(e.target.value)}
                         placeholder="/uploads/t.png"
                     />
+                </label>
+
+                <label>
+                    방송을 볼 수 있는 사람
+                    <select value={audience} onChange={(e) => setAudience(e.target.value)}>
+                        {AUDIENCE_OPTIONS.map(({ value, label }) => (
+                            <option key={value} value={value}>
+                                {label}
+                            </option>
+                        ))}
+                    </select>
+                    <span className="meta">
+                        구독자만 보게 하면 구독하지 않은 사람에게는 영상 주소가 내려가지 않습니다. 방송 중에는 바꿀 수 없습니다.
+                    </span>
+                </label>
+
+                <label>
+                    채팅할 수 있는 사람
+                    <select value={chatAudience} onChange={(e) => setChatAudience(e.target.value)}>
+                        {AUDIENCE_OPTIONS.map(({ value, label }) => (
+                            <option key={value} value={value}>
+                                {label}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+
+                <label>
+                    슬로우 모드
+                    <select value={slowModeSeconds} onChange={(e) => setSlowModeSeconds(Number(e.target.value))}>
+                        {SLOW_MODE_CHOICES.map((seconds) => (
+                            <option key={seconds} value={seconds}>
+                                {seconds === 0 ? '끔' : `${seconds}초에 한 번`}
+                            </option>
+                        ))}
+                    </select>
                 </label>
 
                 <button type="submit">저장</button>
@@ -648,7 +695,8 @@ function PaymentHistory() {
                         </Link>
                         <span className="meta">
                             {' '}
-                            · {won(payment.amount)} · {payment.method} · {dateOnly(payment.approvedAt)}
+                            · {payment.kind === 'DONATION' ? '후원' : '유료 구독'} · {won(payment.amount)} ·{' '}
+                            {payment.method} · {dateOnly(payment.approvedAt)}
                         </span>
                         {payment.status === 'CANCELED' && (
                             <span className="meta"> · 환불됨 {dateOnly(payment.canceledAt)}</span>
@@ -693,7 +741,7 @@ function EarningsPanel() {
 
             {error && <p className="error">{error}</p>}
             {earnings?.months.length === 0 && (
-                <p className="empty">아직 받은 유료 구독 결제가 없습니다.</p>
+                <p className="empty">아직 받은 유료 구독이나 후원이 없습니다.</p>
             )}
 
             {earnings?.months.length > 0 && (
@@ -705,6 +753,10 @@ function EarningsPanel() {
                             · 결제 {won(earnings.total.gross)} − 환불 {won(earnings.total.refunded)} −
                             수수료 {won(earnings.total.fee)} ({earnings.feePercent}%)
                         </span>
+                        <br />
+                        <span className="meta">
+                            유료 구독 {won(earnings.total.membership)} · 후원 {won(earnings.total.donation)} (환불 제외)
+                        </span>
                     </p>
 
                     <table className="earnings">
@@ -712,6 +764,8 @@ function EarningsPanel() {
                             <tr>
                                 <th>달</th>
                                 <th>결제</th>
+                                <th>구독</th>
+                                <th>후원</th>
                                 <th>환불</th>
                                 <th>수수료</th>
                                 <th>정산 예정</th>
@@ -724,6 +778,8 @@ function EarningsPanel() {
                                     <td>
                                         {won(month.gross)} ({month.count}건)
                                     </td>
+                                    <td>{won(month.membership)}</td>
+                                    <td>{won(month.donation)}</td>
                                     <td>{won(month.refunded)}</td>
                                     <td>{won(month.fee)}</td>
                                     <td>{won(month.net)}</td>

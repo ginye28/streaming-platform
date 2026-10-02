@@ -6,6 +6,8 @@ import com.sp.api.common.response.ApiResponse;
 import com.sp.api.common.response.PageResponse;
 import com.sp.api.common.security.AuthUtils;
 import com.sp.api.live.dto.LiveStreamResponse;
+import com.sp.api.live.schedule.LiveScheduleResponse;
+import com.sp.api.live.schedule.LiveScheduleService;
 import com.sp.api.live.service.LiveStreamService;
 import com.sp.api.stream.dto.StreamResponse;
 import com.sp.api.stream.service.StreamService;
@@ -27,6 +29,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 /**
  * 공개 채널 페이지. 계정 자원(/api/users)과 분리해 조회는 비로그인도 가능하게 한다.
  */
@@ -39,6 +43,7 @@ public class ChannelController {
     private final StreamService streamService;
     private final SubscribeService subscribeService;
     private final LiveStreamService liveStreamService;
+    private final LiveScheduleService scheduleService;
 
     @GetMapping("/{channelId}")
     public ResponseEntity<ApiResponse<ChannelResponse>> findChannel(
@@ -66,19 +71,38 @@ public class ChannelController {
 
     /** 채널이 방송 중이면 그 방송. 아니면 404. */
     @GetMapping("/{channelId}/live")
-    public ResponseEntity<ApiResponse<LiveStreamResponse>> findChannelLive(@PathVariable Long channelId) {
-        return ResponseEntity.ok(ApiResponse.ok(liveStreamService.findLiveByChannel(channelId)));
+    public ResponseEntity<ApiResponse<LiveStreamResponse>> findChannelLive(
+            @PathVariable Long channelId,
+            Authentication authentication
+    ) {
+
+        return ResponseEntity.ok(ApiResponse.ok(
+                liveStreamService.findLiveByChannel(channelId, AuthUtils.emailOrNull(authentication))
+        ));
+    }
+
+    /** 채널의 앞으로의 방송 예약. */
+    @GetMapping("/{channelId}/schedules")
+    public ResponseEntity<ApiResponse<List<LiveScheduleResponse>>> findChannelSchedules(
+            @PathVariable Long channelId,
+            Authentication authentication
+    ) {
+
+        return ResponseEntity.ok(ApiResponse.ok(
+                scheduleService.findUpcomingOfChannel(channelId, AuthUtils.emailOrNull(authentication))
+        ));
     }
 
     /** 채널의 지난 방송 기록. */
     @GetMapping("/{channelId}/live-history")
     public ResponseEntity<ApiResponse<PageResponse<LiveStreamResponse>>> findChannelLiveHistory(
             @PathVariable Long channelId,
-            @PageableDefault(size = 20) Pageable pageable
+            @PageableDefault(size = 20) Pageable pageable,
+            Authentication authentication
     ) {
 
         return ResponseEntity.ok(ApiResponse.ok(
-                liveStreamService.findChannelHistory(channelId, pageable)
+                liveStreamService.findChannelHistory(channelId, pageable, AuthUtils.emailOrNull(authentication))
         ));
     }
 

@@ -141,6 +141,39 @@ abstract class IntegrationTestSupport {
         return location.substring(location.lastIndexOf('/') + 1);
     }
 
+    /** 채널이 지금 방송 중인 방송의 id. */
+    protected long currentLiveId(long channelId) throws Exception {
+
+        MvcResult result = mockMvc.perform(
+                        org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                .get("/api/channels/" + channelId + "/live"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        return json(result).path("data").path("id").asLong();
+    }
+
+    protected void subscribe(String token, long channelId) throws Exception {
+
+        mockMvc.perform(post("/api/channels/" + channelId + "/subscribe")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+    }
+
+    /** 다음 방송의 공개 대상·채팅 대상·슬로우 모드를 저장한다. */
+    protected void saveLiveSetting(String token, String audience, String chatAudience, int slowModeSeconds)
+            throws Exception {
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/api/lives/settings")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"테스트 방송","audience":"%s","chatAudience":"%s","slowModeSeconds":%d}"""
+                                .formatted(audience, chatAudience, slowModeSeconds)))
+                .andExpect(status().isOk());
+    }
+
     protected void endBroadcast(String publicName) throws Exception {
 
         mockMvc.perform(post("/api/internal/rtmp/publish-done").param("name", publicName))

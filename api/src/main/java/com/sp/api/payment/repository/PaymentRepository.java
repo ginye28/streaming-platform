@@ -17,7 +17,7 @@ import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
-    @EntityGraph(attributePaths = {"user", "channel"})
+    @EntityGraph(attributePaths = {"user", "channel", "liveStream"})
     Optional<Payment> findByOrderId(String orderId);
 
     /**
@@ -28,7 +28,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @Query("select p from Payment p where p.orderId = :orderId")
     Optional<Payment> findByOrderIdForUpdate(@Param("orderId") String orderId);
 
-    @EntityGraph(attributePaths = {"user", "channel"})
+    @EntityGraph(attributePaths = {"user", "channel", "liveStream"})
     @Query("select p from Payment p where p.id = :id")
     Optional<Payment> findWithUsersById(@Param("id") Long id);
 
@@ -44,13 +44,13 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @EntityGraph(attributePaths = {"user", "channel"})
     Page<Payment> findByStatusOrderByIdDesc(PaymentStatus status, Pageable pageable);
 
-    /** 내 채널로 들어온 결제를 승인된 달·상태별로 합산한다. 수익 장부용. */
+    /** 내 채널로 들어온 결제를 승인된 달·상태·종류(구독/후원)별로 합산한다. 수익 장부용. */
     @Query("""
             select new com.sp.api.payment.repository.MonthlyTotal(
-                year(p.approvedAt), month(p.approvedAt), p.status, count(p), sum(p.amount))
+                year(p.approvedAt), month(p.approvedAt), p.status, p.kind, count(p), sum(p.amount))
             from Payment p
             where p.channel.id = :channelId and p.status in :statuses and p.approvedAt is not null
-            group by year(p.approvedAt), month(p.approvedAt), p.status
+            group by year(p.approvedAt), month(p.approvedAt), p.status, p.kind
             """)
     List<MonthlyTotal> monthlyTotals(
             @Param("channelId") Long channelId, @Param("statuses") Collection<PaymentStatus> statuses);

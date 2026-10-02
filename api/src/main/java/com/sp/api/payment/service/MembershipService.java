@@ -12,6 +12,7 @@ import com.sp.api.payment.dto.MembershipResultResponse;
 import com.sp.api.payment.dto.PaymentConfigResponse;
 import com.sp.api.payment.dto.PaymentHistoryResponse;
 import com.sp.api.payment.entity.Payment;
+import com.sp.api.payment.entity.PaymentKind;
 import com.sp.api.payment.entity.PaymentStatus;
 import com.sp.api.payment.gateway.GatewayPayment;
 import com.sp.api.payment.gateway.PaymentGateway;
@@ -50,11 +51,15 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class MembershipService {
 
+    /** 후원과 함께 남길 수 있는 말의 최대 길이. DonationOrderRequest 의 검증과 같은 값이다. */
+    static final int DONATION_MESSAGE_MAX_LENGTH = 100;
+
     private final PaymentProperties properties;
     private final PaymentGateway gateway;
     private final PaymentRepository paymentRepository;
     private final SubscribeRepository subscribeRepository;
     private final UserRepository userRepository;
+    private final DonationService donationService;
     private final PlatformTransactionManager transactionManager;
 
     public PaymentConfigResponse config() {
@@ -64,7 +69,9 @@ public class MembershipService {
                 enabled,
                 enabled ? properties.getClientKey() : null,
                 properties.getPriceKrw(),
-                properties.getPeriodDays()
+                properties.getPeriodDays(),
+                properties.getDonationAmounts(),
+                DONATION_MESSAGE_MAX_LENGTH
         );
     }
 
@@ -233,6 +240,11 @@ public class MembershipService {
         payment.markDone(
                 approved.paymentKey(), approved.method(), approved.receiptUrl(), approved.approvedAt());
 
+        // 후원이면 구독 기간이 아니라 채팅에 후원 메시지를 올린다.
+        if (payment.isDonation()) {
+            return donationService.deliver(payment);
+        }
+
         // 구독하지 않은 채 결제했다면 이 결제로 구독도 함께 시작한다.
         Subscribe subscribe = subscribeRepository
                 .findBySubscriberIdAndChannelId(payment.getUser().getId(), payment.getChannel().getId())
@@ -258,6 +270,10 @@ public class MembershipService {
 
     private MembershipResultResponse resultOf(Payment payment) {
 
+        if (payment.isDonation()) {
+            return inTransaction(() -> donationService.resultOf(payment));
+        }
+
         return inTransaction(() -> {
             Subscribe subscribe = subscribeRepository
                     .findBySubscriberIdAndChannelId(payment.getUser().getId(), payment.getChannel().getId())
@@ -278,7 +294,9 @@ public class MembershipService {
                 subscribe == null ? null : subscribe.getPaidUntil(),
                 payment.getAmount(),
                 payment.getMethod(),
-                payment.getReceiptUrl()
+                payment.getReceiptUrl(),
+                PaymentKind.SUBSCRIPTION.name(),
+                null
         );
     }
 

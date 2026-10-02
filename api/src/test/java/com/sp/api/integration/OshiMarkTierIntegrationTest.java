@@ -34,12 +34,6 @@ class OshiMarkTierIntegrationTest extends IntegrationTestSupport {
                 .andExpect(status().isOk());
     }
 
-    private void subscribe(String token, long channelId) throws Exception {
-        mockMvc.perform(post("/api/channels/" + channelId + "/subscribe")
-                        .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk());
-    }
-
     private org.springframework.test.web.servlet.ResultActions updateSubscription(
             String token, long channelId, String body
     ) throws Exception {

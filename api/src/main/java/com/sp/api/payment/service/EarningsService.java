@@ -3,6 +3,7 @@ package com.sp.api.payment.service;
 import com.sp.api.common.exception.NotFoundException;
 import com.sp.api.payment.config.PaymentProperties;
 import com.sp.api.payment.dto.EarningsResponse;
+import com.sp.api.payment.entity.PaymentKind;
 import com.sp.api.payment.entity.PaymentStatus;
 import com.sp.api.payment.repository.MonthlyTotal;
 import com.sp.api.payment.repository.PaymentRepository;
@@ -46,14 +47,18 @@ public class EarningsService {
         for (MonthlyTotal row : rows) {
             String month = "%04d-%02d".formatted(row.year(), row.month());
 
-            // [0]=gross [1]=refunded [2]=count
-            long[] sums = byMonth.computeIfAbsent(month, key -> new long[3]);
+            // [0]=gross [1]=refunded [2]=count [3]=membership [4]=donation (3·4 는 환불된 것을 뺀 금액)
+            long[] sums = byMonth.computeIfAbsent(month, key -> new long[5]);
 
             sums[0] += row.amount();
             sums[2] += row.count();
 
             if (row.status() == PaymentStatus.CANCELED) {
                 sums[1] += row.amount();
+            } else if (row.kind() == PaymentKind.DONATION) {
+                sums[4] += row.amount();
+            } else {
+                sums[3] += row.amount();
             }
         }
 
@@ -67,10 +72,12 @@ public class EarningsService {
         long refunded = months.stream().mapToLong(EarningsResponse.Month::refunded).sum();
         long count = months.stream().mapToLong(EarningsResponse.Month::count).sum();
         long fee = months.stream().mapToLong(EarningsResponse.Month::fee).sum();
+        long membership = months.stream().mapToLong(EarningsResponse.Month::membership).sum();
+        long donation = months.stream().mapToLong(EarningsResponse.Month::donation).sum();
 
         return new EarningsResponse(
                 feePercent,
-                new EarningsResponse.Totals(gross, refunded, fee, gross - refunded - fee, count),
+                new EarningsResponse.Totals(gross, refunded, fee, gross - refunded - fee, count, membership, donation),
                 months
         );
     }
@@ -81,6 +88,6 @@ public class EarningsService {
         long refunded = sums[1];
         long fee = (gross - refunded) * feePercent / 100;
 
-        return new EarningsResponse.Month(name, gross, refunded, fee, gross - refunded - fee, sums[2]);
+        return new EarningsResponse.Month(name, gross, refunded, fee, gross - refunded - fee, sums[2], sums[3], sums[4]);
     }
 }

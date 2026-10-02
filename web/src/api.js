@@ -347,3 +347,84 @@ export const getUsers = (role, page = 0) =>
 
 export const changeUserRole = (id, role) =>
     authorized(`/api/admin/users/${id}/role`, { method: 'PATCH', body: { role } })
+
+// ---- 채팅 운영 (방송 안에서) ----
+
+export const deleteChatMessage = (liveId, messageId) =>
+    authorized(`/api/lives/${liveId}/chats/${messageId}`, { method: 'DELETE' })
+
+export const pinChatMessage = (liveId, messageId) =>
+    authorized(`/api/lives/${liveId}/pin`, { method: 'PUT', body: { messageId } })
+
+export const unpinChatMessage = (liveId) =>
+    authorized(`/api/lives/${liveId}/pin`, { method: 'DELETE' })
+
+/** seconds 가 0 이면 끈다. 고를 수 있는 값은 서버가 정한다. */
+export const setSlowMode = (liveId, seconds) =>
+    authorized(`/api/lives/${liveId}/slow-mode`, { method: 'PUT', body: { seconds } })
+
+export const setChatAudience = (liveId, chatAudience) =>
+    authorized(`/api/lives/${liveId}/chat-audience`, { method: 'PUT', body: { chatAudience } })
+
+/** minutes 를 비우면 강퇴(풀 때까지). purge 면 그 사람이 이 방송에서 쓴 메시지도 지운다. */
+export const restrictChatUser = (liveId, { userId, minutes, reason, purge }) =>
+    authorized(`/api/lives/${liveId}/restrictions`, {
+        method: 'POST',
+        body: { userId, minutes, reason, purge },
+    })
+
+export const liftChatRestriction = (liveId, userId) =>
+    authorized(`/api/lives/${liveId}/restrictions/${userId}`, { method: 'DELETE' })
+
+// ---- 채팅 도구 (내 채널) ----
+
+export const getModerators = () => authorized('/api/users/me/moderators')
+
+export const addModerator = (userId) =>
+    authorized(`/api/users/me/moderators/${userId}`, { method: 'POST' })
+
+export const removeModerator = (userId) =>
+    authorized(`/api/users/me/moderators/${userId}`, { method: 'DELETE' })
+
+export const getBannedWords = () => authorized('/api/users/me/banned-words')
+
+export const addBannedWord = (word) =>
+    authorized('/api/users/me/banned-words', { method: 'POST', body: { word } })
+
+export const removeBannedWord = (id) =>
+    authorized(`/api/users/me/banned-words/${id}`, { method: 'DELETE' })
+
+export const getChatRestrictions = () => authorized('/api/users/me/chat-restrictions')
+
+export const liftChannelRestriction = (userId) =>
+    authorized(`/api/users/me/chat-restrictions/${userId}`, { method: 'DELETE' })
+
+// ---- 다시보기 채팅 · 후원 ----
+
+/** 방송이 끝난 뒤 afterId 다음부터 이어서 받는다. nextAfterId 가 없으면 끝. */
+export const getChatReplay = (liveId, afterId, size = 500) =>
+    maybeAuthorized(`/api/lives/${liveId}/chats/replay${query({ afterId, size })}`)
+
+/** 후원 주문을 만든다. 돌려받은 값으로 결제창을 연다. */
+export const createDonationOrder = (liveId, amount, message) =>
+    authorized(`/api/lives/${liveId}/donations/orders`, { method: 'POST', body: { amount, message } })
+
+// ---- 방송 예약 ----
+
+export const getSchedules = (page = 0) => maybeAuthorized(`/api/lives/schedules${query({ page })}`)
+
+export const getSchedule = (id) => maybeAuthorized(`/api/lives/schedules/${id}`)
+
+export const getChannelSchedules = (channelId) =>
+    maybeAuthorized(`/api/channels/${channelId}/schedules`)
+
+export const getMySchedules = () => authorized('/api/lives/schedules/mine')
+
+export const createSchedule = (payload) =>
+    authorized('/api/lives/schedules', { method: 'POST', body: payload })
+
+export const updateSchedule = (id, payload) =>
+    authorized(`/api/lives/schedules/${id}`, { method: 'PUT', body: payload })
+
+export const cancelSchedule = (id) =>
+    authorized(`/api/lives/schedules/${id}`, { method: 'DELETE' })

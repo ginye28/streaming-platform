@@ -4,6 +4,7 @@ import Pager from '../components/Pager.jsx'
 import { useAsyncData } from '../useAsyncData.js'
 
 const STATUS_LABEL = { DONE: '승인', CANCELED: '환불됨', FAILED: '실패', READY: '대기' }
+const KIND_LABEL = { SUBSCRIPTION: '유료 구독', DONATION: '후원' }
 
 /** 결제 목록과 환불. 사용자 환불 가능 기간이 지난 결제도 사유를 적으면 환불할 수 있다. */
 export default function PaymentsTab() {
@@ -94,6 +95,7 @@ export default function PaymentsTab() {
                                 <th>번호</th>
                                 <th>결제한 사람</th>
                                 <th>채널</th>
+                                <th>종류</th>
                                 <th>금액</th>
                                 <th>상태</th>
                                 <th>수단</th>
@@ -113,6 +115,7 @@ export default function PaymentsTab() {
                                         <span className="admin__who">{payment.userEmail}</span>
                                     </td>
                                     <td>{payment.channelNickname}</td>
+                                    <td>{KIND_LABEL[payment.kind] ?? payment.kind}</td>
                                     <td>{payment.amount.toLocaleString('ko-KR')}원</td>
                                     <td>{STATUS_LABEL[payment.status] ?? payment.status}</td>
                                     <td>{payment.method}</td>

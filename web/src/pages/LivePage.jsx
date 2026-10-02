@@ -1,18 +1,29 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { getChatHistory, getLive, getLiveIntro } from '../api.js'
 import { useAuth } from '../useAuth.js'
-import HlsPlayer from '../components/HlsPlayer.jsx'
 import ChannelSubscribe from '../components/ChannelSubscribe.jsx'
+import ChatPanel from '../components/ChatPanel.jsx'
+import HlsPlayer from '../components/HlsPlayer.jsx'
 import IntroGate from '../components/IntroGate.jsx'
-import OshiMark from '../components/OshiMark.jsx'
 import Link from '../components/Link.jsx'
+import ReplayChat from '../components/ReplayChat.jsx'
 import { useAsyncData } from '../useAsyncData.js'
-import { useChat } from '../useChat.js'
+
+const LOCK_COPY = {
+    SUBSCRIBERS: {
+        title: '구독자 전용 방송',
+        body: '이 채널을 구독하면 볼 수 있어요.',
+    },
+    PAID: {
+        title: '유료 구독자 전용 방송',
+        body: '이 채널을 유료로 구독하면 볼 수 있어요.',
+    },
+}
 
 export default function LivePage({ id }) {
     const { me } = useAuth()
 
-    const { data: live, error, loading } = useAsyncData(() => getLive(id), [id])
+    const { data: live, error, loading, reload } = useAsyncData(() => getLive(id), [id])
 
     // 방송 정보와 나란히 받는다. 인트로 때문에 화면이 늦게 뜨면 안 된다.
     const { data: intro, loading: introLoading } = useAsyncData(
@@ -20,9 +31,13 @@ export default function LivePage({ id }) {
         [id]
     )
 
-    // 지난 내역은 최신순으로 오므로 오래된 것부터 보이도록 뒤집는다.
+    // 지난 내역은 최신순으로 오므로 오래된 것부터 보이도록 뒤집고, 지운 메시지는 뺀다.
+    // 볼 수 없는 방송이면 서버가 거절하는데, 그때는 채팅창을 그리지 않으니 오류를 따로 보이지 않는다.
     const { data: history } = useAsyncData(
-        () => getChatHistory(id).then((page) => [...page.content].reverse()),
+        () =>
+            getChatHistory(id)
+                .then((page) => [...page.content].reverse().filter((message) => !message.deleted))
+                .catch(() => []),
         [id]
     )
 
@@ -33,6 +48,14 @@ export default function LivePage({ id }) {
     if (loading || introLoading) return <p className="empty">불러오는 중…</p>
     if (error) return <p className="error">{error}</p>
     if (!live) return null
+
+    if (live.locked) {
+        return <LockedLive live={live} onChanged={reload} />
+    }
+
+    if (live.status === 'ENDED') {
+        return <VodView live={live} />
+    }
 
     if (intro?.showGate && enteredLiveId !== id) {
         return <IntroGate intro={intro} liveId={id} onEnter={() => setEnteredLiveId(id)} />
@@ -45,12 +68,9 @@ export default function LivePage({ id }) {
 
                 <h2>{live.title}</h2>
 
-                <p className="meta">
-                    <Link to={{ view: 'channel', id: live.channelId }}>{live.nickname}</Link>
-                    {live.status === 'ENDED' && ' · 종료된 방송'}
-                </p>
+                <LiveMeta live={live} />
 
-                <ChannelSubscribe channelId={live.channelId} />
+                <ChannelSubscribe channelId={live.channelId} onChanged={reload} />
 
                 {live.description && <p className="description">{live.description}</p>}
             </div>
@@ -59,68 +79,66 @@ export default function LivePage({ id }) {
               지난 내역을 받은 뒤에 연결해야 순서가 꼬이지 않는다.
               key 로 방송이 바뀌면 채팅 상태를 새로 시작한다.
             */}
-            {history && (
-                <ChatPanel key={id} liveId={id} history={history} canSend={Boolean(me)} />
-            )}
+            {history && <ChatPanel key={id} live={live} history={history} me={me} />}
         </section>
     )
 }
 
-function ChatPanel({ liveId, history, canSend }) {
-    const { messages, viewerCount, connected, send } = useChat(liveId, history)
-    const [content, setContent] = useState('')
-    const listRef = useRef(null)
+function LiveMeta({ live }) {
+    return (
+        <p className="meta">
+            <Link to={{ view: 'channel', id: live.channelId }}>{live.nickname}</Link>
+            {live.status === 'ENDED' && ' · 종료된 방송'}
+            {live.audience !== 'ALL' && ` · ${LOCK_COPY[live.audience].title}`}
+        </p>
+    )
+}
 
-    // 새 메시지가 오면 맨 아래로 붙인다.
-    useEffect(() => {
-        const list = listRef.current
-
-        if (list) {
-            list.scrollTop = list.scrollHeight
-        }
-    }, [messages])
-
-    function handleSubmit(event) {
-        event.preventDefault()
-
-        if (send(content.trim())) {
-            setContent('')
-        }
-    }
+/** 영상을 볼 수 없는 방송. 구독 등급이 모자란 시청자에게 무엇을 하면 되는지 알려 준다. */
+function LockedLive({ live, onChanged }) {
+    const copy = LOCK_COPY[live.audience] ?? LOCK_COPY.SUBSCRIBERS
 
     return (
-        <aside className="chat">
-            <div className="chat__header">
-                채팅
-                {viewerCount != null && <span className="meta"> · 시청자 {viewerCount}명</span>}
-                {!connected && <span className="meta"> · 연결 중…</span>}
+        <section className="locked-live">
+            <h2>{live.title}</h2>
+
+            <LiveMeta live={live} />
+
+            <div className="locked-live__box">
+                <p>
+                    <strong>{copy.title}</strong>
+                </p>
+                <p className="meta">{copy.body}</p>
+
+                <ChannelSubscribe channelId={live.channelId} onChanged={onChanged} />
+            </div>
+        </section>
+    )
+}
+
+/** 끝난 방송. 다시보기가 남아 있으면 영상과 함께 방송 때의 채팅이 재생 위치에 맞춰 흐른다. */
+function VodView({ live }) {
+    const [currentTime, setCurrentTime] = useState(0)
+
+    return (
+        <section className="live">
+            <div className="live__main">
+                {live.vodUrl ? (
+                    <HlsPlayer src={live.vodUrl} poster={live.thumbnailUrl} onTimeUpdate={setCurrentTime} />
+                ) : (
+                    <p className="empty">이 방송은 다시보기가 남아 있지 않습니다.</p>
+                )}
+
+                <h2>{live.title}</h2>
+
+                <LiveMeta live={live} />
+
+                <ChannelSubscribe channelId={live.channelId} />
+
+                {live.description && <p className="description">{live.description}</p>}
             </div>
 
-            <ul className="chat__list" ref={listRef}>
-                {messages.map((message) => (
-                    <li key={message.id}>
-                        <OshiMark url={message.oshiMarkUrl} tier={message.oshiTier} />
-                        <strong>{message.nickname}</strong> {message.content}
-                    </li>
-                ))}
-            </ul>
-
-            {canSend ? (
-                <form className="chat__form" onSubmit={handleSubmit}>
-                    <input
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        placeholder="메시지를 입력하세요"
-                        maxLength={200}
-                        required
-                    />
-                    <button type="submit" disabled={!connected}>
-                        보내기
-                    </button>
-                </form>
-            ) : (
-                <p className="meta chat__form">채팅을 쓰려면 로그인이 필요합니다.</p>
-            )}
-        </aside>
+            {live.vodUrl && <ReplayChat key={live.id} liveId={live.id} currentTime={currentTime} />}
+        </section>
     )
 }

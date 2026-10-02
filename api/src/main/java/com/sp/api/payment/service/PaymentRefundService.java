@@ -45,6 +45,7 @@ public class PaymentRefundService {
     private final PaymentGateway gateway;
     private final PaymentRepository paymentRepository;
     private final SubscribeRepository subscribeRepository;
+    private final DonationService donationService;
     private final PlatformTransactionManager transactionManager;
 
     /** 사용자가 내 결제를 환불한다. */
@@ -55,6 +56,11 @@ public class PaymentRefundService {
 
             if (!found.isOwnedBy(email)) {
                 throw new ForbiddenException("내 결제가 아닙니다.");
+            }
+
+            // 후원은 이미 방송에 전달된 메시지라, 직접 환불하면 받고 돌려받는 일이 쉬워진다. 관리자가 사정을 보고 처리한다.
+            if (found.isDonation()) {
+                throw new BadRequestException("후원은 직접 환불할 수 없습니다. 문의해 주세요.");
             }
 
             requireRefundable(found, true);
@@ -112,6 +118,12 @@ public class PaymentRefundService {
             }
 
             payment.markCanceled(reason, LocalDateTime.now());
+
+            if (payment.isDonation()) {
+                // 후원은 구독 기간이 없다. 대신 채팅에 올라간 후원 메시지를 지운다.
+                donationService.onRefunded(payment);
+                return null;
+            }
 
             // 그 결제로 늘어난 기간만큼 되돌린다.
             subscribeRepository

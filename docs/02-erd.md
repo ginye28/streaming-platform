@@ -1,6 +1,6 @@
 # ERD
 
-표 18개. 스키마는 `api/src/main/resources/db/migration/` 의 SQL 이 만듭니다.
+표 22개. 스키마는 `api/src/main/resources/db/migration/` 의 SQL 이 만듭니다.
 아래는 실제로 만들어진 MySQL 8.0 스키마를 그대로 옮긴 것입니다.
 
 ```
@@ -8,9 +8,13 @@ users ─┬─< streams ─┬─< comments ─┐
        │            ├─< likes     │ (comments.parent_id → comments.id)
        │            └─ categories │
        ├─< live_streams ─< chat_messages
+       ├─< live_schedules
        ├─ live_settings (1:1)
+       ├─< channel_moderators >─ users
+       ├─< chat_restrictions >─ users
+       ├─< channel_banned_words
        ├─< subscriptions >─ users
-       ├─< payments (user_id, channel_id)
+       ├─< payments (user_id, channel_id, live_stream_id)
        ├─< blocks >─ users
        ├─< notifications
        ├─< reports
@@ -102,13 +106,19 @@ users ─┬─< streams ─┬─< comments ─┐
 | title | varchar(100) | | 방송 시작 시점의 `live_settings` 값을 복사 |
 | description | text | null 허용 | |
 | thumbnail_url | varchar(255) | null 허용 | |
-| stream_name | varchar(100) | | 재생 URL 에 쓰이는 공개 이름 |
+| stream_name | varchar(100) | | 재생 URL 에 쓰이는 이름. **방송마다 새로 만든 UUID** (다시보기도 이 이름으로 남는다) |
 | status | enum | | `LIVE` · `ENDED` |
 | started_at | datetime(6) | | |
 | ended_at | datetime(6) | null 허용 | |
 | peak_viewer_count | bigint | | 그 방송의 최고 동시 시청자 수 |
+| audience | varchar(20) | 기본 `ALL` | 영상을 볼 수 있는 사람: `ALL` · `SUBSCRIBERS` · `PAID`. 시작할 때 정해지고 방송 중에는 안 바뀐다 |
+| chat_audience | varchar(20) | 기본 `ALL` | 채팅할 수 있는 사람. 방송 중에도 주인이 바꾼다 |
+| slow_mode_seconds | int | 기본 0 | 슬로우 모드 대기 시간(초). 0 이면 끔 |
+| pinned_message_id | bigint | null 허용 | 채팅창 위에 고정한 메시지 |
+| vod_available | bit(1) | 기본 0 | 다시보기가 남았는지(스트리밍 서버가 녹화하는 경우) |
 
 nginx-rtmp 의 `on_publish` 로 한 줄이 생기고, `on_publish_done` 으로 `ENDED` 가 됩니다.
+`audience`·`chat_audience`·`slow_mode_seconds` 는 가까운 방송 예약이 있으면 그 예약에서, 없으면 `live_settings` 에서 복사됩니다.
 인덱스: `(status)`, `(user_id)`.
 
 ---
@@ -122,6 +132,8 @@ nginx-rtmp 의 `on_publish` 로 한 줄이 생기고, `on_publish_done` 으로 `
 | title | varchar(100) | | |
 | description | text | null 허용 | |
 | thumbnail_url | varchar(255) | null 허용 | |
+| audience · chat_audience | varchar(20) | 기본 `ALL` | 다음 방송을 볼 수 있는 사람 · 채팅할 수 있는 사람 |
+| slow_mode_seconds | int | 기본 0 | 슬로우 모드로 시작할 때의 대기 시간 |
 
 방송을 시작할 때 이 값이 `live_streams` 로 복사됩니다.
 설정을 나중에 바꿔도 이미 시작한 방송의 제목은 안 바뀝니다.
@@ -135,10 +147,13 @@ nginx-rtmp 의 `on_publish` 로 한 줄이 생기고, `on_publish_done` 으로 `
 | id | bigint | PK | |
 | live_stream_id | bigint | FK → live_streams | |
 | user_id | bigint | FK → users | |
-| content | varchar(500) | | |
+| content | varchar(500) | | 후원 메시지는 비어 있을 수 있다 |
 | created_at | datetime(6) | | |
+| donation_amount | int | null 허용 | 후원이면 금액(원). 일반 채팅은 null |
+| donation_payment_id | bigint | null 허용 | 후원 메시지가 나온 결제. 환불되면 이 값으로 메시지를 찾아 지운다 |
+| deleted | bit(1) | 기본 0 | 지운 메시지. 행을 남기고 표시만 켠다(내용은 어느 응답에도 나가지 않는다) |
 
-인덱스: `(live_stream_id, id)` — 방송별 최신순 조회용.
+인덱스: `(live_stream_id, id)` — 방송별 최신순·다시보기(오래된 순) 조회용.
 
 ---
 
@@ -158,7 +173,7 @@ nginx-rtmp 의 `on_publish` 로 한 줄이 생기고, `on_publish_done` 으로 `
 
 ---
 
-## payments — 유료 구독 결제
+## payments — 결제 (유료 구독 · 방송 후원)
 
 | 컬럼 | 타입 | | |
 |---|---|---|---|
@@ -166,7 +181,10 @@ nginx-rtmp 의 `on_publish` 로 한 줄이 생기고, `on_publish_done` 으로 `
 | order_id | varchar(64) | **UNIQUE**, NOT NULL | 토스에 보내는 주문번호. 서버가 만든 무작위 값 |
 | payment_key | varchar(200) | UNIQUE, null 허용 | 승인 뒤 토스가 주는 결제 키. 승인 전에는 비어 있다 |
 | user_id | bigint | FK → users | 결제한 사람 |
-| channel_id | bigint | FK → users | 구독 대상 채널 |
+| channel_id | bigint | FK → users | 구독 대상 채널 · 후원받은 방송의 주인 |
+| kind | varchar(20) | 기본 `SUBSCRIPTION` | `SUBSCRIPTION`(유료 구독) · `DONATION`(방송 후원) |
+| live_stream_id | bigint | null 허용 | 후원이 들어간 방송. 구독 결제는 null |
+| donation_message | varchar(100) | null 허용 | 후원과 함께 남긴 말. 승인되면 채팅에 올라간다 |
 | amount | int | NOT NULL | 서버가 정한 금액(원) |
 | status | enum('DONE','FAILED','READY','CANCELED') | NOT NULL | 승인 완료 · 실패 · 주문 · 환불(취소). 값은 끝에 덧붙여 늘렸다 |
 | method | varchar(50) | null 허용 | 카드 · 간편결제 · 계좌이체 등 |
@@ -176,7 +194,72 @@ nginx-rtmp 의 `on_publish` 로 한 줄이 생기고, `on_publish_done` 으로 `
 | failure_code · failure_message | varchar | null 허용 | 실패 사유 |
 | created_at | datetime(6) | NOT NULL | 주문을 만든 때 |
 
-돈이 오간 기록이라 지우지 않습니다. 인덱스: `(user_id, id)` — 내 결제 내역용.
+돈이 오간 기록이라 지우지 않습니다. 인덱스: `(user_id, id)` — 내 결제 내역용, `(live_stream_id)`.
+구독과 후원이 같은 승인·환불 흐름을 타고, `kind` 로 승인 뒤에 할 일(유료 기간을 늘린다 / 채팅에 후원 메시지를 올린다)이 갈립니다.
+
+---
+
+## live_schedules — 방송 예약
+
+| 컬럼 | 타입 | | |
+|---|---|---|---|
+| id | bigint | PK | |
+| user_id | bigint | FK → users | 방송할 채널 |
+| title | varchar(100) | | |
+| description | text | null 허용 | |
+| thumbnail_url | varchar(255) | null 허용 | |
+| scheduled_at | datetime(6) | | 방송 시각(서버 시간대의 시각으로 저장. API 는 시간대가 붙은 시각으로 주고받는다) |
+| audience · chat_audience | varchar(20) | 기본 `ALL` | 방송을 볼 수 있는 사람 · 채팅할 수 있는 사람 |
+| status | varchar(20) | | `SCHEDULED` · `STARTED` · `CANCELED` · `EXPIRED` |
+| live_stream_id | bigint | null 허용 | 이 예약으로 시작된 방송 |
+| reminder_sent_at | datetime(6) | null 허용 | "곧 시작" 알림을 보낸 때. 시간이 바뀌면 비워 다시 보낸다 |
+| created_at | datetime(6) | | |
+
+인덱스: `(status, scheduled_at)`, `(user_id, status)`.
+방송이 시작되면 가까운 예약 하나(시작 90분 전 ~ 6시간 후 범위)가 그 방송에 이어지고 `STARTED` 가 됩니다.
+
+---
+
+## channel_moderators — 채널 매니저
+
+| 컬럼 | 타입 | | |
+|---|---|---|---|
+| id | bigint | PK | |
+| channel_id | bigint | FK → users | 채널 주인 |
+| user_id | bigint | FK → users | 매니저가 된 사람 |
+| created_at | datetime(6) | | |
+
+`(channel_id, user_id)` UNIQUE. 채널 한 곳에 최대 10명. 그 채널의 모든 방송에서 같은 권한을 갖습니다.
+
+---
+
+## chat_restrictions — 채팅 제한
+
+| 컬럼 | 타입 | | |
+|---|---|---|---|
+| id | bigint | PK | |
+| channel_id | bigint | FK → users | 제한을 건 채널 |
+| user_id | bigint | FK → users | 제한된 사람 |
+| restricted_until | datetime(6) | null 허용 | 이 시각까지 막힌다. **null 이면 강퇴**(풀어 줄 때까지) |
+| reason | varchar(100) | null 허용 | |
+| created_by | bigint | | 제한한 주인·매니저 |
+| created_at | datetime(6) | | |
+
+`(channel_id, user_id)` UNIQUE — 한 사람에 한 행이라 다시 제한하면 같은 행을 고칩니다.
+제한은 방송이 아니라 **채널**에 걸려서 다음 방송에도 이어집니다.
+
+---
+
+## channel_banned_words — 금칙어
+
+| 컬럼 | 타입 | | |
+|---|---|---|---|
+| id | bigint | PK | |
+| channel_id | bigint | FK → users | |
+| word | varchar(30) | | 소문자로 바꾸고 공백을 뗀 값 |
+| created_at | datetime(6) | | |
+
+`(channel_id, word)` UNIQUE. 채팅·후원 메시지의 같은 모양(소문자·공백 제거)에 단어가 들어 있으면 거절합니다. 채널당 최대 100개.
 
 ---
 
@@ -198,10 +281,10 @@ nginx-rtmp 의 `on_publish` 로 한 줄이 생기고, `on_publish_done` 으로 `
 |---|---|---|---|
 | id | bigint | PK | |
 | recipient_id | bigint | FK → users | 받는 사람 |
-| type | **varchar(30)** | | `LIVE_START` · `STREAM_COMMENT` · `COMMENT_REPLY` |
+| type | **varchar(30)** | | `LIVE_START` · `STREAM_COMMENT` · `COMMENT_REPLY` · `PAID_EXPIRING` · `DONATION` · `LIVE_SCHEDULED` · `LIVE_REMINDER` |
 | message | varchar(200) | | 화면에 그대로 보여 줄 문장 |
 | channel_id | bigint | null 허용 | 알림을 일으킨 사람 |
-| target_id | bigint | null 허용 | 눌렀을 때 갈 곳 (방송 id 또는 영상 id) |
+| target_id | bigint | null 허용 | 눌렀을 때 갈 곳 (방송 id · 영상 id · 방송 예약 id) |
 | is_read | bit(1) | | |
 | created_at | datetime(6) | | |
 

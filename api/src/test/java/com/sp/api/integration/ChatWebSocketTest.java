@@ -54,6 +54,15 @@ class ChatWebSocketTest {
     @Autowired
     private com.sp.api.common.jwt.JwtProvider jwtProvider;
 
+    @Autowired
+    private com.sp.api.chat.moderation.ChatModerationService moderationService;
+
+    @Autowired
+    private com.sp.api.chat.service.ChatService chatService;
+
+    @Autowired
+    private com.sp.api.live.repository.LiveSettingRepository liveSettingRepository;
+
     private RestClient restClient;
 
     @org.junit.jupiter.api.BeforeEach
@@ -156,6 +165,107 @@ class ChatWebSocketTest {
                 .isEqualTo(1);
 
         session.disconnect();
+    }
+
+
+    @Test
+    @DisplayName("채팅을 보내지 못한 이유는 보낸 사람에게만 돌아가고 방에는 퍼지지 않는다")
+    void rejectionIsReportedOnlyToSender() throws Exception {
+
+        String ownerToken = signupAndLogin("rejown@test.com", "거절방주인");
+        String viewerToken = signupAndLogin("rejview@test.com", "거절시청자");
+        long liveId = startBroadcastAndGetLiveId(ownerToken);
+
+        moderationService.addBannedWord("rejown@test.com", "금지어");
+
+        StompSession session = connect(viewerToken);
+
+        BlockingQueue<String> room = new LinkedBlockingQueue<>();
+        BlockingQueue<String> errors = new LinkedBlockingQueue<>();
+
+        subscribe(session, "/topic/lives/" + liveId, room);
+        subscribe(session, "/user/queue/chat-errors", errors);
+
+        send(session, "/app/lives/" + liveId + "/chat", "{\"content\":\"이건 금지어 입니다\"}");
+
+        assertThat(objectMapper.readTree(poll(errors)).path("message").asString())
+                .contains("사용할 수 없는 단어");
+
+        // 방에는 아무것도 전달되지 않는다
+        assertThat(room.poll(2, TimeUnit.SECONDS)).isNull();
+
+        session.disconnect();
+    }
+
+    @Test
+    @DisplayName("메시지를 지우면 방에 DELETE 이벤트가 나간다")
+    void deleteEventIsBroadcast() throws Exception {
+
+        String ownerToken = signupAndLogin("evown@test.com", "이벤트방주인");
+        signupAndLogin("evview@test.com", "이벤트시청자");
+        long liveId = startBroadcastAndGetLiveId(ownerToken);
+
+        StompSession session = connect(ownerToken);
+
+        BlockingQueue<String> events = new LinkedBlockingQueue<>();
+        subscribe(session, "/topic/lives/" + liveId + "/events", events);
+
+        long messageId = chatService.send(liveId, "evview@test.com", "곧 지워질 말").id();
+
+        moderationService.deleteMessage(liveId, messageId, "evown@test.com");
+
+        JsonNode event = objectMapper.readTree(poll(events));
+
+        assertThat(event.path("type").asString()).isEqualTo("DELETE");
+        assertThat(event.path("messageId").asLong()).isEqualTo(messageId);
+
+        session.disconnect();
+    }
+
+    @Test
+    @DisplayName("구독자 전용 방송의 채팅방은 구독하지 않은 연결이 구독할 수 없다")
+    void lockedRoomRejectsSubscription() throws Exception {
+
+        String ownerToken = signupAndLogin("lockown@test.com", "잠금방주인");
+
+        com.sp.api.user.entity.User owner = userRepository.findByEmail("lockown@test.com").orElseThrow();
+
+        com.sp.api.live.entity.LiveSetting setting =
+                liveSettingRepository.save(new com.sp.api.live.entity.LiveSetting(owner, "잠긴 방송", null, null));
+        setting.update("잠긴 방송", null, null,
+                com.sp.api.live.entity.Audience.SUBSCRIBERS, com.sp.api.live.entity.Audience.ALL, 0);
+        liveSettingRepository.save(setting);
+
+        long liveId = startBroadcastAndGetLiveId(ownerToken);
+
+        BlockingQueue<String> errors = new LinkedBlockingQueue<>();
+
+        WebSocketStompClient client = new WebSocketStompClient(new StandardWebSocketClient());
+        client.setMessageConverter(new SimpleMessageConverter());
+
+        StompSession anonymous = client.connectAsync(
+                        "ws://localhost:" + port + "/ws",
+                        new WebSocketHttpHeaders(),
+                        new StompHeaders(),
+                        new StompSessionHandlerAdapter() {
+
+                            @Override
+                            @NonNull
+                            public Type getPayloadType(@NonNull StompHeaders headers) {
+                                return byte[].class;
+                            }
+
+                            @Override
+                            public void handleFrame(@NonNull StompHeaders headers, Object payload) {
+                                // 서버가 거절하면 ERROR 프레임이 온다
+                                errors.add(headers.getFirst("message") == null ? "error" : headers.getFirst("message"));
+                            }
+                        })
+                .get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+
+        subscribe(anonymous, "/topic/lives/" + liveId, new LinkedBlockingQueue<>());
+
+        assertThat(poll(errors)).contains("구독자");
     }
 
     // --- 도우미 ---

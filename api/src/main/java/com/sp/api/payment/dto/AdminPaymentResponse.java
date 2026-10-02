@@ -21,7 +21,9 @@ public record AdminPaymentResponse(
         LocalDateTime canceledAt,
         String cancelReason,
         String failureCode,
-        String failureMessage
+        String failureMessage,
+        /** SUBSCRIPTION 또는 DONATION. */
+        String kind
 ) {
 
     public static AdminPaymentResponse from(Payment payment) {
@@ -41,7 +43,8 @@ public record AdminPaymentResponse(
                 payment.getCanceledAt(),
                 payment.getCancelReason(),
                 payment.getFailureCode(),
-                payment.getFailureMessage()
+                payment.getFailureMessage(),
+                payment.getKind().name()
         );
     }
 }

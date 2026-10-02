@@ -33,7 +33,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void configureMessageBroker(MessageBrokerRegistry registry) {
 
         // 단순 인메모리 브로커. 서버를 여러 대로 늘리면 외부 브로커(Redis 등)가 필요하다.
-        registry.enableSimpleBroker("/topic");
+        // /queue 는 보낸 사람에게만 돌려주는 메시지(채팅을 못 보낸 이유)가 지나는 길이다.
+        registry.enableSimpleBroker("/topic", "/queue");
         registry.setApplicationDestinationPrefixes("/app");
     }
 

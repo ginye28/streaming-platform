@@ -10,6 +10,7 @@ import MePage from './pages/MePage.jsx'
 import NotificationsPage from './pages/NotificationsPage.jsx'
 import PayFailPage from './pages/PayFailPage.jsx'
 import PayResultPage from './pages/PayResultPage.jsx'
+import SchedulePage from './pages/SchedulePage.jsx'
 import SearchPage from './pages/SearchPage.jsx'
 import StreamPage from './pages/StreamPage.jsx'
 import SubscribedPage from './pages/SubscribedPage.jsx'
@@ -25,6 +26,8 @@ function Routes() {
             return <LivesPage />
         case 'live':
             return <LivePage id={id} />
+        case 'schedule':
+            return <SchedulePage id={id} />
         case 'stream':
             return <StreamPage id={id} />
         case 'channel':

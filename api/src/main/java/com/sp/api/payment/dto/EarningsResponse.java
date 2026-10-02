@@ -22,10 +22,13 @@ public record EarningsResponse(
      * @param fee      (gross - refunded) 에 수수료율을 곱한 금액
      * @param net      정산 예정액 = gross - refunded - fee
      * @param count    결제 건수(환불된 것 포함)
+     * @param membership 유료 구독으로 들어온 금액(환불된 것은 뺀다)
+     * @param donation   후원으로 들어온 금액(환불된 것은 뺀다)
      */
-    public record Totals(long gross, long refunded, long fee, long net, long count) {
+    public record Totals(long gross, long refunded, long fee, long net, long count, long membership, long donation) {
     }
 
-    public record Month(String month, long gross, long refunded, long fee, long net, long count) {
+    public record Month(
+            String month, long gross, long refunded, long fee, long net, long count, long membership, long donation) {
     }
 }

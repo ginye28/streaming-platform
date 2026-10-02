@@ -23,7 +23,28 @@ public class LiveProperties {
     @Value("${app.rtmp.redirect-base}")
     private String rtmpRedirectBase;
 
+    /**
+     * 스트리밍 서버가 방송을 다시보기로 남기는지(streaming/nginx.conf 의 vod 애플리케이션).
+     * 켜면 방송이 끝날 때 다시보기 주소를 내려 준다. 녹화를 안 하는 서버에서 켜면 없는 주소를 가리키게 된다.
+     */
+    @Value("${app.vod.enabled:false}")
+    private boolean vodEnabled;
+
+    /** 다시보기 재생 주소의 앞부분. 기본은 HLS 주소 옆의 /vod. */
+    @Value("${app.vod.base-url:}")
+    private String vodBaseUrl;
+
     public String redirectUrlFor(String publicName) {
         return rtmpRedirectBase + "/" + publicName;
+    }
+
+    /** 방송(streamName)의 다시보기 재생 주소. */
+    public String vodUrlFor(String streamName) {
+
+        String base = vodBaseUrl == null || vodBaseUrl.isBlank()
+                ? hlsBaseUrl.replaceAll("/hls/?$", "/vod")
+                : vodBaseUrl;
+
+        return base + "/" + streamName + ".m3u8";
     }
 }

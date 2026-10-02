@@ -1,7 +1,10 @@
 package com.sp.api.payment.entity;
 
+import com.sp.api.live.entity.LiveStream;
 import com.sp.api.user.entity.User;
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,7 +12,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 유료 구독 결제 한 건.
+ * 결제 한 건. 유료 구독(SUBSCRIPTION)과 방송 후원(DONATION)이 같은 표를 쓴다.
  *
  * 주문(READY)은 결제창을 열기 전에 서버가 만든다. 금액을 서버가 정해 두고,
  * 결제 후 돌아온 값과 맞는지 비교하려는 것이다. 돈이 오간 기록이라 지우지 않는다.
@@ -73,6 +76,21 @@ public class Payment {
     @Column(length = 200)
     private String cancelReason;
 
+    /** 구독인지 후원인지. 이 값으로 승인·환불 때 해야 할 일이 갈린다. */
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(nullable = false, length = 20)
+    private PaymentKind kind = PaymentKind.SUBSCRIPTION;
+
+    /** 후원이 들어간 방송. 구독 결제는 null. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "live_stream_id")
+    private LiveStream liveStream;
+
+    /** 후원과 함께 남긴 말. 승인되면 채팅에 올라간다. */
+    @Column(length = 100)
+    private String donationMessage;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -81,6 +99,22 @@ public class Payment {
         this.user = user;
         this.channel = channel;
         this.amount = amount;
+    }
+
+    /** 방송 후원 주문. channel 은 방송의 주인이다. */
+    public static Payment donation(
+            String orderId, User user, User channel, int amount, LiveStream liveStream, String message) {
+
+        Payment payment = new Payment(orderId, user, channel, amount);
+        payment.kind = PaymentKind.DONATION;
+        payment.liveStream = liveStream;
+        payment.donationMessage = message == null || message.isBlank() ? null : message.trim();
+
+        return payment;
+    }
+
+    public boolean isDonation() {
+        return kind == PaymentKind.DONATION;
     }
 
     @PrePersist
