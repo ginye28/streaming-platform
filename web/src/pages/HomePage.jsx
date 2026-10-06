@@ -316,7 +316,13 @@ function LiveRing({ lives }) {
                 <div className="section-head">
                     <h2 id="ring-title">Live 중인 채널</h2>
                 </div>
-                <p className="empty">지금 방송 중인 채널이 없어요.</p>
+                <p className="empty">
+                    지금 방송 중인 채널이 없어요.
+                    <br />
+                    <Link to={{ view: 'schedule' }} className="empty__link">
+                        예정된 방송 보기
+                    </Link>
+                </p>
             </section>
         )
     }

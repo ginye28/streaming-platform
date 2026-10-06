@@ -520,6 +520,13 @@ button[type='submit']:hover:not(:disabled),
     text-align: center;
 }
 
+.empty__link {
+    display: inline-block;
+    margin-top: 10px;
+    color: var(--accent);
+    text-decoration: underline;
+}
+
 .description {
     color: var(--muted);
     white-space: pre-wrap;
