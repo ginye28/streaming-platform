@@ -74,6 +74,12 @@ public class SecurityConfig {
                         // WebSocket 핸드셰이크. 인증은 STOMP CONNECT 프레임에서 따로 처리한다.
                         .requestMatchers("/ws/**").permitAll()
 
+                        // 브라우저 방송 업로드 연결. 인증은 연결 뒤 첫 메시지(로그인 토큰)에서 처리한다.
+                        .requestMatchers("/ingest/**").permitAll()
+
+                        // 브라우저에서 방송한 영상(HLS 재생목록·조각). 시청자 누구나 받는다.
+                        .requestMatchers(HttpMethod.GET, "/live-hls/**").permitAll()
+
                         // 방송 설정은 본인만. 아래 공개 규칙보다 먼저 선언한다.
                         .requestMatchers("/api/lives/settings").authenticated()
 

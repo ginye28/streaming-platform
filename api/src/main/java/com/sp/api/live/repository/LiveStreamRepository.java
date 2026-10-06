@@ -43,6 +43,9 @@ public interface LiveStreamRepository extends JpaRepository<LiveStream, Long> {
     @EntityGraph(attributePaths = "user")
     Optional<LiveStream> findByStreamNameAndStatus(String streamName, LiveStream.Status status);
 
+    /** 서버가 다시 켜지면 끊겨 버린 브라우저 방송(재생 이름이 접두어로 시작)을 정리하려고 찾는다. */
+    List<LiveStream> findByStatusAndStreamNameStartingWith(LiveStream.Status status, String prefix);
+
     boolean existsByUserIdAndStatus(Long userId, LiveStream.Status status);
 
     /** 채널 목록에서 어느 채널이 방송 중인지 한 번에 판별한다. */

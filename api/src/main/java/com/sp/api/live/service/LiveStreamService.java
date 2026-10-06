@@ -74,6 +74,19 @@ public class LiveStreamService {
      */
     @Transactional
     public LiveStream startBroadcast(String streamKey) {
+        return openBroadcast(streamKey, newStreamName());
+    }
+
+    /**
+     * 브라우저에서 보내는 방송을 연다. OBS 방송과 같지만 재생 이름에 접두어가 붙고(API 가 직접 HLS 를 내려 준다는 표시),
+     * 다시보기는 남기지 않는다.
+     */
+    @Transactional
+    public LiveStream startBrowserBroadcast(String streamKey) {
+        return openBroadcast(streamKey, LiveProperties.BROWSER_STREAM_PREFIX + newStreamName());
+    }
+
+    private LiveStream openBroadcast(String streamKey, String streamName) {
 
         if (streamKey == null || streamKey.isBlank()) {
             throw new ForbiddenException("스트림 키가 필요합니다.");
@@ -103,7 +116,7 @@ public class LiveStreamService {
                     schedule.getTitle(),
                     schedule.getDescription(),
                     schedule.getThumbnailUrl(),
-                    newStreamName(),
+                    streamName,
                     schedule.getAudience(),
                     schedule.getChatAudience(),
                     setting != null ? setting.getSlowModeSeconds() : 0
@@ -114,7 +127,7 @@ public class LiveStreamService {
                     setting != null ? setting.getTitle() : user.getNickname() + " 님의 방송",
                     setting != null ? setting.getDescription() : null,
                     setting != null ? setting.getThumbnailUrl() : null,
-                    newStreamName(),
+                    streamName,
                     setting != null ? setting.getAudience() : Audience.ALL,
                     setting != null ? setting.getChatAudience() : Audience.ALL,
                     setting != null ? setting.getSlowModeSeconds() : 0
@@ -167,6 +180,35 @@ public class LiveStreamService {
                     close(live);
                     log.info("방송 종료: liveId={}", live.getId());
                 });
+    }
+
+    /** 브라우저 방송이 끝나면 닫는다. 녹화하지 않으므로 다시보기는 남기지 않는다. */
+    @Transactional
+    public void endBrowserBroadcast(String streamName) {
+
+        liveStreamRepository.findByStreamNameAndStatus(streamName, LiveStream.Status.LIVE)
+                .ifPresent(live -> {
+                    live.end(false);
+                    viewerTracker.clear(live.getId());
+                    slowModeLimiter.clear(live.getId());
+                    log.info("브라우저 방송 종료: liveId={}", live.getId());
+                });
+    }
+
+    /** 서버가 꺼졌다 켜지면 브라우저 방송은 이미 끊겼다. 방송 중으로 남은 것을 닫는다. @return 닫은 개수 */
+    @Transactional
+    public int closeStaleBrowserBroadcasts() {
+
+        List<LiveStream> stale = liveStreamRepository.findByStatusAndStreamNameStartingWith(
+                LiveStream.Status.LIVE, LiveProperties.BROWSER_STREAM_PREFIX);
+
+        stale.forEach(live -> {
+            live.end(false);
+            viewerTracker.clear(live.getId());
+            slowModeLimiter.clear(live.getId());
+        });
+
+        return stale.size();
     }
 
     private void close(LiveStream live) {

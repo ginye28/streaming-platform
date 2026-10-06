@@ -100,6 +100,15 @@ app:
     # nginx 콜백이 ?token= 으로 붙여 보내는 비밀 값. 비우면 검사하지 않는다. 공개 서버에서는 반드시 채운다.
     callback-token: ${RTMP_CALLBACK_TOKEN:}
 
+  ingest:
+    # 브라우저에서 바로 방송하기(화면 공유·카메라 → API 의 ffmpeg → HLS). 무료 서버에서도 PC 없이 방송이 된다.
+    enabled: ${BROWSER_INGEST_ENABLED:true}
+    # API 자신의 바깥 주소. Render 는 RENDER_EXTERNAL_URL 을 자동으로 넣어 준다.
+    public-base-url: ${API_PUBLIC_URL:${RENDER_EXTERNAL_URL:http://localhost:8080}}
+    hls-dir: ${INGEST_HLS_DIR:${java.io.tmpdir}/sp-ingest-hls}
+    max-sessions: ${INGEST_MAX_SESSIONS:1}
+    max-kbps: ${INGEST_MAX_KBPS:6000}
+
 logging:
   level:
     com.sp.api: INFO
