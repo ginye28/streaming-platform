@@ -71,11 +71,15 @@ $confPath = Join-Path $work 'nginx.conf'
 
 # 3) 스트리밍 서버
 docker run -d --name sp-streaming-live `
-    -p 1935:1935 -p 8081:8081 `
+    -p 127.0.0.1:1935:1935 -p 127.0.0.1:8081:8081 `
     -v "${confPath}:/etc/nginx/nginx.conf:ro" `
     -v sp-streaming-vod:/tmp/vod `
     tiangolo/nginx-rtmp | Out-Null
 if ($LASTEXITCODE -ne 0) { throw '스트리밍 서버 컨테이너를 띄우지 못했습니다.' }
+
+# 다시보기 볼륨은 root 소유로 만들어져서 nginx 작업자(nobody)가 녹화 파일을 못 쓴다. 소유자를 넘겨 준다.
+$env:MSYS_NO_PATHCONV = '1'
+docker exec sp-streaming-live chown nobody /tmp/vod
 
 Start-Sleep -Seconds 2
 try {
