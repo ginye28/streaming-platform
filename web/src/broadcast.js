@@ -25,31 +25,58 @@ export function pickMimeType() {
     return MIME_CANDIDATES.find((type) => MediaRecorder.isTypeSupported(type)) ?? null
 }
 
-/** 화면 공유(소리 포함) 또는 카메라를 연다. 사용자가 누른 직후에 불러야 브라우저가 허용한다. */
+/**
+ * 화면 공유(소리 포함) 또는 카메라를 연다. 사용자가 누른 직후에 불러야 브라우저가 허용한다.
+ *
+ * @returns {{ stream: MediaStream, audio: 'screen' | 'mic' | 'none', micError: string | null }}
+ *   audio 는 실제로 소리가 들어갔는지. 마이크를 원했는데 못 열었으면 micError 에 이유가 담긴다.
+ */
 export async function openCapture({ source, withMic }) {
+    let micError = null
+
     if (source === 'screen') {
         const screen = await navigator.mediaDevices.getDisplayMedia({
             video: { frameRate: 30, width: { max: 1920 }, height: { max: 1080 } },
             audio: true,
         })
 
+        let audio = screen.getAudioTracks().length > 0 ? 'screen' : 'none'
+
         // 화면 공유는 소리가 없을 때가 많다. 원하면 마이크를 덧붙인다.
-        if (withMic && screen.getAudioTracks().length === 0) {
+        if (withMic && audio === 'none') {
             try {
                 const mic = await navigator.mediaDevices.getUserMedia({ audio: true })
                 mic.getAudioTracks().forEach((track) => screen.addTrack(track))
-            } catch {
-                // 마이크를 못 열어도 화면만으로 방송한다
+                audio = 'mic'
+            } catch (e) {
+                micError = e?.name === 'NotAllowedError' ? 'denied' : 'unavailable'
             }
         }
 
-        return screen
+        return { stream: screen, audio, micError }
     }
 
-    return navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
-        audio: withMic,
-    })
+    try {
+        const camera = await navigator.mediaDevices.getUserMedia({
+            video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
+            audio: withMic,
+        })
+
+        return { stream: camera, audio: camera.getAudioTracks().length > 0 ? 'mic' : 'none', micError }
+    } catch (e) {
+        if (!withMic) throw e
+
+        // 마이크가 막혀 있어도 카메라 영상만으로 방송할 수 있게 한 번 더 시도한다.
+        const camera = await navigator.mediaDevices.getUserMedia({
+            video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
+        })
+
+        return {
+            stream: camera,
+            audio: 'none',
+            micError: e?.name === 'NotAllowedError' ? 'denied' : 'unavailable',
+        }
+    }
 }
 
 /**
