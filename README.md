@@ -39,6 +39,7 @@ docs/        요구사항 · ERD · API 명세 · 아키텍처 · 컨벤션 · �
 | [05-convention.md](docs/05-convention.md) | 커밋 · 코드 · 테스트 규칙 |
 | [06-deployment.md](docs/06-deployment.md) | 컨테이너로 띄우기, 환경변수 |
 | [07-troubleshooting.md](docs/07-troubleshooting.md) | 만들면서 부딪힌 것들과 원인 |
+| [08-handoff.md](docs/08-handoff.md) | 지금까지 한 것 · 남은 것 · 이어서 하는 법 (다른 PC·새 세션용) |
 
 > 처음 켜신다면 [집에서 확인할 것](#집에서-확인할-것) 을 순서대로 따라가시면 됩니다.
 
