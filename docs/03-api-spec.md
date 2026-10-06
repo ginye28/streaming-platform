@@ -988,7 +988,7 @@ POST /api/lives/{liveId}/donations/orders
 ## 내부 API (외부 노출 금지)
 
 nginx-rtmp 가 호출하는 콜백. JWT 가 아니라 스트림 키로 인증하므로
-배포 시 `/api/internal/**` 는 반드시 내부망으로 제한해야 한다.
+배포 시 `/api/internal/**` 는 내부망으로 제한하거나, `RTMP_CALLBACK_TOKEN` 을 채워 nginx 가 `?token=` 으로 붙여 보내는 값이 맞을 때만 받게 한다. 값이 틀리면 두 호출 모두 403 (비워 두면 검사하지 않는다).
 
 | 메서드 | 경로 | 설명 |
 |---|---|---|

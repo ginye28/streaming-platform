@@ -1,6 +1,16 @@
 # Streaming Platform
 
 실시간 스트리밍 플랫폼 개인 프로젝트입니다.
+방송(RTMP 송출 → HLS 시청)에 채팅 · 구독 · 후원 · 다시보기 · 방송 예약까지 되는, 라이브에 비중을 둔 유튜브형 서비스입니다.
+
+| | |
+|---|---|
+| 웹 | https://sp-web.vercel.app (Vercel) |
+| API | https://sp-api-5mal.onrender.com (Render, Docker) |
+| DB | TiDB Cloud Starter (MySQL 호환) |
+
+> 모두 무료 구간이라 API 는 한참 안 쓰면 잠들어서 **첫 요청이 30초 안팎 걸릴 수 있습니다.**
+> 운영 서버에는 RTMP 수신 서버가 없어서, 실제 송출은 로컬(docker compose)에서 시연합니다. 자세한 구성은 [배포 문서](docs/06-deployment.md).
 
 ## 기술 스택
 
@@ -23,7 +33,7 @@ docs/        요구사항 · ERD · API 명세 · 아키텍처 · 컨벤션 · �
 | | |
 |---|---|
 | [01-requirements.md](docs/01-requirements.md) | 무엇을 왜 만들기로 했나 |
-| [02-erd.md](docs/02-erd.md) | 표 17개의 컬럼과 관계 |
+| [02-erd.md](docs/02-erd.md) | 표 22개의 컬럼과 관계 |
 | [03-api-spec.md](docs/03-api-spec.md) | API 상세 |
 | [04-architecture.md](docs/04-architecture.md) | 기술 선택과 송출 흐름, 패키지 구조 |
 | [05-convention.md](docs/05-convention.md) | 커밋 · 코드 · 테스트 규칙 |
@@ -59,18 +69,7 @@ cd streaming-platform
 이미 받아 뒀다면 그 폴더로 이동하면 됩니다.
 **`api` 폴더가 보이는 위치**에서 아래 명령들을 실행하세요.
 
-작업 브랜치로 이동합니다. `git fetch` 를 먼저 해야 로컬이 브랜치를 인식합니다.
-
-```bash
-git fetch origin
-git checkout claude/code-review-26k8iw
-```
-
-> `error: pathspec ... did not match any file(s) known to git` 가 뜨면
-> `git fetch origin` 을 빠뜨린 것입니다. 그래도 안 되면 아래처럼 명시적으로:
-> ```bash
-> git checkout -b claude/code-review-26k8iw origin/claude/code-review-26k8iw
-> ```
+기본 브랜치(`main`)에 모든 기능이 들어 있어서 따로 브랜치를 옮길 필요가 없습니다.
 
 ---
 
@@ -507,6 +506,8 @@ docker compose --profile full up -d --build
 | 배포용 이미지 (api · web · streaming) + GHCR 푸시 | 완료 |
 | 시청자 화면 (목록 · 재생 · 댓글 · 채널 · 라이브 · 채팅 · 알림 · 업로드) | 완료 |
 | 화면 색·서체 (밝은 화면 + 나이트 모드) | 완료 (배치는 미확정) |
+| 무료 배포 (Vercel 웹 · Render API · TiDB) | 완료 (라이브 송출 서버는 운영에 없음) |
+| 송출 콜백 보호 (`RTMP_CALLBACK_TOKEN`) — 재생 주소에 보이는 방송 이름만으로 남의 방송을 끝내지 못하게 | 완료 (값을 채워야 켜짐, 비우면 검사 안 함) |
 | 소셜 로그인 | 엔티티만 준비 (`Provider`) |
 
 API 상세는 [docs/03-api-spec.md](docs/03-api-spec.md) 참고.
@@ -517,7 +518,8 @@ API 상세는 [docs/03-api-spec.md](docs/03-api-spec.md) 참고.
 
 1. **화면 배치 다시 잡기** — 색과 서체는 입혔지만, 무엇을 어디에 놓을지는 그대로입니다.
    `app.css` 는 색만 맡고 있어서 배치를 바꿔도 색이 깨지지 않습니다.
-2. **Redis 도입** — 시청자 수 집계, 조회수 중복 판정, 채팅 브로커를 서버 여러 대로 확장할 때 필요.
+2. **운영 서버에서 실제 송출** — 지금은 로컬에서만 송출됩니다. 무료 VM 이나 터널로 RTMP 수신 서버를 바깥에 열어야 합니다.
+3. **Redis 도입** — 시청자 수 집계, 조회수 중복 판정, 채팅 브로커를 서버 여러 대로 확장할 때 필요.
    지금은 셋 다 서버 메모리에 있어서 단일 서버에서만 맞습니다.
 
 ---
@@ -799,15 +801,6 @@ dir "%JAVA_HOME%\bin\java.exe"
 ```bat
 cd api
 gradlew.bat bootRun --args="--spring.profiles.active=local"
-```
-
-**`error: pathspec 'claude/...' did not match any file(s) known to git`**
-
-로컬이 아직 원격 브랜치를 모르는 상태입니다. 먼저 가져오세요.
-
-```bash
-git fetch origin
-git checkout claude/code-review-26k8iw
 ```
 
 **CMD 에서 `./gradlew` 가 실행되지 않는다**

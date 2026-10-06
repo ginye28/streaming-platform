@@ -18,7 +18,8 @@ import java.net.URI;
  * nginx-rtmp 의 on_publish / on_publish_done 콜백 수신부.
  *
  * JWT 가 아니라 스트림 키로 인증하므로 외부에 노출되면 안 된다.
- * 배포 시 /api/internal/** 는 반드시 내부망(또는 리버스 프록시 ACL)으로 제한할 것.
+ * 공개 서버(Render 등)에서는 RTMP_CALLBACK_TOKEN 을 채워 두면 nginx 가 주소에 붙여 보내는
+ * token 이 맞을 때만 받는다. (재생 주소에 드러나는 방송 이름만으로 남의 방송을 끝내는 것을 막는다.)
  */
 @Slf4j
 @RestController
@@ -37,7 +38,14 @@ public class RtmpCallbackController {
      * 공개 이름으로 리다이렉트해 키를 감춘다.
      */
     @PostMapping("/publish")
-    public ResponseEntity<Void> publish(@RequestParam("name") String name) {
+    public ResponseEntity<Void> publish(
+            @RequestParam("name") String name,
+            @RequestParam(value = "token", required = false) String token
+    ) {
+
+        if (!liveProperties.callbackAllowed(token)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
 
         // 리다이렉트되어 공개 이름으로 다시 들어온 요청은 그대로 통과시킨다.
         if (liveProperties.isRenameOnPublish() && liveStreamService.isActiveRepublish(name)) {
@@ -57,8 +65,13 @@ public class RtmpCallbackController {
 
     @PostMapping("/publish-done")
     public ResponseEntity<Void> publishDone(
-            @RequestParam(value = "name", required = false) String name
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "token", required = false) String token
     ) {
+
+        if (!liveProperties.callbackAllowed(token)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
 
         liveStreamService.endBroadcast(name);
 
