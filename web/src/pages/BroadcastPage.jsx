@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../useAuth.js'
 import { openCapture, pickMimeType, startBroadcast } from '../broadcast.js'
 import Link from '../components/Link.jsx'
+import { loginTo } from '../router.js'
 
 const SOURCES = [
     { value: 'screen', label: '화면 공유' },
@@ -102,7 +103,7 @@ export default function BroadcastPage() {
             <section>
                 <h2>브라우저로 방송하기</h2>
                 <p className="empty">
-                    방송하려면 <Link to={{ view: 'auth' }}>로그인</Link>이 필요합니다.
+                    방송하려면 <Link to={loginTo()}>로그인</Link>이 필요합니다.
                 </p>
             </section>
         )

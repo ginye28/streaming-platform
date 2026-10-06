@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { login, signup } from '../api.js'
 import { useAuth } from '../useAuth.js'
-import { navigate } from '../router.js'
+import { navigate, parseNext, useRoute } from '../router.js'
 
 export default function AuthPage() {
     const { refreshMe } = useAuth()
+    const { next } = useRoute()
+    const back = parseNext(next)
     const [mode, setMode] = useState('login')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -25,7 +27,7 @@ export default function AuthPage() {
 
             await login(email, password)
             await refreshMe()
-            navigate({ view: 'home' })
+            navigate(back ?? { view: 'home' })
         } catch (e) {
             setError(e.message)
         } finally {
@@ -49,6 +51,8 @@ export default function AuthPage() {
                     회원가입
                 </button>
             </div>
+
+            {back && <p className="meta">로그인하면 보던 화면으로 돌아와요.</p>}
 
             {error && <p className="error">{error}</p>}
 

@@ -8,6 +8,7 @@ import {
 } from '../api.js'
 import { assetUrl } from '../assets.js'
 import Link from '../components/Link.jsx'
+import { loginTo } from '../router.js'
 import { HEART_COLORS, heartInk, toggleHeart, useHearts } from '../hearts.js'
 import { useAsyncData } from '../useAsyncData.js'
 import { useAuth } from '../useAuth.js'
@@ -173,7 +174,7 @@ function EmptyVideos({ filtered, onShowAll }) {
                     첫 영상 올리기
                 </Link>
             ) : (
-                <Link to={{ view: 'auth' }} className="empty__link">
+                <Link to={loginTo()} className="empty__link">
                     로그인하고 첫 영상 올리기
                 </Link>
             )}

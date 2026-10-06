@@ -3,6 +3,7 @@ import { toggleSubscribe, updateSubscription } from '../api.js'
 import { useAuth } from '../useAuth.js'
 import { usePaymentConfig } from '../payments.js'
 import PaidMembership from './PaidMembership.jsx'
+import { loginTo } from '../router.js'
 import Link from './Link.jsx'
 import SubscriptionControls from './SubscriptionControls.jsx'
 
@@ -24,7 +25,7 @@ export default function SubscribeBar({ channel, onChanged, onFail }) {
     if (!me) {
         return (
             <div className="subscribe-bar">
-                <Link to={{ view: 'auth' }} className="cta">
+                <Link to={loginTo()} className="cta">
                     로그인하고 구독하기
                 </Link>
             </div>

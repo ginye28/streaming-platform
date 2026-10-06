@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { getChatHistory, getLive, getLiveIntro } from '../api.js'
+import { loginTo } from '../router.js'
 import { useAuth } from '../useAuth.js'
 import ChannelSubscribe from '../components/ChannelSubscribe.jsx'
 import ChatPanel from '../components/ChatPanel.jsx'
@@ -70,7 +71,10 @@ export default function LivePage({ id }) {
                     label={`${live.title} 라이브 방송`}
                     waitingLabel="방송 준비 중"
                 >
-                    <span className="pill pill--live">LIVE</span>
+                    {/* 송출이 오기 전에는 LIVE 라고 하지 않는다. 방송이 시작된 줄은 알지만 영상은 아직이다. */}
+                    {({ waiting }) =>
+                        waiting ? <span className="pill">곧 시작</span> : <span className="pill pill--live">LIVE</span>
+                    }
                 </HlsPlayer>
 
                 <LiveInfo live={live} onChanged={reload} />
@@ -106,7 +110,7 @@ function LiveInfo({ live, onChanged }) {
                 {/* 좁은 화면에서는 구독이 접혀 있으므로, 로그아웃이면 가장 큰 행동 하나만 머리 줄에 둔다. */}
                 {!me && (
                     <Link
-                        to={{ view: 'auth' }}
+                        to={loginTo()}
                         className="cta cta--sm live__quick"
                         aria-label="로그인하고 이 채널 구독하기"
                     >

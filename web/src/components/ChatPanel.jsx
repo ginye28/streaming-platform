@@ -11,12 +11,49 @@ import {
 import { AUDIENCE_LABEL, AUDIENCE_OPTIONS, SLOW_MODE_CHOICES } from '../audience.js'
 import { donationTier } from '../donation.js'
 import { won } from '../payments.js'
+import { loginTo } from '../router.js'
 import { useChat } from '../useChat.js'
 import DonateBox from './DonateBox.jsx'
 import Link from './Link.jsx'
 import OshiMark from './OshiMark.jsx'
 
 const ROLE_LABEL = { OWNER: '주인', MANAGER: '매니저' }
+
+/**
+ * 채팅 연결 상태. 연결되면 사라진다.
+ * 처음 연결 중이면 "연결 중", 5초가 넘으면 서버가 깨는 중임을 알리고,
+ * 한 번 연결됐다가 끊긴 뒤에는 끊겼다는 사실과 다시 연결하는 중임을 알린다(재연결은 자동이다).
+ */
+function ChatStatus({ connected }) {
+    const [everConnected, setEverConnected] = useState(false)
+    const [slow, setSlow] = useState(false)
+
+    // 한 번이라도 연결된 적이 있는지는 렌더 중에 맞춘다(효과 안에서 상태를 바꾸지 않는다).
+    if (connected && !everConnected) setEverConnected(true)
+
+    useEffect(() => {
+        if (connected) return
+
+        const timer = setTimeout(() => setSlow(true), 5000)
+
+        return () => {
+            clearTimeout(timer)
+            setSlow(false)
+        }
+    }, [connected])
+
+    if (connected) return null
+
+    let text = '연결 중…'
+    if (everConnected) text = '연결이 끊겼어요. 다시 연결하는 중…'
+    else if (slow) text = '서버를 깨우는 중이에요. 최대 1분쯤 걸려요'
+
+    return (
+        <span className="meta" role="status">
+            {' '}· {text}
+        </span>
+    )
+}
 
 /** 1초마다 지금 시각을 갱신한다. 후원 띠가 시간이 지나면 사라지게 하려는 것이다. enabled 가 false 면 멈춘다. */
 function useNow(enabled) {
@@ -123,7 +160,7 @@ export default function ChatPanel({ live, history, me }) {
             <div className="chat__header">
                 채팅
                 {chat.viewerCount != null && <span className="meta"> · 시청자 {chat.viewerCount}명</span>}
-                {!chat.connected && <span className="meta"> · 연결 중…</span>}
+                <ChatStatus connected={chat.connected} />
             </div>
 
             {isStaff && (
@@ -260,7 +297,7 @@ export default function ChatPanel({ live, history, me }) {
 
             {!me && (
                 <div className="donate">
-                    <Link to={{ view: 'auth' }} className="donate__open">
+                    <Link to={loginTo()} className="donate__open">
                         후원하려면 로그인
                     </Link>
                 </div>
@@ -271,7 +308,7 @@ export default function ChatPanel({ live, history, me }) {
                     <input
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
-                        placeholder="메시지를 입력하세요"
+                        placeholder={chat.connected ? '메시지를 입력하세요' : '연결되면 보낼 수 있어요'}
                         maxLength={200}
                         required
                     />
@@ -281,7 +318,7 @@ export default function ChatPanel({ live, history, me }) {
                 </form>
             ) : !me ? (
                 <div className="chat__form">
-                    <Link to={{ view: 'auth' }} className="cta cta--block">
+                    <Link to={loginTo()} className="cta cta--block">
                         로그인하고 채팅 참여하기
                     </Link>
                 </div>

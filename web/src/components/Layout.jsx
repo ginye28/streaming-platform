@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { getMySubscriptions, getUnreadCount } from '../api.js'
 import { assetUrl } from '../assets.js'
 import { useAuth } from '../useAuth.js'
-import { navigate, useRoute } from '../router.js'
+import { loginTo, navigate, useRoute } from '../router.js'
 import Link from '../components/Link.jsx'
 import ThemeToggle from '../components/ThemeToggle.jsx'
 import { useAsyncData } from '../useAsyncData.js'
@@ -69,7 +69,7 @@ export default function Layout({ children }) {
                             <button onClick={logout}>로그아웃</button>
                         </>
                     ) : (
-                        <Link to={{ view: 'auth' }}>로그인</Link>
+                        <Link to={loginTo()}>로그인</Link>
                     )}
                 </div>
             </header>

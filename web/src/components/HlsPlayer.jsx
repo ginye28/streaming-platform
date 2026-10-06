@@ -7,6 +7,7 @@ import Hls from 'hls.js'
  * onTimeUpdate(초) 를 주면 재생 위치가 바뀔 때마다 알려 준다. 다시보기 채팅이 영상과 맞춰 흐르는 데 쓴다.
  * waitingLabel 을 주면 송출이 아직 오지 않는 동안 영상 면 안에 그 문구로 기다리는 중임을 알린다(오류가 아니다).
  * label 은 영상의 접근 이름, children 은 영상 위 왼쪽 위에 얹을 표시(LIVE 배지 등)다.
+ * children 이 함수면 { waiting } 을 받아, 송출이 오기 전과 후에 다른 표시를 낼 수 있다.
  */
 export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, label, children }) {
     const videoRef = useRef(null)
@@ -124,7 +125,11 @@ export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, lab
                     aria-label={label}
                 />
 
-                {children && <div className="player-box__badges">{children}</div>}
+                {children && (
+                    <div className="player-box__badges">
+                        {typeof children === 'function' ? children({ waiting: waiting && !error }) : children}
+                    </div>
+                )}
 
                 {waiting && !error && waitingLabel && (
                     <div className="player-box__wait" role="status">
