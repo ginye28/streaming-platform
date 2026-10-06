@@ -99,6 +99,25 @@ class LiveIntegrationTest extends IntegrationTestSupport {
     }
 
     @Test
+    @DisplayName("콜백 비밀 값을 안 쓰는 서버는 알려 준 공개 주소를 받지 않는다")
+    void announcedAddressIsIgnoredWithoutCallbackToken() throws Exception {
+
+        String token = signupAndLogin("nohls@test.com", "주소무시");
+
+        String location = mockMvc.perform(post("/api/internal/rtmp/publish")
+                        .param("name", streamKeyOf(token))
+                        .param("hls", "https://evil.example.com/hls"))
+                .andExpect(status().isFound())
+                .andReturn().getResponse().getHeader("Location");
+
+        String publicName = location.substring(location.lastIndexOf('/') + 1);
+
+        mockMvc.perform(get("/api/lives"))
+                .andExpect(jsonPath("$.data.content[0].hlsUrl").value(
+                        "http://localhost:8081/hls/" + publicName + ".m3u8"));
+    }
+
+    @Test
     @DisplayName("미리 저장한 방송 설정이 방송 제목으로 쓰인다")
     void liveSettingIsAppliedToBroadcast() throws Exception {
 

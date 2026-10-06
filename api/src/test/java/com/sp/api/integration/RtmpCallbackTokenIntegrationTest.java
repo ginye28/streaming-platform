@@ -4,7 +4,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.context.TestPropertySource;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -55,6 +57,61 @@ class RtmpCallbackTokenIntegrationTest extends IntegrationTestSupport {
         mockMvc.perform(post("/api/internal/rtmp/publish")
                         .param("name", streamKey).param("token", "secret-callback"))
                 .andExpect(status().isFound());
+    }
+
+    @Test
+    @DisplayName("스트리밍 서버가 알려 준 공개 주소가 시청자에게 내려가는 재생 주소가 된다")
+    void announcedPublicAddressIsUsedForPlayback() throws Exception {
+
+        String token = signupAndLogin("tok-hls@test.com", "공개주소");
+
+        String location = mockMvc.perform(post("/api/internal/rtmp/publish")
+                        .param("name", streamKeyOf(token))
+                        .param("token", "secret-callback")
+                        .param("hls", "https://abc-def.trycloudflare.com/hls"))
+                .andExpect(status().isFound())
+                .andReturn().getResponse().getHeader("Location");
+
+        String publicName = location.substring(location.lastIndexOf('/') + 1);
+
+        mockMvc.perform(get("/api/lives"))
+                .andExpect(jsonPath("$.data.content[0].hlsUrl")
+                        .value("https://abc-def.trycloudflare.com/hls/" + publicName + ".m3u8"));
+    }
+
+    @Test
+    @DisplayName("https 주소가 아니거나 이상한 모양이면 공개 주소로 받지 않는다")
+    void suspiciousPublicAddressIsIgnored() throws Exception {
+
+        for (String bad : new String[]{
+                "http://abc.trycloudflare.com/hls",
+                "https://evil.com/hls?x=1",
+                "https://evil.com/hls#frag",
+                "javascript:alert(1)",
+                "https://",
+                "https://a b.com/hls"}) {
+
+            mockMvc.perform(post("/api/internal/rtmp/publish")
+                            .param("name", "아무거나")
+                            .param("token", "secret-callback")
+                            .param("hls", bad))
+                    .andExpect(status().isForbidden());
+        }
+
+        String token = signupAndLogin("tok-bad@test.com", "나쁜주소");
+
+        String location = mockMvc.perform(post("/api/internal/rtmp/publish")
+                        .param("name", streamKeyOf(token))
+                        .param("token", "secret-callback")
+                        .param("hls", "https://evil.com/hls?x=1"))
+                .andExpect(status().isFound())
+                .andReturn().getResponse().getHeader("Location");
+
+        String publicName = location.substring(location.lastIndexOf('/') + 1);
+
+        mockMvc.perform(get("/api/lives"))
+                .andExpect(jsonPath("$.data.content[0].hlsUrl")
+                        .value("http://localhost:8081/hls/" + publicName + ".m3u8"));
     }
 
     private String startBroadcastWithToken(String userToken) throws Exception {

@@ -135,6 +135,33 @@ nginx:1.27-alpine  →  dist/ 를 :80 으로
 - API 는 녹화가 실제로 됐는지 확인하지 않습니다. `VOD_ENABLED` 는 위 nginx 설정을 쓰는 서버에서만 켜세요.
 - 무료로 운영하는 Render API 와 이 PC 의 스트리밍 서버를 잇는 경우에도 같습니다. `VOD_BASE_URL` 은 시청자 브라우저가 직접 여는 주소여야 합니다.
 
+### 운영 사이트에서 라이브 켜기 (내 PC + 임시 터널)
+
+무료 호스팅(Render)은 RTMP 같은 TCP 포트를 받지 못해서, 운영 사이트의 라이브는 **내 PC 가 스트리밍 서버 역할**을 합니다.
+
+```
+OBS ──RTMP──▶ 내 PC(nginx-rtmp, docker) ──콜백(https, 비밀 값)──▶ Render API
+                       │
+                       └─HLS(8081)──Cloudflare 임시 터널──▶ 시청자 브라우저(sp-web.vercel.app)
+```
+
+- 송출(1935)은 이 PC 안에서만 받습니다. 바깥에 여는 것은 영상 조각을 내려 주는 HLS 포트(8081)뿐이고, 임시 터널로만 닿습니다.
+- 터널 주소는 켤 때마다 바뀝니다. 스트리밍 서버가 **방송을 시작할 때 자기 공개 주소를 API 에 알려 주고**(`hls=` 인자), API 는 그 주소를 시청자에게 내려 줍니다. 그래서 Render 환경변수를 매번 바꿀 필요가 없습니다.
+- 이 알림은 **`RTMP_CALLBACK_TOKEN` 이 맞을 때만** 받습니다(`https` 주소 모양일 때만, 틀리면 무시). 남이 재생 주소를 바꿔 끼울 수 없게 하려는 것입니다. 값은 서버 메모리에만 있어서 API 가 재시작되면 다음 방송을 시작할 때 다시 받습니다.
+
+**처음 한 번**
+1. Render → `sp-api` → Environment 에 `RTMP_CALLBACK_TOKEN` 추가(영문·숫자 16자 이상). 저장하면 재배포됩니다.
+2. (다시보기를 쓰려면) `VOD_ENABLED=true` 도 추가. 다시보기 주소는 같은 터널의 `/vod` 입니다.
+3. PC 에 Docker Desktop 과 cloudflared(`winget install Cloudflare.cloudflared`) 를 설치합니다.
+
+**방송할 때마다**
+```powershell
+.\scripts\start-live.ps1 -Token <1번에서 정한 값>
+```
+출력된 안내대로 OBS 서버 `rtmp://localhost:1935/live`, 스트림 키는 사이트의 **내 계정 → 스트림 키** 를 씁니다. 끝나면 `.\scripts\stop-live.ps1`.
+
+한계: PC 가 꺼져 있거나 터널이 끊기면 시청할 수 없고, 임시 터널은 가용성 보장이 없습니다. 상시 운영하려면 Oracle Cloud Always Free VM 에 `streaming/` 을 올리고 `HLS_BASE_URL` 을 그 주소로 고정하는 편이 맞습니다.
+
 ### 다른 주소로 서비스할 때
 
 Vite 는 API 주소를 **빌드할 때 코드에 박아 넣습니다.** 컨테이너를 다시 띄우는 것만으로는 안 바뀝니다.
