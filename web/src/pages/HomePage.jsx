@@ -8,7 +8,6 @@ import {
 } from '../api.js'
 import { assetUrl } from '../assets.js'
 import Link from '../components/Link.jsx'
-import StreamList from '../components/StreamList.jsx'
 import { HEART_COLORS, toggleHeart, useHearts } from '../hearts.js'
 import { useAsyncData } from '../useAsyncData.js'
 import { useAuth } from '../useAuth.js'
@@ -33,64 +32,163 @@ export default function HomePage() {
     const [sortBy, setSortBy] = useState('LATEST')
 
     const { data: categories } = useAsyncData(getCategories, [])
-    const { data: lives } = useAsyncData(() => getLives(0), [])
+    const {
+        data: lives,
+        error: livesError,
+        loading: livesLoading,
+        reload: reloadLives,
+    } = useAsyncData(() => getLives(0), [])
 
     const {
         data: page,
         error,
         loading,
+        reload,
     } = useAsyncData(() => getStreams(categoryId, sortBy, 0), [categoryId, sortBy])
+
+    // 무료 서버는 한참 안 쓰면 잠든다. 첫 요청이 오래 걸리면 그 이유를 알려 준다.
+    const waking = useSlow(livesLoading || loading)
 
     const liveList = lives?.content ?? []
     const tournament = liveList.filter((live) => TOURNAMENT_CHANNEL_IDS.includes(live.channelId))
 
     return (
         <section className="home">
+            {waking && (
+                <p className="notice" role="status">
+                    서버가 쉬고 있다가 깨는 중이에요. 처음 접속하면 30초 넘게 걸릴 수 있어요. 잠시만 기다려 주세요.
+                </p>
+            )}
+
             {tournament.length > 0 && (
                 <HeroBanner live={tournament[0]} others={tournament.slice(1)} />
             )}
 
             <LiveStrip lives={liveList} />
 
-            <LiveRing lives={liveList} />
+            <LiveRing
+                lives={liveList}
+                loading={livesLoading}
+                error={livesError}
+                onRetry={reloadLives}
+            />
 
             <div className="home__filters">
-                <Chip active={categoryId === ''} onClick={() => setCategoryId('')}>
-                    전체
-                </Chip>
-
-                {categories?.map((category) => (
-                    <Chip
-                        key={category.id}
-                        active={categoryId === String(category.id)}
-                        onClick={() => setCategoryId(String(category.id))}
-                    >
-                        {category.name}
+                <div className="home__filter-group" role="group" aria-label="카테고리">
+                    <Chip active={categoryId === ''} onClick={() => setCategoryId('')}>
+                        전체
                     </Chip>
-                ))}
 
-                <span className="home__filters-gap" />
+                    {categories?.map((category) => (
+                        <Chip
+                            key={category.id}
+                            active={categoryId === String(category.id)}
+                            onClick={() => setCategoryId(String(category.id))}
+                        >
+                            {category.name}
+                        </Chip>
+                    ))}
+                </div>
 
-                {SORTS.map((sort) => (
-                    <Chip
-                        key={sort.value}
-                        active={sortBy === sort.value}
-                        onClick={() => setSortBy(sort.value)}
-                    >
-                        {sort.label}
-                    </Chip>
-                ))}
+                <div className="home__filter-group home__filter-group--sort" role="group" aria-label="정렬">
+                    {SORTS.map((sort) => (
+                        <Chip
+                            key={sort.value}
+                            active={sortBy === sort.value}
+                            onClick={() => setSortBy(sort.value)}
+                        >
+                            {sort.label}
+                        </Chip>
+                    ))}
+                </div>
             </div>
 
-            {error && <p className="error">{error}</p>}
+            {error && (
+                <p className="error">
+                    {error} <button type="button" onClick={reload}>다시 시도</button>
+                </p>
+            )}
             {loading && <p className="empty">불러오는 중…</p>}
 
             {!loading && page?.content.length > 0 && (
                 <Carousel title="새로 올라온 영상" items={page.content} />
             )}
 
-            {!loading && page?.content.length === 0 && <StreamList streams={[]} />}
+            {!loading && !error && page?.content.length === 0 && (
+                <EmptyVideos filtered={categoryId !== ''} onShowAll={() => setCategoryId('')} />
+            )}
         </section>
+    )
+}
+
+/** active 가 delay 이상 이어지면 true. 느린 첫 응답에 안내를 띄울 때 쓴다. */
+function useSlow(active, delay = 5000) {
+    const [slow, setSlow] = useState(false)
+
+    useEffect(() => {
+        if (!active) return
+
+        const timer = setTimeout(() => setSlow(true), delay)
+        return () => {
+            clearTimeout(timer)
+            setSlow(false)
+        }
+    }, [active, delay])
+
+    return slow
+}
+
+/** 올라온 영상이 없을 때. 비어 있는 이유와 다음 행동을 함께 보여 준다. */
+function EmptyVideos({ filtered, onShowAll }) {
+    const { me } = useAuth()
+
+    if (filtered) {
+        return (
+            <p className="empty">
+                이 카테고리에는 아직 영상이 없어요.
+                <br />
+                <button type="button" className="empty__link" onClick={onShowAll}>
+                    전체 영상 보기
+                </button>
+            </p>
+        )
+    }
+
+    return (
+        <p className="empty">
+            아직 올라온 영상이 없어요.
+            <br />
+            {me ? (
+                <Link to={{ view: 'upload' }} className="empty__link">
+                    첫 영상 올리기
+                </Link>
+            ) : (
+                <Link to={{ view: 'auth' }} className="empty__link">
+                    로그인하고 첫 영상 올리기
+                </Link>
+            )}
+        </p>
+    )
+}
+
+/** 글자 기호(‹ › ▶) 대신 하트 아이콘과 같은 굵기(2)로 그린 아이콘. */
+function Icon({ name, size = 18 }) {
+    return (
+        <svg
+            width={size}
+            height={size}
+            viewBox="0 0 24 24"
+            fill={name === 'play' ? 'currentColor' : 'none'}
+            stroke={name === 'play' ? 'none' : 'currentColor'}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+        >
+            {name === 'prev' && <path d="M15 5l-7 7 7 7" />}
+            {name === 'next' && <path d="M9 5l7 7-7 7" />}
+            {name === 'play' && <path d="M7 4.5v15l12.5-7.5z" />}
+        </svg>
     )
 }
 
@@ -128,7 +226,9 @@ function LiveStrip({ lives }) {
         const track = trackRef.current
         if (!track) return
 
-        track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: 'smooth' })
+        // OS 에서 동작 줄이기를 켠 사람에게는 부드럽게 미끄러지지 않고 바로 넘긴다.
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: reduceMotion ? 'auto' : 'smooth' })
     }
 
     if (onAir.length === 0 && !resting?.length) return null
@@ -137,12 +237,14 @@ function LiveStrip({ lives }) {
         <section className="strip" aria-labelledby="strip-title">
             <div className="section-head">
                 <h2 id="strip-title">지금 방송 중</h2>
-                <span className="section-head__hint">오래 방송한 순 · 오른쪽 끝은 오래 쉰 채널</span>
+                <span className="section-head__hint">
+                    오래 방송한 순{resting?.length > 0 && ' · 오른쪽 끝은 오래 쉰 채널'}
+                </span>
             </div>
 
             <div className="strip__row">
                 <button type="button" className="strip__arrow" onClick={() => scroll(-1)} aria-label="앞쪽 보기">
-                    ‹
+                    <Icon name="prev" />
                 </button>
 
                 <ul className="strip__track" ref={trackRef}>
@@ -190,7 +292,7 @@ function LiveStrip({ lives }) {
                 </ul>
 
                 <button type="button" className="strip__arrow" onClick={() => scroll(1)} aria-label="뒤쪽 보기">
-                    ›
+                    <Icon name="next" />
                 </button>
             </div>
         </section>
@@ -221,11 +323,14 @@ const RING_MIN_W = 720
 // 드래그 픽셀을 칸 수로 바꾸는 비율 (기준 폭에서).
 const RING_PX_PER_SLOT = 220
 
-function LiveRing({ lives }) {
+function LiveRing({ lives, loading, error, onRetry }) {
     const hearts = useHearts()
     const boxRef = useRef(null)
     const dragRef = useRef(null)
     const [width, setWidth] = useState(RING_BASE_W)
+    // 실제 폭을 재기 전의 카드는 그리지 않는다. 기준 폭 자리에서 실제 자리로
+    // 날아오는 전환이 첫 화면마다 보이기 때문이다.
+    const [measured, setMeasured] = useState(false)
     const [turn, setTurn] = useState(0)
     const [dragging, setDragging] = useState(false)
     const hasLives = lives.length > 0
@@ -234,7 +339,10 @@ function LiveRing({ lives }) {
         const el = boxRef.current
         if (!el) return
 
-        const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width))
+        const observer = new ResizeObserver(([entry]) => {
+            setWidth(entry.contentRect.width)
+            setMeasured(true)
+        })
         observer.observe(el)
         return () => observer.disconnect()
         // 방송이 하나도 없을 때는 상자가 그려지지 않는다. 방송이 생기면 그때 붙잡는다.
@@ -310,6 +418,24 @@ function LiveRing({ lives }) {
         }
     }
 
+    if (n === 0 && (loading || error)) {
+        return (
+            <section className="ring-section" aria-labelledby="ring-title">
+                <div className="section-head">
+                    <h2 id="ring-title">Live 중인 채널</h2>
+                </div>
+                {error ? (
+                    <p className="error">
+                        방송 목록을 불러오지 못했어요. {error}{' '}
+                        <button type="button" onClick={onRetry}>다시 시도</button>
+                    </p>
+                ) : (
+                    <p className="empty" role="status">방송 목록을 불러오는 중…</p>
+                )}
+            </section>
+        )
+    }
+
     if (n === 0) {
         return (
             <section className="ring-section" aria-labelledby="ring-title">
@@ -332,16 +458,18 @@ function LiveRing({ lives }) {
             <div className="section-head">
                 <h2 id="ring-title">Live 중인 채널</h2>
                 <span className="section-head__hint">
-                    끌면 가장 큰 카드가 다음 자리로 넘어가요 · 하트를 누르면 색이 붙고 누른 순서대로 앞에 모여요
+                    {flat
+                        ? '옆으로 넘겨 보세요 · 하트를 누르면 색이 붙고 앞에 모여요'
+                        : '끌면 가장 큰 카드가 다음 자리로 넘어가요 · 하트를 누르면 색이 붙고 누른 순서대로 앞에 모여요'}
                 </span>
 
                 {!flat && n > 1 && (
                     <span className="ring__arrows">
                         <button type="button" onClick={() => setTurn((t) => Math.round(t) + 1)} aria-label="이전 카드">
-                            ‹
+                            <Icon name="prev" />
                         </button>
                         <button type="button" onClick={() => setTurn((t) => Math.round(t) - 1)} aria-label="다음 카드">
-                            ›
+                            <Icon name="next" />
                         </button>
                     </span>
                 )}
@@ -357,7 +485,7 @@ function LiveRing({ lives }) {
                 onPointerCancel={handlePointerUp}
                 onClickCapture={handleClickCapture}
             >
-                {ordered.map((live, pos) => {
+                {measured && ordered.map((live, pos) => {
                     const heartIndex = heartedLives.indexOf(live)
                     const color = heartIndex >= 0 ? HEART_COLORS[heartIndex % HEART_COLORS.length] : null
 
@@ -444,7 +572,7 @@ function RingCard({ live, color, order, size, front, onBringFront, onHeart, styl
 
             {front && size !== 'md' && (
                 <Link to={{ view: 'live', id: live.id }} className="ring__go" draggable="false">
-                    ▶ 보러 가기
+                    <Icon name="play" size={11} /> 보러 가기
                 </Link>
             )}
 
@@ -693,7 +821,7 @@ function LiveWheel({ items }) {
             onPointerCancel={handlePointerUp}
             onClickCapture={handleClickCapture}
         >
-            {cards}
+            {size.width > 0 && cards}
         </div>
     )
 }
@@ -721,7 +849,9 @@ function HeroBanner({ live, others }) {
                     {live.nickname}
                 </span>
 
-                <span className="hero-cta">▶ 지금 보기</span>
+                <span className="hero-cta">
+                    <Icon name="play" size={12} /> 지금 보기
+                </span>
             </Link>
 
             {others.length > 0 && <LiveWheel items={others} />}
@@ -808,7 +938,12 @@ function Carousel({ title, items }) {
 
 function Chip({ active, onClick, children }) {
     return (
-        <button type="button" className={`chip${active ? ' chip--on' : ''}`} onClick={onClick}>
+        <button
+            type="button"
+            className={`chip${active ? ' chip--on' : ''}`}
+            aria-pressed={active}
+            onClick={onClick}
+        >
             {children}
         </button>
     )

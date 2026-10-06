@@ -33,6 +33,7 @@
     --corner-xs: 0 10px 0 10px;
     --corner-pill: 0 14px 0 14px;
     --corner-sm: 0 18px 0 18px;
+    --corner-2xs: 0 6px 0 6px;
 }
 
 :root[data-theme='dark'] {
@@ -70,6 +71,21 @@ body {
 
 a {
     color: inherit;
+}
+
+/* 브라우저 기본 표면도 팔레트를 따른다: 글자 선택, 입력 커서, 체크박스·라디오. */
+::selection {
+    background: var(--accent);
+    color: var(--on-accent);
+}
+
+input,
+textarea {
+    caret-color: var(--accent);
+}
+
+body {
+    accent-color: var(--accent);
 }
 
 h2 {
@@ -121,7 +137,7 @@ h3 {
     place-items: center;
     width: 40px;
     height: 40px;
-    border-radius: 0 14px 0 14px;
+    border-radius: var(--corner-pill);
     background: var(--accent);
     color: var(--on-accent);
     font-size: 15px;
@@ -175,7 +191,7 @@ h3 {
 .nav__search input {
     flex: 1;
     min-width: 0;
-    border-radius: 0 16px 0 16px;
+    border-radius: var(--corner-sm);
     background: var(--sunken);
 }
 
@@ -238,7 +254,7 @@ h3 {
     align-items: center;
     height: 44px;
     padding: 0 14px;
-    border-radius: 0 16px 0 16px;
+    border-radius: var(--corner-sm);
     color: var(--text);
     font-size: 15px;
     font-weight: 600;
@@ -281,7 +297,7 @@ h3 {
     align-items: center;
     gap: 10px;
     padding: 6px;
-    border-radius: 0 12px 0 12px;
+    border-radius: var(--corner-pill);
     color: var(--text);
     font-size: 14px;
     font-weight: 600;
@@ -299,7 +315,7 @@ h3 {
     width: 28px;
     height: 28px;
     overflow: hidden;
-    border-radius: 0 9px 0 9px;
+    border-radius: var(--corner-xs);
     background: var(--accent-soft);
     color: var(--accent);
     font-size: 12px;
@@ -327,7 +343,7 @@ h3 {
 
 .side__live {
     padding: 0 6px;
-    border-radius: 0 6px 0 6px;
+    border-radius: var(--corner-2xs);
     background: var(--danger);
     color: #fff;
     font-size: 10px;
@@ -514,6 +530,23 @@ button[type='submit']:hover:not(:disabled),
     font-size: 14px;
 }
 
+.notice {
+    margin: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--corner-xs);
+    background: var(--sunken);
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.error button {
+    margin-left: 6px;
+    padding: 4px 10px;
+    font-size: 13px;
+}
+
 .empty {
     padding: 40px 0;
     color: var(--muted);
@@ -523,8 +556,14 @@ button[type='submit']:hover:not(:disabled),
 .empty__link {
     display: inline-block;
     margin-top: 10px;
+    padding: 0;
+    border: 0;
+    background: none;
     color: var(--accent);
+    font: inherit;
     text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
 }
 
 .description {
@@ -534,7 +573,7 @@ button[type='submit']:hover:not(:disabled),
 
 code {
     padding: 2px 6px;
-    border-radius: 0 6px 0 6px;
+    border-radius: var(--corner-2xs);
     background: var(--sunken);
     font-size: 14px;
     overflow-wrap: anywhere;
@@ -1101,6 +1140,9 @@ details li {
 }
 
 .hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     margin-top: 4px;
     padding: 11px 22px;
     border-radius: var(--corner-pill);
@@ -1219,12 +1261,34 @@ details li {
 .home__filters {
     display: flex;
     flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 12px 20px;
+}
+
+/* 카테고리 묶음과 정렬 묶음. 줄이 바뀌어도 서로 다른 묶음으로 읽혀야 한다. */
+.home__filter-group {
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 8px;
 }
 
-.home__filters-gap {
-    flex: 1 1 20px;
+.home__filter-group:first-child {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+/* 좁은 화면: 정렬은 자기 줄을 갖고, 가는 선으로 카테고리와 나눈다. */
+@media (max-width: 640px) {
+    .home__filter-group:first-child {
+        flex-basis: 100%;
+    }
+
+    .home__filter-group--sort {
+        flex-basis: 100%;
+        padding-top: 12px;
+        border-top: 1px solid var(--border);
+    }
 }
 
 .chip {
@@ -1325,6 +1389,7 @@ details li {
 }
 
 .tile__meta {
+    font-variant-numeric: tabular-nums;
     color: var(--muted);
     font-size: 12px;
 }
@@ -1383,13 +1448,19 @@ details li {
 
 .strip__arrow,
 .ring__arrows button {
+    display: grid;
     flex: 0 0 40px;
+    place-items: center;
     width: 40px;
     height: 40px;
     padding: 0;
-    border-radius: 0 14px 0 14px;
-    font-size: 22px;
-    line-height: 1;
+    border-radius: var(--corner-pill);
+    color: var(--muted);
+}
+
+.strip__arrow:hover:not(:disabled),
+.ring__arrows button:hover:not(:disabled) {
+    color: var(--text);
 }
 
 .strip__track {
@@ -1468,6 +1539,7 @@ details li {
 
 .strip__meta {
     margin-top: -4px;
+    font-variant-numeric: tabular-nums;
     color: var(--muted);
     font-size: 11px;
     font-weight: 700;
@@ -1578,7 +1650,7 @@ details li {
     position: absolute;
     top: 8px;
     padding: 1px 7px;
-    border-radius: 0 6px 0 6px;
+    border-radius: var(--corner-2xs);
     color: #fff;
     font-size: 10px;
     font-weight: 800;
@@ -1630,6 +1702,7 @@ details li {
 }
 
 .ring__viewers {
+    font-variant-numeric: tabular-nums;
     color: var(--muted);
     font-size: 12px;
     font-weight: 700;
@@ -1652,11 +1725,14 @@ details li {
 }
 
 .ring__go {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     position: absolute;
     top: -18px;
     right: 12px;
     padding: 8px 14px;
-    border-radius: 0 12px 0 12px;
+    border-radius: var(--corner-pill);
     background: var(--text);
     color: var(--bg);
     font-size: 13px;
@@ -1707,9 +1783,20 @@ details li {
 .ring--flat {
     display: flex;
     gap: 16px;
-    padding-bottom: 28px;
+    padding: 4px 4px 28px;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
+    scroll-padding-left: 4px;
+    scrollbar-width: none;
+}
+
+.ring--flat::-webkit-scrollbar {
+    display: none;
+}
+
+/* 스크롤 상자가 그림자를 잘라 회색 띠가 생기므로 납작한 줄에서는 그림자를 얕게 쓴다. */
+.ring--flat .ring__card--front {
+    box-shadow: 0 6px 16px rgb(12 18 16 / 0.08);
 }
 
 .ring--flat .ring__card {
@@ -2117,5 +2204,42 @@ details li {
 @keyframes broadcast-pulse {
     50% {
         opacity: 0.35;
+    }
+}
+
+/* ── 움직임 줄이기 ──
+ * OS 에서 "동작 줄이기"를 켠 사람에게는 튕기는 전환, 깜빡임, 부드러운 스크롤을 없앤다.
+ * 카드 위치는 그대로 바뀌고 걸리는 시간만 없어진다. 바퀴 카드는 JS 가 인라인으로
+ * 전환을 넣기 때문에 !important 로 덮는다. */
+@media (prefers-reduced-motion: reduce) {
+    .ring__card,
+    .ring__heart,
+    .wheel__card {
+        transition: none !important;
+    }
+
+    .ring__heart:hover:not(:disabled) {
+        transform: none;
+    }
+
+    .broadcast__dot {
+        animation: none;
+    }
+
+    .carousel__track,
+    .strip__track {
+        scroll-behavior: auto;
+    }
+}
+
+/* ── 터치 화면 ──
+ * 손가락으로 넘기는 화면에서는 화살표가 필요 없고, 칩은 44px 이상이어야 눌린다. */
+@media (hover: none) and (pointer: coarse) {
+    .strip__arrow {
+        display: none;
+    }
+
+    .chip {
+        padding: 11px 16px;
     }
 }
