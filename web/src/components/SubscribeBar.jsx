@@ -23,9 +23,11 @@ export default function SubscribeBar({ channel, onChanged, onFail }) {
 
     if (!me) {
         return (
-            <p className="meta">
-                <Link to={{ view: 'auth' }}>로그인</Link>하면 이 채널을 구독할 수 있습니다.
-            </p>
+            <div className="subscribe-bar">
+                <Link to={{ view: 'auth' }} className="cta">
+                    로그인하고 구독하기
+                </Link>
+            </div>
         )
     }
 

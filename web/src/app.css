@@ -94,6 +94,7 @@ body {
     accent-color: var(--accent);
 }
 
+h1,
 h2 {
     margin: 0 0 16px;
     font-size: 22px;
@@ -1910,35 +1911,40 @@ details li {
 
 /* ── 채팅 운영 · 후원 · 고정 ── */
 
-/* 후원 단계 색. 1(작은 후원) ~ 5(큰 후원). */
+/* 후원 단계 색. 1(작은 후원) ~ 5(큰 후원). --on-tier 는 그 색 바탕 위 글자색(4.5:1 이상)이다. */
 .chat-line--t1,
 .chat-donation--t1,
 .donate__amount--t1 {
-    --tier: #2b7fd1;
+    --tier: #2877c4;
+    --on-tier: #ffffff;
 }
 
 .chat-line--t2,
 .chat-donation--t2,
 .donate__amount--t2 {
     --tier: #14909f;
+    --on-tier: #161a18;
 }
 
 .chat-line--t3,
 .chat-donation--t3,
 .donate__amount--t3 {
     --tier: #c98a00;
+    --on-tier: #161a18;
 }
 
 .chat-line--t4,
 .chat-donation--t4,
 .donate__amount--t4 {
     --tier: #d9690a;
+    --on-tier: #161a18;
 }
 
 .chat-line--t5,
 .chat-donation--t5,
 .donate__amount--t5 {
     --tier: #d1342b;
+    --on-tier: #ffffff;
 }
 
 .chat__tools {
@@ -1976,7 +1982,7 @@ details li {
 .chat__pinned-label {
     flex: none;
     padding: 1px 6px;
-    border-radius: 4px;
+    border-radius: var(--corner-2xs);
     background: var(--accent);
     color: var(--on-accent);
     font-size: 11px;
@@ -2004,7 +2010,6 @@ details li {
 
 .chat-donation {
     padding: 6px 14px;
-    border-left: 4px solid var(--tier);
     background: color-mix(in srgb, var(--tier) 16%, transparent);
     font-size: 13px;
     overflow-wrap: anywhere;
@@ -2016,22 +2021,36 @@ details li {
 
 .chat-line--donation {
     padding: 6px 8px;
-    border-left: 4px solid var(--tier);
-    border-radius: 4px;
+    border: 1px solid color-mix(in srgb, var(--tier) 45%, transparent);
+    border-radius: var(--corner-2xs);
     background: color-mix(in srgb, var(--tier) 14%, transparent);
 }
 
-.chat-line__amount {
-    color: var(--tier);
+/* 금액은 등급색 바탕에 대비가 확보된 글자색을 얹은 칩이다. 글자만 색을 입히면 읽히지 않는다. */
+.chat-line__amount,
+.chat-amount {
+    display: inline-block;
+    margin-bottom: 2px;
+    padding: 0 6px;
+    border-radius: var(--corner-2xs);
+    background: var(--tier);
+    color: var(--on-tier);
     font-size: 12px;
     font-weight: 700;
+    line-height: 18px;
+}
+
+/* 채팅 줄에서는 금액 칩이 한 줄을 차지하고 그 아래에 이름과 글이 온다. */
+.chat-line__amount {
+    display: block;
+    width: fit-content;
 }
 
 .chat-badge {
     display: inline-block;
     margin-right: 4px;
     padding: 0 5px;
-    border-radius: 4px;
+    border-radius: var(--corner-2xs);
     font-size: 11px;
     font-weight: 700;
     vertical-align: 1px;
@@ -2097,6 +2116,24 @@ details li {
     width: 100%;
 }
 
+/* 로그아웃 상태의 후원 진입은 링크지만 버튼과 같은 모양이다. */
+a.donate__open {
+    display: block;
+    box-sizing: border-box;
+    padding: 9px 11px;
+    border: 1px solid var(--border);
+    border-radius: var(--corner-xs);
+    background: var(--sunken);
+    color: var(--text);
+    font-size: 15px;
+    text-align: center;
+    text-decoration: none;
+}
+
+a.donate__open:hover {
+    border-color: var(--border-strong);
+}
+
 .donate__amounts,
 .donate__actions {
     display: flex;
@@ -2111,7 +2148,7 @@ details li {
 
 .donate__amount[aria-pressed='true'] {
     background: var(--tier);
-    color: #fff;
+    color: var(--on-tier);
 }
 
 .donate .meta {
@@ -2168,7 +2205,7 @@ details li {
     width: 96px;
     aspect-ratio: 16 / 9;
     overflow: hidden;
-    border-radius: 4px;
+    border-radius: var(--corner-2xs);
     background: var(--sunken);
 }
 
@@ -2273,6 +2310,184 @@ details li {
     }
 }
 
+/* 링크지만 버튼처럼 보이는 확정 행동(로그인하고 구독, 로그인하고 채팅). 확정하는 곳에만 초록을 쓴다. */
+.cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 16px;
+    border: 1px solid var(--accent);
+    border-radius: var(--corner-xs);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.cta:hover {
+    border-color: var(--accent-hover);
+    background: var(--accent-hover);
+}
+
+.cta--sm {
+    padding: 6px 14px;
+    font-size: 14px;
+}
+
+.cta--block {
+    width: 100%;
+}
+
+/* ── 라이브 시청: 영상 · 채널 줄 · 채팅 ── */
+.player-box {
+    position: relative;
+    background: #000;
+    border-radius: var(--corner-xs);
+}
+
+.player-box .player {
+    display: block;
+}
+
+.player-box__badges {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    gap: 6px;
+    pointer-events: none;
+}
+
+/* 송출이 아직 오지 않을 때. 고장이 아니라 기다리는 중이므로 빨강 대신 영상 면 안의 차분한 안내로 보인다. */
+.player-box__wait {
+    position: absolute;
+    inset: 0 0 48px;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 6px;
+    padding: 16px;
+    color: #f4f7f5;
+    text-align: center;
+    pointer-events: none;
+}
+
+.player-box__wait strong {
+    font-size: 17px;
+}
+
+.player-box__wait span:not(.player-box__dots) {
+    font-size: 13px;
+    opacity: 0.8;
+}
+
+.player-box__dots {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.player-box__dots i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: broadcast-pulse 1.4s ease-in-out infinite;
+}
+
+.player-box__dots i:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.player-box__dots i:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+.channel-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin: 12px 0;
+}
+
+.channel-row__body {
+    min-width: 0;
+}
+
+.channel-row__body .meta {
+    margin: 0 0 4px;
+}
+
+.channel-row__body .subscribe-bar {
+    margin: 0;
+}
+
+.channel-avatar {
+    display: grid;
+    flex: 0 0 40px;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    overflow: hidden;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 16px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.channel-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.live__quick {
+    display: none;
+}
+
+/* 채널명처럼 작은 링크는 보이는 크기는 두고, 누를 수 있는 영역만 사방으로 넓힌다. */
+.live .meta a {
+    position: relative;
+}
+
+.live .meta a::after {
+    content: '';
+    position: absolute;
+    inset: -14px -8px;
+}
+
+.chat__body {
+    position: relative;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* 위로 올려 읽는 동안 쌓인 새 메시지. 누르면 맨 아래로 돌아가 다시 따라간다. */
+.chat__jump {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    padding: 6px 14px;
+    border-color: var(--accent);
+    border-radius: var(--corner-pill);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    transform: translateX(-50%);
+}
+
+.chat__jump:hover:not(:disabled) {
+    border-color: var(--accent-hover);
+    background: var(--accent-hover);
+}
+
 /* ── 라이브 시청: 좁은 화면 ──
  * 영상과 채팅이 한 화면에 함께 보여야 한다. 페이지는 스크롤하지 않고,
  * 영상(16:9) · 제목 줄 · 채팅이 위에서 아래로 쌓이며 채팅만 안에서 스크롤한다.
@@ -2310,8 +2525,10 @@ details li {
     }
 
     .live .player {
-        display: block;
         max-height: none;
+    }
+
+    .live .player-box {
         border-radius: 0;
     }
 
@@ -2327,7 +2544,7 @@ details li {
         min-width: 0;
     }
 
-    .live__titles h2 {
+    .live__titles h1 {
         margin: 0;
         overflow: hidden;
         font-size: 16px;
@@ -2341,6 +2558,11 @@ details li {
         font-size: 13px;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    .live__quick {
+        display: inline-flex;
+        flex: 0 0 auto;
     }
 
     .live__toggle {
@@ -2372,7 +2594,8 @@ details li {
     }
 
     /* 고정 메시지·후원 띠·후원 칸이 붙어도 입력줄이 화면 밖으로 밀리지 않게 목록이 줄어든다. */
-    .live .chat__list {
+    .live .chat__body,
+    .live .chat > .chat__list {
         flex: 1 1 0;
         min-height: 80px;
     }
@@ -2393,7 +2616,8 @@ details li {
         transform: none;
     }
 
-    .broadcast__dot {
+    .broadcast__dot,
+    .player-box__dots i {
         animation: none;
     }
 

@@ -64,7 +64,14 @@ export default function LivePage({ id }) {
     return (
         <section className="live">
             <div className="live__main">
-                <HlsPlayer src={live.hlsUrl} poster={live.thumbnailUrl} />
+                <HlsPlayer
+                    src={live.hlsUrl}
+                    poster={live.thumbnailUrl}
+                    label={`${live.title} 라이브 방송`}
+                    waitingLabel="방송 준비 중"
+                >
+                    <span className="pill pill--live">LIVE</span>
+                </HlsPlayer>
 
                 <LiveInfo live={live} onChanged={reload} />
             </div>
@@ -84,6 +91,7 @@ export default function LivePage({ id }) {
  * 구독과 설명은 "정보" 를 눌러야 펼쳐진다.
  */
 function LiveInfo({ live, onChanged }) {
+    const { me } = useAuth()
     const [open, setOpen] = useState(false)
     const moreId = `live-more-${live.id}`
 
@@ -91,9 +99,20 @@ function LiveInfo({ live, onChanged }) {
         <div className={`live__info${open ? ' live__info--open' : ''}`}>
             <div className="live__head">
                 <div className="live__titles">
-                    <h2>{live.title}</h2>
+                    <h1>{live.title}</h1>
                     <LiveMeta live={live} />
                 </div>
+
+                {/* 좁은 화면에서는 구독이 접혀 있으므로, 로그아웃이면 가장 큰 행동 하나만 머리 줄에 둔다. */}
+                {!me && (
+                    <Link
+                        to={{ view: 'auth' }}
+                        className="cta cta--sm live__quick"
+                        aria-label="로그인하고 이 채널 구독하기"
+                    >
+                        구독
+                    </Link>
+                )}
 
                 <button
                     type="button"
@@ -107,7 +126,7 @@ function LiveInfo({ live, onChanged }) {
             </div>
 
             <div id={moreId} className="live__more">
-                <ChannelSubscribe channelId={live.channelId} onChanged={onChanged} />
+                <ChannelSubscribe channelId={live.channelId} onChanged={onChanged} identity />
 
                 {live.description && <p className="description">{live.description}</p>}
             </div>
@@ -131,7 +150,7 @@ function LockedLive({ live, onChanged }) {
 
     return (
         <section className="locked-live">
-            <h2>{live.title}</h2>
+            <h1>{live.title}</h1>
 
             <LiveMeta live={live} />
 
@@ -155,7 +174,12 @@ function VodView({ live }) {
         <section className="live">
             <div className="live__main">
                 {live.vodUrl ? (
-                    <HlsPlayer src={live.vodUrl} poster={live.thumbnailUrl} onTimeUpdate={setCurrentTime} />
+                    <HlsPlayer
+                        src={live.vodUrl}
+                        poster={live.thumbnailUrl}
+                        label={`${live.title} 다시보기`}
+                        onTimeUpdate={setCurrentTime}
+                    />
                 ) : (
                     <p className="empty">이 방송은 다시보기가 남아 있지 않습니다.</p>
                 )}

@@ -13,6 +13,7 @@ import { donationTier } from '../donation.js'
 import { won } from '../payments.js'
 import { useChat } from '../useChat.js'
 import DonateBox from './DonateBox.jsx'
+import Link from './Link.jsx'
 import OshiMark from './OshiMark.jsx'
 
 const ROLE_LABEL = { OWNER: '주인', MANAGER: '매니저' }
@@ -51,6 +52,11 @@ export default function ChatPanel({ live, history, me }) {
     const [menuFor, setMenuFor] = useState(null)
     const listRef = useRef(null)
 
+    // 맨 아래를 보고 있을 때만 새 메시지를 따라간다. 위로 올려 읽는 중이면 붙잡아 끌어내리지 않고,
+    // 그동안 쌓인 새 메시지 수를 칩으로 알려 준다.
+    const [stuck, setStuck] = useState(true)
+    const [leftAt, setLeftAt] = useState(0)
+
     const isOwner = live.myRole === 'OWNER'
     const isStaff = isOwner || live.myRole === 'MANAGER'
 
@@ -69,14 +75,27 @@ export default function ChatPanel({ live, history, me }) {
         return () => clearTimeout(timer)
     }, [localNotice])
 
-    // 새 메시지가 오면 맨 아래로 붙인다.
+    // 맨 아래를 보고 있으면 새 메시지가 올 때 맨 아래로 붙인다.
     useEffect(() => {
         const list = listRef.current
 
-        if (list) {
+        if (list && stuck) {
             list.scrollTop = list.scrollHeight
         }
-    }, [chat.messages])
+    }, [chat.messages, stuck])
+
+    function handleScroll(event) {
+        const list = event.currentTarget
+        const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 40
+
+        if (atBottom !== stuck) {
+            setStuck(atBottom)
+
+            if (!atBottom) setLeftAt(chat.messages.length)
+        }
+    }
+
+    const unseen = stuck ? 0 : Math.max(0, chat.messages.length - leftAt)
 
     const notice = localNotice ?? chat.notice
 
@@ -100,7 +119,7 @@ export default function ChatPanel({ live, history, me }) {
     }
 
     return (
-        <aside className="chat">
+        <aside className="chat" aria-label="채팅">
             <div className="chat__header">
                 채팅
                 {chat.viewerCount != null && <span className="meta"> · 시청자 {chat.viewerCount}명</span>}
@@ -170,14 +189,24 @@ export default function ChatPanel({ live, history, me }) {
                             key={message.id}
                             className={`chat-donation chat-donation--t${donationTier(message.donationAmount)}`}
                         >
-                            <strong>{message.nickname}</strong> {won(message.donationAmount)}
+                            <strong>{message.nickname}</strong>{' '}
+                            <span className="chat-amount">{won(message.donationAmount)}</span>
                             {message.content && <span> {message.content}</span>}
                         </li>
                     ))}
                 </ul>
             )}
 
-            <ul className="chat__list" ref={listRef}>
+            <div className="chat__body">
+            <ul
+                className="chat__list"
+                ref={listRef}
+                role="log"
+                aria-live="polite"
+                aria-relevant="additions"
+                aria-label="채팅 메시지"
+                onScroll={handleScroll}
+            >
                 {chat.messages.map((message) => (
                     <ChatLine
                         key={message.id}
@@ -209,6 +238,16 @@ export default function ChatPanel({ live, history, me }) {
                 ))}
             </ul>
 
+            {unseen > 0 && (
+                <button type="button" className="chat__jump" onClick={() => setStuck(true)}>
+                    새 메시지 {unseen > 99 ? '99+' : unseen}개{' '}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ verticalAlign: '-2px' }}>
+                        <path d="M12 5v14M6 13l6 6 6-6" />
+                    </svg>
+                </button>
+            )}
+            </div>
+
             {notice && (
                 <p className="chat__notice" role="status">
                     {notice}
@@ -217,6 +256,14 @@ export default function ChatPanel({ live, history, me }) {
 
             {me && !isOwner && (
                 <DonateBox liveId={live.id} onFail={(message) => setLocalNotice(message)} />
+            )}
+
+            {!me && (
+                <div className="donate">
+                    <Link to={{ view: 'auth' }} className="donate__open">
+                        후원하려면 로그인
+                    </Link>
+                </div>
             )}
 
             {canSend ? (
@@ -232,11 +279,15 @@ export default function ChatPanel({ live, history, me }) {
                         보내기
                     </button>
                 </form>
+            ) : !me ? (
+                <div className="chat__form">
+                    <Link to={{ view: 'auth' }} className="cta cta--block">
+                        로그인하고 채팅 참여하기
+                    </Link>
+                </div>
             ) : (
                 <p className="meta chat__form">
-                    {!me
-                        ? '채팅을 쓰려면 로그인이 필요합니다.'
-                        : `${AUDIENCE_LABEL[live.chatAudience]} 채팅할 수 있습니다. 구독하면 참여할 수 있어요.`}
+                    {`${AUDIENCE_LABEL[live.chatAudience]} 채팅할 수 있습니다. 구독하면 참여할 수 있어요.`}
                 </p>
             )}
         </aside>
@@ -278,7 +329,7 @@ function ChatLine({ message, me, isOwner, isStaff, open, onToggle, onDelete, onP
             <strong>{message.nickname}</strong> {message.content}
 
             {showMenu && (
-                <button type="button" className="chat-line__more" aria-label="메시지 도구" aria-expanded={open} onClick={onToggle}>
+                <button type="button" className="chat-line__more" aria-label={`${message.nickname} 메시지 도구`} aria-expanded={open} onClick={onToggle}>
                     ⋯
                 </button>
             )}
