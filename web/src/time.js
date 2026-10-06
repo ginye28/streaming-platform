@@ -40,3 +40,27 @@ export function countdown(target, now = Date.now()) {
         done: left === 0,
     }
 }
+
+/** 지나간 시간(ms)을 "3분 전", "어제" 처럼. */
+export function formatAgo(ms) {
+    const minutes = Math.floor(ms / 60000)
+    if (minutes < 60) return `${Math.max(1, minutes)}분 전`
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24) return `${hours}시간 전`
+    const days = Math.floor(hours / 24)
+    if (days < 7) return days === 1 ? '어제' : `${days}일 전`
+    if (days < 30) return `${Math.floor(days / 7)}주 전`
+    return `${Math.floor(days / 30)}달 전`
+}
+
+/**
+ * 서버가 주는 시간대 없는 시각("2026-10-05T21:14:00")을 "3일 전" 처럼.
+ * 서버는 시간대 없는 LocalDateTime 을 주므로 이 브라우저와 같은 시간대라고 보고 읽는다.
+ */
+export function timeAgo(value) {
+    if (!value) return ''
+
+    const time = new Date(value).getTime()
+
+    return Number.isNaN(time) ? '' : formatAgo(Date.now() - time)
+}

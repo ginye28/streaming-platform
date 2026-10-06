@@ -12,6 +12,8 @@ import { loginTo } from '../router.js'
 import { HEART_COLORS, heartInk, toggleHeart, useHearts } from '../hearts.js'
 import { useAsyncData } from '../useAsyncData.js'
 import { useAuth } from '../useAuth.js'
+import { useSlow } from '../useSlow.js'
+import { formatAgo } from '../time.js'
 
 const SORTS = [
     { value: 'LATEST', label: '최신순' },
@@ -130,23 +132,6 @@ function scrollTrack(track, direction) {
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: reduceMotion ? 'auto' : 'smooth' })
-}
-
-/** active 가 delay 이상 이어지면 true. 느린 첫 응답에 안내를 띄울 때 쓴다. */
-function useSlow(active, delay = 5000) {
-    const [slow, setSlow] = useState(false)
-
-    useEffect(() => {
-        if (!active) return
-
-        const timer = setTimeout(() => setSlow(true), delay)
-        return () => {
-            clearTimeout(timer)
-            setSlow(false)
-        }
-    }, [active, delay])
-
-    return slow
 }
 
 /** 올라온 영상이 없을 때. 비어 있는 이유와 다음 행동을 함께 보여 준다. */
@@ -654,17 +639,6 @@ function toTime(value, fallback = Date.now()) {
 function formatUptime(ms) {
     const minutes = Math.max(0, Math.floor(ms / 60000))
     return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`
-}
-
-function formatAgo(ms) {
-    const minutes = Math.floor(ms / 60000)
-    if (minutes < 60) return `${Math.max(1, minutes)}분 전`
-    const hours = Math.floor(minutes / 60)
-    if (hours < 24) return `${hours}시간 전`
-    const days = Math.floor(hours / 24)
-    if (days < 7) return days === 1 ? '어제' : `${days}일 전`
-    if (days < 30) return `${Math.floor(days / 7)}주 전`
-    return `${Math.floor(days / 30)}달 전`
 }
 
 // 맨 앞(가장 아래)까지 내려온 카드 한 장의 크기. 뒤로 갈수록 이보다 작아진다.

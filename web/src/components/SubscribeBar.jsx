@@ -18,6 +18,7 @@ export default function SubscribeBar({ channel, onChanged, onFail }) {
     const { me } = useAuth()
     const paymentConfig = usePaymentConfig()
     const [busy, setBusy] = useState(false)
+    const [confirming, setConfirming] = useState(false)
 
     // 내 채널은 구독하는 곳이 아니다.
     if (me?.id === channel.id) return null
@@ -55,11 +56,10 @@ export default function SubscribeBar({ channel, onChanged, onFail }) {
             }
         })
 
+    const paidNote = channel.myTier === 'PAID' ? ' 유료 구독도 함께 해지돼요.' : ''
+
     function unsubscribe() {
-        const paidNote = channel.myTier === 'PAID' ? ' 유료 구독도 함께 해지됩니다.' : ''
-
-        if (!window.confirm(`구독을 취소할까요?${paidNote}`)) return
-
+        setConfirming(false)
         run(() => toggleSubscribe(channel.id))
     }
 
@@ -110,9 +110,21 @@ export default function SubscribeBar({ channel, onChanged, onFail }) {
                 onChanged={onChanged}
                 onFail={onFail}
             />
-            <button type="button" onClick={unsubscribe} disabled={busy}>
-                구독 취소
-            </button>
+            {confirming ? (
+                <span className="subscribe-bar__confirm" role="group" aria-label="구독 취소 확인">
+                    <span className="meta">구독을 취소할까요?{paidNote}</span>
+                    <button type="button" onClick={unsubscribe} disabled={busy}>
+                        구독 취소
+                    </button>
+                    <button type="button" onClick={() => setConfirming(false)}>
+                        유지
+                    </button>
+                </span>
+            ) : (
+                <button type="button" onClick={() => setConfirming(true)} disabled={busy}>
+                    구독 취소
+                </button>
+            )}
         </div>
     )
 }

@@ -68,6 +68,9 @@
 
 body {
     margin: 0;
+    /* 한글은 어절 중간에서 끊지 않는다. 너무 긴 한 덩어리(주소 등)만 끊어서 넘치지 않게 한다. */
+    word-break: keep-all;
+    overflow-wrap: break-word;
     background: var(--bg);
     color: var(--text);
     font-family: 'Gothic A1', system-ui, -apple-system, 'Segoe UI', 'Malgun Gothic', sans-serif;
@@ -2370,6 +2373,102 @@ a.donate__open:hover {
 
 .cta--block {
     width: 100%;
+}
+
+/* ── 영상 시청(VOD): 라이브와 같은 영상 상자 · 채널 줄 · 반응 줄 ── */
+.stream__info {
+    margin-top: 12px;
+}
+
+.stream__info h1 {
+    margin-bottom: 4px;
+}
+
+.stream__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+/* 좋아요는 이 화면에서 가장 가벼운 참여다. 누른 상태는 초록 하트로 보인다. */
+.like {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+}
+
+.like svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linejoin: round;
+}
+
+.like[aria-pressed='true'] {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+.like[aria-pressed='true'] svg {
+    fill: currentColor;
+}
+
+/* 수정·삭제·신고는 반응과 떨어진 보조 묶음이다. */
+.stream__manage {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.stream__panel {
+    display: grid;
+    gap: 8px;
+    margin: 8px 0 12px;
+    padding: 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--corner-xs);
+    background: var(--sunken);
+}
+
+.stream__panel p {
+    margin: 0;
+}
+
+.stream__panel label {
+    display: grid;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.stream__panel-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.stream__login {
+    margin: 8px 0 16px;
+}
+
+.subscribe-bar__confirm {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.player-box__wait--error {
+    inset: 0;
+    background: rgb(0 0 0 / 0.72);
+    pointer-events: auto;
+}
+
+.player-box__wait--error button {
+    margin-top: 6px;
 }
 
 /* ── 라이브 시청: 영상 · 채널 줄 · 채팅 ── */
