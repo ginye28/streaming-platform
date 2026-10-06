@@ -1,0 +1,414 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-06T00:00:00+09:00",
+  "title": "Design System: 스트리밍 플랫폼 (SP)",
+  "extensions": {
+    "colorMeta": {
+      "study-green": {
+        "role": "primary",
+        "displayName": "서재의 초록 Study Green",
+        "canonical": "oklch(44.1% 0.075 173)",
+        "tonalRamp": [
+          "oklch(15% 0.055 173)",
+          "oklch(25% 0.065 173)",
+          "oklch(35% 0.071 173)",
+          "oklch(45% 0.075 173)",
+          "oklch(55% 0.075 173)",
+          "oklch(70% 0.068 173)",
+          "oklch(85% 0.055 173)",
+          "oklch(95% 0.042 173)"
+        ]
+      },
+      "study-green-deep": {
+        "role": "primary",
+        "displayName": "깊은 서재 초록 Study Green Deep",
+        "canonical": "oklch(37.5% 0.064 173)",
+        "tonalRamp": [
+          "oklch(15% 0.047 173)",
+          "oklch(25% 0.055 173)",
+          "oklch(35% 0.061 173)",
+          "oklch(45% 0.064 173)",
+          "oklch(55% 0.064 173)",
+          "oklch(70% 0.058 173)",
+          "oklch(85% 0.047 173)",
+          "oklch(95% 0.035 173)"
+        ]
+      },
+      "green-wash": {
+        "role": "primary",
+        "displayName": "초록 번짐 Green Wash",
+        "canonical": "oklch(94.6% 0.012 170)",
+        "tonalRamp": [
+          "oklch(15% 0.009 170)",
+          "oklch(25% 0.010 170)",
+          "oklch(35% 0.011 170)",
+          "oklch(45% 0.012 170)",
+          "oklch(55% 0.012 170)",
+          "oklch(70% 0.011 170)",
+          "oklch(85% 0.009 170)",
+          "oklch(95% 0.007 170)"
+        ]
+      },
+      "live-red": {
+        "role": "secondary",
+        "displayName": "라이브 레드 Live Red",
+        "canonical": "oklch(54.3% 0.179 28)",
+        "tonalRamp": [
+          "oklch(15% 0.131 28)",
+          "oklch(25% 0.154 28)",
+          "oklch(35% 0.170 28)",
+          "oklch(45% 0.178 28)",
+          "oklch(55% 0.178 28)",
+          "oklch(70% 0.163 28)",
+          "oklch(85% 0.131 28)",
+          "oklch(95% 0.099 28)"
+        ]
+      },
+      "live-red-wash": {
+        "role": "secondary",
+        "displayName": "붉은 번짐 Live Red Wash",
+        "canonical": "oklch(95.4% 0.017 27)",
+        "tonalRamp": [
+          "oklch(15% 0.012 27)",
+          "oklch(25% 0.015 27)",
+          "oklch(35% 0.016 27)",
+          "oklch(45% 0.017 27)",
+          "oklch(55% 0.017 27)",
+          "oklch(70% 0.016 27)",
+          "oklch(85% 0.012 27)",
+          "oklch(95% 0.009 27)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "잉크 Ink",
+        "canonical": "oklch(21.3% 0.007 164)",
+        "tonalRamp": [
+          "oklch(15% 0.005 164)",
+          "oklch(25% 0.006 164)",
+          "oklch(35% 0.007 164)",
+          "oklch(45% 0.007 164)",
+          "oklch(55% 0.007 164)",
+          "oklch(70% 0.006 164)",
+          "oklch(85% 0.005 164)",
+          "oklch(95% 0.004 164)"
+        ]
+      },
+      "pencil-gray": {
+        "role": "neutral",
+        "displayName": "연필 회색 Pencil Gray",
+        "canonical": "oklch(55.5% 0.012 150)",
+        "tonalRamp": [
+          "oklch(15% 0.009 150)",
+          "oklch(25% 0.010 150)",
+          "oklch(35% 0.011 150)",
+          "oklch(45% 0.012 150)",
+          "oklch(55% 0.012 150)",
+          "oklch(70% 0.011 150)",
+          "oklch(85% 0.009 150)",
+          "oklch(95% 0.007 150)"
+        ]
+      },
+      "daylight": {
+        "role": "neutral",
+        "displayName": "낮빛 Daylight",
+        "canonical": "oklch(99% 0.002 146)",
+        "tonalRamp": [
+          "oklch(15% 0.001 146)",
+          "oklch(25% 0.002 146)",
+          "oklch(35% 0.002 146)",
+          "oklch(45% 0.002 146)",
+          "oklch(55% 0.002 146)",
+          "oklch(70% 0.002 146)",
+          "oklch(85% 0.001 146)",
+          "oklch(95% 0.001 146)"
+        ]
+      },
+      "sunken-paper": {
+        "role": "neutral",
+        "displayName": "눌린 종이 Sunken Paper",
+        "canonical": "oklch(96.4% 0.004 157)",
+        "tonalRamp": [
+          "oklch(15% 0.003 157)",
+          "oklch(25% 0.003 157)",
+          "oklch(35% 0.004 157)",
+          "oklch(45% 0.004 157)",
+          "oklch(55% 0.004 157)",
+          "oklch(70% 0.004 157)",
+          "oklch(85% 0.003 157)",
+          "oklch(95% 0.002 157)"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "머리카락 선 Hairline",
+        "canonical": "oklch(92.1% 0.006 154)",
+        "tonalRamp": [
+          "oklch(15% 0.004 154)",
+          "oklch(25% 0.005 154)",
+          "oklch(35% 0.006 154)",
+          "oklch(45% 0.006 154)",
+          "oklch(55% 0.006 154)",
+          "oklch(70% 0.005 154)",
+          "oklch(85% 0.004 154)",
+          "oklch(95% 0.003 154)"
+        ]
+      },
+      "hairline-strong": {
+        "role": "neutral",
+        "displayName": "진한 머리카락 선 Hairline Strong",
+        "canonical": "oklch(84.9% 0.012 162)",
+        "tonalRamp": [
+          "oklch(15% 0.009 162)",
+          "oklch(25% 0.010 162)",
+          "oklch(35% 0.011 162)",
+          "oklch(45% 0.012 162)",
+          "oklch(55% 0.012 162)",
+          "oklch(70% 0.011 162)",
+          "oklch(85% 0.009 162)",
+          "oklch(95% 0.007 162)"
+        ]
+      },
+      "mint": {
+        "role": "primary",
+        "displayName": "민트 Mint (나이트 포인트)",
+        "canonical": "oklch(75.3% 0.113 172)"
+      },
+      "coral": {
+        "role": "secondary",
+        "displayName": "코랄 Coral (나이트 신호색)",
+        "canonical": "oklch(72.8% 0.133 27)"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "홈 배너의 방송 제목 하나뿐. 모바일에서는 24px."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "페이지 제목(h2)."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "섹션 제목(h3), 채팅 머리글, 접이식 칸 제목."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "본문, 입력칸, 버튼 글자."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "칩, 메타 정보, 타일 제목, 배지(11–14px, 굵기 600–800)."
+      }
+    },
+    "shadows": [
+      {
+        "name": "chat-box",
+        "value": "0 1px 2px rgb(22 26 24 / 0.05)",
+        "purpose": "채팅 상자의 상시 그림자(--shadow). 나이트에서는 0 1px 2px rgb(0 0 0 / 0.4)."
+      },
+      {
+        "name": "ring-card",
+        "value": "0 6px 16px rgb(12 18 16 / 0.08)",
+        "purpose": "도는 링 카드의 기본 부유감."
+      },
+      {
+        "name": "ring-card-front",
+        "value": "0 18px 40px rgb(12 18 16 / 0.16)",
+        "purpose": "가장 앞에 온 링 카드."
+      },
+      {
+        "name": "wheel-card",
+        "value": "0 10px 30px rgb(0 0 0 / 0.45)",
+        "purpose": "어두운 배너 위에 얹힌 바퀴 카드."
+      },
+      {
+        "name": "go-button",
+        "value": "0 6px 16px rgb(0 0 0 / 0.18)",
+        "purpose": "링 카드 위로 튀어나온 보러 가기 버튼."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ring-settle",
+        "value": "560ms cubic-bezier(0.34, 1.36, 0.64, 1)",
+        "purpose": "링 카드가 놓였을 때 살짝 튕기며 자리에 붙는다(위치·너비). 끄는 동안에는 끈다."
+      },
+      {
+        "name": "ring-fade",
+        "value": "400ms ease",
+        "purpose": "링 카드 투명도 전환."
+      },
+      {
+        "name": "heart-hover",
+        "value": "0.15s ease",
+        "purpose": "하트 버튼 호버 시 scale(1.08)."
+      },
+      {
+        "name": "broadcast-pulse",
+        "value": "1.4s ease-in-out infinite",
+        "purpose": "방송 중 점이 투명도 0.35까지 깜빡인다."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "prefers-reduced-motion: reduce",
+        "purpose": "링·바퀴 카드와 하트 전환, 방송 점 깜빡임, 가로 줄의 부드러운 스크롤을 모두 끈다. 카드는 바로 자리를 바꾼다."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "chat-split",
+        "value": "900px",
+        "purpose": "900px 이상에서 영상 옆에 채팅(320px). 900px 이하에서는 사이드바를 접는다."
+      },
+      {
+        "name": "hero-compact",
+        "value": "860px",
+        "purpose": "860px 이하에서 배너 320px, 제목 24px, 바퀴 접기, 링은 가로 한 줄."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "무언가를 확정하는 버튼(저장, 보내기, 채팅 전송)만 초록을 쓴다.",
+      "html": "<button class=\"ds-btn-primary\">저장</button>",
+      "css": ".ds-btn-primary { padding: 9px 11px; border: 1px solid var(--accent, #17604f); border-radius: 0 10px 0 10px; background: var(--accent, #17604f); color: var(--on-accent, #fff); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; } .ds-btn-primary:hover { border-color: var(--accent-hover, #114c3e); background: var(--accent-hover, #114c3e); } .ds-btn-primary:focus-visible { outline: 2px solid var(--accent, #17604f); outline-offset: 2px; }"
+    },
+    {
+      "name": "Default Button",
+      "kind": "button",
+      "refersTo": "button-default",
+      "description": "기본 버튼은 눌린 종이 바탕으로 조용히 둔다. 호버하면 선만 진해진다.",
+      "html": "<button class=\"ds-btn\">취소</button>",
+      "css": ".ds-btn { padding: 9px 11px; border: 1px solid var(--border, #e2e6e3); border-radius: 0 10px 0 10px; background: var(--sunken, #f1f4f2); color: var(--text, #161a18); font: inherit; font-size: 15px; cursor: pointer; white-space: nowrap; } .ds-btn:hover { border-color: var(--border-strong, #c7d0cb); } .ds-btn:focus-visible { outline: 2px solid var(--accent, #17604f); outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "종이 바탕에 1px 선. 포커스하면 선이 초록으로 바뀐다.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"채널 이름 검색\" />",
+      "css": ".ds-input { padding: 9px 11px; border: 1px solid var(--border, #e2e6e3); border-radius: 0 10px 0 10px; background: var(--surface, #fff); color: var(--text, #161a18); font: inherit; font-size: 15px; } .ds-input::placeholder { color: var(--muted, #6e756f); } .ds-input:hover { border-color: var(--border-strong, #c7d0cb); } .ds-input:focus-visible { border-color: var(--accent, #17604f); outline: 2px solid var(--accent, #17604f); outline-offset: 0; }"
+    },
+    {
+      "name": "Filter Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "드롭다운 대신 눌러서 켜는 필터 칩.",
+      "html": "<button class=\"ds-chip\">전체</button>",
+      "css": ".ds-chip { padding: 7px 14px; border: 1px solid var(--border, #e2e6e3); border-radius: 0 14px 0 14px; background: var(--surface, #fff); color: var(--muted, #6e756f); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; } .ds-chip:hover { border-color: var(--border-strong, #c7d0cb); color: var(--text, #161a18); } .ds-chip:focus-visible { outline: 2px solid var(--accent, #17604f); outline-offset: 2px; }"
+    },
+    {
+      "name": "Filter Chip (선택됨)",
+      "kind": "chip",
+      "refersTo": "chip-on",
+      "description": "선택된 칩은 초록 바탕에 흰 글자.",
+      "html": "<button class=\"ds-chip-on\">라이브</button>",
+      "css": ".ds-chip-on { padding: 7px 14px; border: 1px solid transparent; border-radius: 0 14px 0 14px; background: var(--accent, #17604f); color: var(--on-accent, #fff); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; } .ds-chip-on:focus-visible { outline: 2px solid var(--accent, #17604f); outline-offset: 2px; }"
+    },
+    {
+      "name": "Side Menu Link",
+      "kind": "nav",
+      "refersTo": "side-link-on",
+      "description": "사이드바 메뉴. 현재 위치는 초록 번짐 바탕에 초록 800 글자.",
+      "html": "<a class=\"ds-side-link ds-side-link--on\" href=\"#\">홈</a>",
+      "css": ".ds-side-link { display: flex; align-items: center; height: 44px; padding: 0 14px; border-radius: 0 16px 0 16px; color: var(--text, #161a18); font-size: 15px; font-weight: 600; text-decoration: none; } .ds-side-link:hover { background: var(--sunken, #f1f4f2); } .ds-side-link--on { background: var(--accent-soft, #e6f0ec); color: var(--accent, #17604f); font-weight: 800; } .ds-side-link:focus-visible { outline: 2px solid var(--accent, #17604f); outline-offset: 2px; }"
+    },
+    {
+      "name": "Logo Mark",
+      "kind": "custom",
+      "refersTo": "nav-mark",
+      "description": "SP 시그니처 모서리를 그대로 쓴 초록 로고 자리.",
+      "html": "<span class=\"ds-mark\">SP</span>",
+      "css": ".ds-mark { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 0 14px 0 14px; background: var(--accent, #17604f); color: var(--on-accent, #fff); font-size: 15px; font-weight: 800; letter-spacing: -0.03em; }"
+    },
+    {
+      "name": "Live Badge",
+      "kind": "custom",
+      "refersTo": "live-badge",
+      "description": "방송 중 표시. 라이브 레드 바탕에 흰 글자, 앞에 점.",
+      "html": "<span class=\"ds-live\">LIVE</span>",
+      "css": ".ds-live { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 0 14px 0 14px; background: var(--danger, #c2352c); color: #fff; font-size: 12px; font-weight: 600; letter-spacing: 0.01em; } .ds-live::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }"
+    },
+    {
+      "name": "Video Tile",
+      "kind": "card",
+      "refersTo": "tile-thumb",
+      "description": "홈 가로 줄의 타일. 16:9 썸네일과 두 줄 제목, 12px 메타. 호버하면 초록 윤곽.",
+      "html": "<a class=\"ds-tile\" href=\"#\"><span class=\"ds-tile__thumb\"><span class=\"ds-tile__blank\">썸네일 없음</span></span><span class=\"ds-tile__title\">밤샘 방송 다시보기</span><span class=\"ds-tile__meta\">채널 이름 · 시청 128명</span></a>",
+      "css": ".ds-tile { display: grid; gap: 8px; width: 210px; color: var(--text, #161a18); text-decoration: none; } .ds-tile__thumb { display: block; aspect-ratio: 16 / 9; border-radius: 0 18px 0 18px; overflow: hidden; background: var(--sunken, #f1f4f2); } .ds-tile__blank { display: grid; place-items: center; height: 100%; color: var(--muted, #6e756f); font-size: 12px; } .ds-tile__title { font-size: 14px; font-weight: 600; line-height: 1.4; word-break: keep-all; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; } .ds-tile__meta { color: var(--muted, #6e756f); font-size: 12px; } .ds-tile:hover .ds-tile__thumb { outline: 2px solid var(--accent, #17604f); outline-offset: 2px; } .ds-tile:focus-visible { outline: 2px solid var(--accent, #17604f); outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "낮의 서재 (The Daytime Study)",
+    "overview": "코드의 스타일시트 첫머리가 이미 스스로를 \"디자인 방향 B '낮의 서재'\"라고 부른다. 이 이름을 그대로 가져왔다. 밝고 조용한 책상 위에 영상 썸네일이 놓여 있고, 화면은 그 콘텐츠가 주인공이 되도록 한 걸음 물러선다. 색은 거의 흰색에 가까운 바탕과 한 가지 깊은 초록뿐이다. 그 초록은 \"확정\"할 때와 \"지금 여기\"를 가리킬 때만 나온다. 나머지는 잉크색 글자와 머리카락 같은 얇은 선이다.\n\n개성은 색이 아니라 모양에서 나온다. 왼쪽 위와 오른쪽 아래는 각지고, 오른쪽 위와 왼쪽 아래만 둥근 SP 시그니처 모서리가 로고, 버튼, 입력칸, 썸네일, 배너까지 크기만 달리하며 반복된다. 한 번 눈에 익으면 어느 화면에서도 이 사이트임을 알아볼 수 있다. 나이트 모드는 같은 색 계열을 어둡게 뒤집은 한 벌이고, 사용자가 직접 켤 때만 나온다. OS 설정은 따르지 않는다.",
+    "keyCharacteristics": [
+      "밝은 화면이 기본이고, 나이트 모드는 사용자가 켤 때만 쓴다.",
+      "포인트 색은 초록 하나. 빨강은 \"LIVE\"와 오류, 알림 배지라는 신호 전용이다.",
+      "시그니처 모서리: 대각선 두 곳만 둥글다.",
+      "깊이는 그림자보다 얇은 선과 면의 색 차이로 만든다. 그림자는 떠 있는 카드와 배너 위의 것에만 쓴다.",
+      "평문 CSS와 CSS 변수. 프레임워크나 유틸리티 클래스에 기대지 않는다."
+    ],
+    "rules": [
+      {
+        "name": "The One Green Rule",
+        "body": "포인트는 초록 하나다. 새 포인트 색을 들이지 않는다. 채널마다 다른 색(하트 색 --heart)은 그 채널의 것이고, 사이트의 색이 아니다.",
+        "section": "colors"
+      },
+      {
+        "name": "The Red Means Live Rule",
+        "body": "빨강은 방송 중이거나 잘못된 것일 때만 쓴다. 강조하고 싶다는 이유로 빨강을 쓰지 않는다.",
+        "section": "colors"
+      },
+      {
+        "name": "The Light By Default Rule",
+        "body": "첫 화면은 항상 밝다. prefers-color-scheme 을 따르지 않고, 사용자가 켠 localStorage 의 선택만 따른다.",
+        "section": "colors"
+      },
+      {
+        "name": "The Weight Is The Hierarchy Rule",
+        "body": "위계는 크기보다 굵기로 만든다. 본문 15px 위로 올라가는 글자는 제목과 배너뿐이다.",
+        "section": "typography"
+      },
+      {
+        "name": "The Keep-All Rule",
+        "body": "한글 제목과 이름은 word-break: keep-all. 어절 중간에서 끊지 않는다.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "면은 납작하게 둔다. 그림자는 떠 있어야 할 이유가 있는 카드, 배너 위의 것, 상시 필요한 채팅 상자에만 쓴다.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Signature Corner Rule",
+        "body": "큰 면이든 작은 면이든 사각형이면 대각선 두 모서리만 둥글다. 네 모서리를 모두 둥글게(border-radius: 8px) 하지 않는다.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do 새 사각형은 --corner-xs / pill / sm / md / lg 중 크기에 맞는 변수를 쓴다. 변수를 쓰면 시그니처 모양이 저절로 따라온다.",
+      "Do 색은 :root 변수(var(--accent), var(--surface) 등)로만 쓴다. 값을 직접 쓰면 나이트 모드에서 깨진다.",
+      "Do 확정하는 버튼에만 초록을 쓴다. 나머지 버튼은 눌린 종이 바탕으로 조용히 둔다.",
+      "Do 새 색을 만들면 라이트와 :root[data-theme='dark'] 두 벌을 함께 만든다.",
+      "Do 한국어 제목과 이름에 word-break: keep-all, 길면 두 줄에서 -webkit-line-clamp: 2 로 자른다.",
+      "Do 썸네일이 없는 빈 칸도 디자인한다: 눌린 종이 바탕에 \"썸네일 없음\" 같은 흐린 글자, 같은 비율(16:9)과 같은 모서리.",
+      "Do 바탕이 이미지인 곳(배너)은 테마와 상관없는 고정된 어두운 그라디언트로 글자를 보호한다.",
+      "Do 새 전환·애니메이션·부드러운 스크롤은 prefers-reduced-motion 에서 꺼지게 한다.",
+      "Do 새 카드나 목록은 375px 폭에서 가로로 넘치지 않는지 확인한다."
+    ],
+    "donts": [
+      "Don't 네 모서리를 모두 같은 반지름으로 둥글게 하지 않는다(border-radius: 8px). SP 의 모양이 사라진다.",
+      "Don't 초록 외의 포인트 색을 새로 들이지 않는다. 채널별 하트 색은 예외로, 그 채널 안에서만 쓴다.",
+      "Don't 빨강을 장식이나 강조에 쓰지 않는다. 방송 중이거나 오류일 때만 쓴다.",
+      "Don't OS 다크 모드 설정을 따라가지 않는다. 나이트 모드는 사용자가 직접 켠다.",
+      "Don't 그림자로 위계를 만들지 않는다. 선과 면의 색 차이가 먼저다.",
+      "Don't Tailwind 나 유틸리티 클래스, CSS-in-JS 를 들이지 않는다. 이 시스템은 평문 CSS 와 변수로 되어 있다.",
+      "Don't 서체를 더하지 않는다. Gothic A1 한 가지의 굵기로 위계를 만든다."
+    ]
+  }
+}
