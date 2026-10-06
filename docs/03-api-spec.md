@@ -985,6 +985,23 @@ POST /api/lives/{liveId}/donations/orders
 
 ---
 
+## 브라우저 방송 (WebSocket `/ingest`)
+
+OBS 없이 브라우저에서 화면 공유·카메라를 보내는 연결. REST 가 아니라 순수 WebSocket 이다.
+
+| 순서 | 방향 | 내용 |
+|---|---|---|
+| 1 | 클라이언트 → 서버 | 글자 메시지 `{"type":"start","token":"<로그인 액세스 토큰>"}` |
+| 2 | 서버 → 클라이언트 | 성공 `{"type":"started","liveId":N}` · 실패 `{"type":"error","message":"…"}` 뒤 연결을 닫는다 |
+| 3 | 클라이언트 → 서버 | MediaRecorder 가 만든 WebM(H.264) 조각을 이진 메시지로 계속 보낸다 (조각 하나 최대 4MB) |
+| 4 | — | 연결이 끊기면 방송이 끝난다 (다시보기 없음) |
+
+실패 사유: 토큰이 없거나 틀림 · 같은 계정이 이미 방송 중 · 동시 방송 수 초과(`INGEST_MAX_SESSIONS`) · 시작 메시지 전에 영상을 보냄 · 허용 속도 초과(`INGEST_MAX_KBPS`).
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| GET | `/live-hls/{streamName}.m3u8`, `/live-hls/{streamName}-N.ts` | 브라우저 방송의 HLS. 로그인 없이 받는다. 재생 이름이 `b-` 로 시작하면 이 방송의 `hlsUrl` 이 이 아래를 가리킨다 |
+
 ## 내부 API (외부 노출 금지)
 
 nginx-rtmp 가 호출하는 콜백. JWT 가 아니라 스트림 키로 인증하므로

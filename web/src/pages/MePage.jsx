@@ -184,6 +184,10 @@ function StreamKeyPanel() {
 
             {error && <p className="error">{error}</p>}
 
+            <p className="meta">
+                OBS 가 없다면 <Link to={{ view: 'broadcast' }}>브라우저로 바로 방송하기</Link>를 쓸 수 있어요.
+            </p>
+
             <p className="meta">서버: rtmp://localhost:1935/live</p>
 
             <p className="meta">

@@ -2,6 +2,7 @@ import AdminApp from './admin/AdminApp.jsx'
 import { AuthProvider } from './auth.jsx'
 import Layout from './components/Layout.jsx'
 import AuthPage from './pages/AuthPage.jsx'
+import BroadcastPage from './pages/BroadcastPage.jsx'
 import ChannelPage from './pages/ChannelPage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import LivePage from './pages/LivePage.jsx'
@@ -24,6 +25,8 @@ function Routes() {
     switch (view) {
         case 'lives':
             return <LivesPage />
+        case 'broadcast':
+            return <BroadcastPage />
         case 'live':
             return <LivePage id={id} />
         case 'schedule':

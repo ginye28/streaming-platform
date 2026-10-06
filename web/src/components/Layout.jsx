@@ -49,6 +49,7 @@ export default function Layout({ children }) {
                     <Link to={{ view: 'home' }}>홈</Link>
                     <Link to={{ view: 'lives' }}>라이브</Link>
                     {me && <Link to={{ view: 'subscribed' }}>구독</Link>}
+                    {me && <Link to={{ view: 'broadcast' }}>방송하기</Link>}
                 </nav>
 
                 <div className="nav__account">

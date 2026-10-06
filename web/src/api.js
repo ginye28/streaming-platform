@@ -135,6 +135,16 @@ export async function logout() {
 
 export const getMe = () => authorized('/api/users/me')
 
+/**
+ * 만료되지 않은 액세스 토큰. WebSocket 은 헤더를 못 붙이고 한번 연결하면 갱신할 수 없어서,
+ * 연결하기 직전에 인증이 필요한 요청을 한 번 보내 만료됐다면 갱신된 토큰을 쓰게 한다.
+ */
+export async function freshAccessToken() {
+    await getMe()
+
+    return getAccessToken()
+}
+
 export const updateProfile = (nickname, profileImage) =>
     authorized('/api/users/me', { method: 'PATCH', body: { nickname, profileImage } })
 

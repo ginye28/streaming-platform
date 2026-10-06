@@ -2073,3 +2073,49 @@ details li {
     flex: 1;
     min-width: 0;
 }
+
+/* 브라우저로 방송하기 */
+.broadcast__preview {
+    position: relative;
+    margin: 12px 0;
+    border-radius: var(--corner-xs);
+    background: #000;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+}
+
+.broadcast__preview video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.broadcast__preview .empty {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    color: #fff;
+}
+
+.broadcast__status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+}
+
+.broadcast__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--danger);
+    animation: broadcast-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes broadcast-pulse {
+    50% {
+        opacity: 0.35;
+    }
+}

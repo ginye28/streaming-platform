@@ -24,6 +24,10 @@ export default function LivesPage() {
 
             <h2>지금 방송 중</h2>
 
+            <p className="meta">
+                <Link to={{ view: 'broadcast' }}>브라우저로 바로 방송하기</Link> — OBS 없이 화면 공유나 카메라로 방송해요.
+            </p>
+
             {error && <p className="error">{error}</p>}
             {loading && <p className="empty">불러오는 중…</p>}
 

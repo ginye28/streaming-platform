@@ -15,6 +15,9 @@ public class LiveProperties {
     private static final Pattern HLS_BASE_PATTERN =
             Pattern.compile("^https://[A-Za-z0-9.-]+(:[0-9]{1,5})?(/[A-Za-z0-9._~-]+)*$");
 
+    /** 브라우저에서 보낸 방송의 재생 이름 앞에 붙는 접두어. 이 이름이면 API 가 직접 HLS 를 내려 준다. */
+    public static final String BROWSER_STREAM_PREFIX = "b-";
+
     /** 시청자에게 내려줄 HLS 주소의 앞부분. */
     @Value("${app.hls.base-url}")
     private String hlsBaseUrl;
@@ -25,6 +28,10 @@ public class LiveProperties {
      * 서버 메모리에만 있다(재시작하면 다음 방송 시작 때 다시 받는다).
      */
     private volatile String hlsOverride;
+
+    /** API 자신의 바깥 주소. 브라우저 방송의 HLS 는 API 가 직접 내려 주므로 이 주소 아래에 있다. */
+    @Value("${app.ingest.public-base-url:http://localhost:8080}")
+    private String ingestPublicBaseUrl;
 
     /**
      * on_publish 응답으로 공개 이름으로의 리다이렉트를 돌려줄지 여부.
@@ -96,6 +103,20 @@ public class LiveProperties {
 
     public String redirectUrlFor(String publicName) {
         return rtmpRedirectBase + "/" + publicName;
+    }
+
+    /** 방송(streamName)의 실시간 재생 주소. 브라우저 방송이면 API 가 내려 주는 주소, 아니면 스트리밍 서버의 주소. */
+    public String hlsUrlFor(String streamName) {
+
+        if (streamName.startsWith(BROWSER_STREAM_PREFIX)) {
+            return trimSlash(ingestPublicBaseUrl) + "/live-hls/" + streamName + ".m3u8";
+        }
+
+        return getHlsBaseUrl() + "/" + streamName + ".m3u8";
+    }
+
+    private static String trimSlash(String url) {
+        return url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
     }
 
     /** 방송(streamName)의 다시보기 재생 주소. */

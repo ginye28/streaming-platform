@@ -52,7 +52,7 @@ public record LiveStreamResponse(
                 live.getTitle(),
                 live.getDescription(),
                 live.getThumbnailUrl(),
-                canWatch ? properties.getHlsBaseUrl() + "/" + live.getStreamName() + ".m3u8" : null,
+                canWatch ? properties.hlsUrlFor(live.getStreamName()) : null,
                 live.getStatus().name(),
                 viewerCount,
                 live.getPeakViewerCount(),
