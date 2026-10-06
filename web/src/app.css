@@ -20,6 +20,8 @@
     --on-accent: #ffffff;
     --danger: #c2352c;
     --danger-soft: #fbecea;
+    /* 위험색 바탕(LIVE · 알림 배지) 위의 글자색. 나이트 모드의 코랄은 밝아서 흰 글자가 안 읽힌다. */
+    --on-danger: #ffffff;
 
     --radius: 6px;
     --gap: 20px;
@@ -52,6 +54,7 @@
     --on-accent: #0c1211;
     --danger: #ef8479;
     --danger-soft: #2f1e1c;
+    --on-danger: #0c1211;
 
     --shadow: 0 1px 2px rgb(0 0 0 / 0.4);
 }
@@ -210,7 +213,7 @@ h3 {
     padding: 1px 6px;
     border-radius: var(--corner-xs);
     background: var(--danger);
-    color: #fff;
+    color: var(--on-danger);
     font-size: 11px;
     font-weight: 800;
     line-height: 16px;
@@ -345,7 +348,7 @@ h3 {
     padding: 0 6px;
     border-radius: var(--corner-2xs);
     background: var(--danger);
-    color: #fff;
+    color: var(--on-danger);
     font-size: 10px;
     font-weight: 800;
     letter-spacing: 0.04em;
@@ -1246,7 +1249,7 @@ details li {
 
 .pill--live {
     background: var(--danger);
-    color: #fff;
+    color: var(--on-danger);
 }
 
 .pill--live::before {
@@ -1661,6 +1664,7 @@ details li {
 .ring__live {
     left: 8px;
     background: var(--danger);
+    color: var(--on-danger);
 }
 
 .ring__order {

@@ -332,7 +332,7 @@
       "refersTo": "live-badge",
       "description": "방송 중 표시. 라이브 레드 바탕에 흰 글자, 앞에 점.",
       "html": "<span class=\"ds-live\">LIVE</span>",
-      "css": ".ds-live { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 0 14px 0 14px; background: var(--danger, #c2352c); color: #fff; font-size: 12px; font-weight: 600; letter-spacing: 0.01em; } .ds-live::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }"
+      "css": ".ds-live { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 0 14px 0 14px; background: var(--danger, #c2352c); color: var(--on-danger, #fff); font-size: 12px; font-weight: 600; letter-spacing: 0.01em; } .ds-live::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }"
     },
     {
       "name": "Video Tile",
@@ -393,6 +393,7 @@
     "dos": [
       "Do 새 사각형은 --corner-xs / pill / sm / md / lg 중 크기에 맞는 변수를 쓴다. 변수를 쓰면 시그니처 모양이 저절로 따라온다.",
       "Do 색은 :root 변수(var(--accent), var(--surface) 등)로만 쓴다. 값을 직접 쓰면 나이트 모드에서 깨진다.",
+      "Do 위험색(--danger) 바탕의 배지 글자는 #fff 대신 var(--on-danger) 를 쓴다.",
       "Do 확정하는 버튼에만 초록을 쓴다. 나머지 버튼은 눌린 종이 바탕으로 조용히 둔다.",
       "Do 새 색을 만들면 라이트와 :root[data-theme='dark'] 두 벌을 함께 만든다.",
       "Do 한국어 제목과 이름에 word-break: keep-all, 길면 두 줄에서 -webkit-line-clamp: 2 로 자른다.",
