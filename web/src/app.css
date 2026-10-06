@@ -265,7 +265,7 @@ h3 {
     top: 64px;
     flex: 0 0 248px;
     box-sizing: border-box;
-    height: calc(100vh - 64px);
+    height: calc(100vh - 65px);
     overflow-y: auto;
     padding: 20px 16px;
     border-right: 1px solid var(--border);
@@ -618,6 +618,8 @@ code {
 .player {
     width: 100%;
     max-height: 60vh;
+    /* 방송이 없을 때도 영상 자리의 크기가 같아서, 영상이 붙어도 아래 내용이 밀리지 않는다. */
+    aspect-ratio: 16 / 9;
     border-radius: var(--corner-xs);
     background: #000;
 }
@@ -2268,6 +2270,111 @@ details li {
 @keyframes broadcast-pulse {
     50% {
         opacity: 0.35;
+    }
+}
+
+/* ── 라이브 시청: 좁은 화면 ──
+ * 영상과 채팅이 한 화면에 함께 보여야 한다. 페이지는 스크롤하지 않고,
+ * 영상(16:9) · 제목 줄 · 채팅이 위에서 아래로 쌓이며 채팅만 안에서 스크롤한다.
+ * 입력줄은 화면 맨 아래에 있어 엄지가 닿는다. */
+.live__toggle {
+    display: none;
+}
+
+@media (max-width: 899px) {
+    /* 보는 동안은 검색이 필요 없다. 머리 줄을 한 줄로 줄여 영상에 자리를 준다. */
+    .app:has(.live) .nav {
+        flex-wrap: nowrap;
+    }
+
+    .app:has(.live) .nav__search {
+        display: none;
+    }
+
+    .main:has(> .live) {
+        max-width: none;
+        padding: 0;
+    }
+
+    .live {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        height: calc(100vh - 65px);
+        height: calc(100dvh - 65px);
+    }
+
+    .live__main {
+        flex: 0 0 auto;
+        min-width: 0;
+    }
+
+    .live .player {
+        display: block;
+        max-height: none;
+        border-radius: 0;
+    }
+
+    .live__head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 16px;
+    }
+
+    .live__titles {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .live__titles h2 {
+        margin: 0;
+        overflow: hidden;
+        font-size: 16px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .live__titles .meta {
+        margin: 0;
+        overflow: hidden;
+        font-size: 13px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .live__toggle {
+        display: inline-block;
+        flex: 0 0 auto;
+        min-height: 44px;
+        padding: 0 14px;
+        font-size: 14px;
+    }
+
+    .live__more {
+        display: none;
+        max-height: 26vh;
+        padding: 0 16px 12px;
+        overflow-y: auto;
+    }
+
+    .live__info--open .live__more {
+        display: block;
+    }
+
+    .live .chat {
+        flex: 1;
+        height: auto;
+        min-height: 0;
+        border-width: 1px 0 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    /* 고정 메시지·후원 띠·후원 칸이 붙어도 입력줄이 화면 밖으로 밀리지 않게 목록이 줄어든다. */
+    .live .chat__list {
+        flex: 1 1 0;
+        min-height: 80px;
     }
 }
 

@@ -66,13 +66,7 @@ export default function LivePage({ id }) {
             <div className="live__main">
                 <HlsPlayer src={live.hlsUrl} poster={live.thumbnailUrl} />
 
-                <h2>{live.title}</h2>
-
-                <LiveMeta live={live} />
-
-                <ChannelSubscribe channelId={live.channelId} onChanged={reload} />
-
-                {live.description && <p className="description">{live.description}</p>}
+                <LiveInfo live={live} onChanged={reload} />
             </div>
 
             {/*
@@ -81,6 +75,43 @@ export default function LivePage({ id }) {
             */}
             {history && <ChatPanel key={id} live={live} history={history} me={me} />}
         </section>
+    )
+}
+
+/**
+ * 방송 제목·채널·구독·설명. 넓은 화면에서는 영상 아래에 모두 펼쳐 둔다.
+ * 좁은 화면에서는 영상과 채팅이 한 화면에 함께 보이도록 제목과 채널만 남기고,
+ * 구독과 설명은 "정보" 를 눌러야 펼쳐진다.
+ */
+function LiveInfo({ live, onChanged }) {
+    const [open, setOpen] = useState(false)
+    const moreId = `live-more-${live.id}`
+
+    return (
+        <div className={`live__info${open ? ' live__info--open' : ''}`}>
+            <div className="live__head">
+                <div className="live__titles">
+                    <h2>{live.title}</h2>
+                    <LiveMeta live={live} />
+                </div>
+
+                <button
+                    type="button"
+                    className="live__toggle"
+                    aria-expanded={open}
+                    aria-controls={moreId}
+                    onClick={() => setOpen((value) => !value)}
+                >
+                    {open ? '접기' : '정보'}
+                </button>
+            </div>
+
+            <div id={moreId} className="live__more">
+                <ChannelSubscribe channelId={live.channelId} onChanged={onChanged} />
+
+                {live.description && <p className="description">{live.description}</p>}
+            </div>
+        </div>
     )
 }
 
@@ -129,13 +160,7 @@ function VodView({ live }) {
                     <p className="empty">이 방송은 다시보기가 남아 있지 않습니다.</p>
                 )}
 
-                <h2>{live.title}</h2>
-
-                <LiveMeta live={live} />
-
-                <ChannelSubscribe channelId={live.channelId} />
-
-                {live.description && <p className="description">{live.description}</p>}
+                <LiveInfo live={live} />
             </div>
 
             {live.vodUrl && <ReplayChat key={live.id} liveId={live.id} currentTime={currentTime} />}
