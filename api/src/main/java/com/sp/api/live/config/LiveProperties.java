@@ -6,14 +6,25 @@ import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.regex.Pattern;
 
 @Getter
 @Component
 public class LiveProperties {
 
+    private static final Pattern HLS_BASE_PATTERN =
+            Pattern.compile("^https://[A-Za-z0-9.-]+(:[0-9]{1,5})?(/[A-Za-z0-9._~-]+)*$");
+
     /** 시청자에게 내려줄 HLS 주소의 앞부분. */
     @Value("${app.hls.base-url}")
     private String hlsBaseUrl;
+
+    /**
+     * 스트리밍 서버가 방송을 시작할 때 알려 준 공개 주소. 있으면 hlsBaseUrl 대신 쓴다.
+     * 내 PC 에서 스트리밍 서버를 돌리고 임시 터널로 공개할 때, 터널 주소가 켤 때마다 바뀌어서 있는 기능이다.
+     * 서버 메모리에만 있다(재시작하면 다음 방송 시작 때 다시 받는다).
+     */
+    private volatile String hlsOverride;
 
     /**
      * on_publish 응답으로 공개 이름으로의 리다이렉트를 돌려줄지 여부.
@@ -55,6 +66,34 @@ public class LiveProperties {
                 token.getBytes(StandardCharsets.UTF_8));
     }
 
+    /** 시청자에게 실제로 내려 줄 HLS 주소의 앞부분. */
+    public String getHlsBaseUrl() {
+        String override = hlsOverride;
+        return override != null ? override : hlsBaseUrl;
+    }
+
+    /**
+     * 스트리밍 서버가 알려 준 공개 주소를 받는다. 콜백 비밀 값이 설정돼 있고(= 호출자가 검증됐고),
+     * https 주소처럼 생겼을 때만 받는다. 시청자 브라우저가 이 주소로 영상을 받으러 가므로 아무 값이나 받으면 안 된다.
+     *
+     * @return 받았으면 true
+     */
+    public boolean acceptHlsOverride(String candidate) {
+
+        if (callbackToken == null || callbackToken.isBlank() || candidate == null) {
+            return false;
+        }
+
+        String url = candidate.endsWith("/") ? candidate.substring(0, candidate.length() - 1) : candidate;
+
+        if (!HLS_BASE_PATTERN.matcher(url).matches()) {
+            return false;
+        }
+
+        this.hlsOverride = url;
+        return true;
+    }
+
     public String redirectUrlFor(String publicName) {
         return rtmpRedirectBase + "/" + publicName;
     }
@@ -63,7 +102,7 @@ public class LiveProperties {
     public String vodUrlFor(String streamName) {
 
         String base = vodBaseUrl == null || vodBaseUrl.isBlank()
-                ? hlsBaseUrl.replaceAll("/hls/?$", "/vod")
+                ? getHlsBaseUrl().replaceAll("/hls/?$", "/vod")
                 : vodBaseUrl;
 
         return base + "/" + streamName + ".m3u8";

@@ -40,11 +40,17 @@ public class RtmpCallbackController {
     @PostMapping("/publish")
     public ResponseEntity<Void> publish(
             @RequestParam("name") String name,
-            @RequestParam(value = "token", required = false) String token
+            @RequestParam(value = "token", required = false) String token,
+            @RequestParam(value = "hls", required = false) String hls
     ) {
 
         if (!liveProperties.callbackAllowed(token)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        // 스트리밍 서버가 자기 공개 주소를 알려 주면 시청자에게 그 주소를 내려 준다. (비밀 값이 있을 때만 받는다)
+        if (hls != null && !liveProperties.acceptHlsOverride(hls)) {
+            log.warn("스트리밍 서버가 알려 준 공개 주소를 받지 않았다");
         }
 
         // 리다이렉트되어 공개 이름으로 다시 들어온 요청은 그대로 통과시킨다.
