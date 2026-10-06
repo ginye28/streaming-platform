@@ -15,7 +15,7 @@ export default function LivesPage() {
 
     return (
         <section>
-            {schedules?.content.length > 0 && (
+            {schedules && (
                 <>
                     <h2>방송 예정</h2>
                     <ScheduleList schedules={schedules.content} />

@@ -319,7 +319,7 @@ function LiveRing({ lives }) {
                 <p className="empty">
                     지금 방송 중인 채널이 없어요.
                     <br />
-                    <Link to={{ view: 'schedule' }} className="empty__link">
+                    <Link to={{ view: 'lives' }} className="empty__link">
                         예정된 방송 보기
                     </Link>
                 </p>
