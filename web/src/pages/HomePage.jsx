@@ -8,7 +8,7 @@ import {
 } from '../api.js'
 import { assetUrl } from '../assets.js'
 import Link from '../components/Link.jsx'
-import { HEART_COLORS, toggleHeart, useHearts } from '../hearts.js'
+import { HEART_COLORS, heartInk, toggleHeart, useHearts } from '../hearts.js'
 import { useAsyncData } from '../useAsyncData.js'
 import { useAuth } from '../useAuth.js'
 
@@ -54,6 +54,8 @@ export default function HomePage() {
 
     return (
         <section className="home">
+            <h1 className="visually-hidden">홈</h1>
+
             {waking && (
                 <p className="notice" role="status">
                     서버가 쉬고 있다가 깨는 중이에요. 처음 접속하면 30초 넘게 걸릴 수 있어요. 잠시만 기다려 주세요.
@@ -119,6 +121,14 @@ export default function HomePage() {
             )}
         </section>
     )
+}
+
+/** 가로 줄을 한 화면의 80% 만큼 넘긴다. 동작 줄이기를 켠 사람에게는 미끄러지지 않고 바로 넘긴다. */
+function scrollTrack(track, direction) {
+    if (!track) return
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: reduceMotion ? 'auto' : 'smooth' })
 }
 
 /** active 가 delay 이상 이어지면 true. 느린 첫 응답에 안내를 띄울 때 쓴다. */
@@ -223,12 +233,7 @@ function LiveStrip({ lives }) {
     }, [me?.id])
 
     function scroll(direction) {
-        const track = trackRef.current
-        if (!track) return
-
-        // OS 에서 동작 줄이기를 켠 사람에게는 부드럽게 미끄러지지 않고 바로 넘긴다.
-        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-        track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: reduceMotion ? 'auto' : 'smooth' })
+        scrollTrack(trackRef.current, direction)
     }
 
     if (onAir.length === 0 && !resting?.length) return null
@@ -277,7 +282,7 @@ function LiveStrip({ lives }) {
                             >
                                 <span className="strip__face">
                                     {channel.profileImage ? (
-                                        <img src={assetUrl(channel.profileImage)} alt="" />
+                                        <img src={assetUrl(channel.profileImage)} alt="" loading="lazy" decoding="async" />
                                     ) : (
                                         channel.nickname.slice(0, 1)
                                     )}
@@ -546,7 +551,7 @@ function RingCard({ live, color, order, size, front, onBringFront, onHeart, styl
     return (
         <div
             className={`ring__card ring__card--${size}${hearted ? ' ring__card--hearted' : ''}${front ? ' ring__card--front' : ''}`}
-            style={{ ...style, ...(hearted ? { '--heart': color } : {}) }}
+            style={{ ...style, ...(hearted ? { '--heart': color, '--on-heart': heartInk(color) } : {}) }}
         >
             <Link
                 to={{ view: 'live', id: live.id }}
@@ -556,7 +561,13 @@ function RingCard({ live, color, order, size, front, onBringFront, onHeart, styl
                 {...(bring ? { onClick: bring } : {})}
             >
                 {live.thumbnailUrl ? (
-                    <img src={assetUrl(live.thumbnailUrl)} alt="" draggable="false" />
+                    <img
+                        src={assetUrl(live.thumbnailUrl)}
+                        alt=""
+                        draggable="false"
+                        loading={front ? undefined : 'lazy'}
+                        decoding="async"
+                    />
                 ) : (
                     <span className="ring__blank">{live.nickname?.slice(0, 1)}</span>
                 )}
@@ -831,7 +842,13 @@ function HeroBanner({ live, others }) {
     return (
         <div className="hero-wrap">
             {live.thumbnailUrl && (
-                <img className="hero-bg" src={assetUrl(live.thumbnailUrl)} alt="" draggable="false" />
+                <img
+                    className="hero-bg"
+                    src={assetUrl(live.thumbnailUrl)}
+                    alt=""
+                    draggable="false"
+                    fetchPriority="high"
+                />
             )}
 
             <Link to={{ view: 'live', id: live.id }} className="hero-body" draggable="false">
@@ -901,7 +918,18 @@ function Carousel({ title, items }) {
 
     return (
         <div className="carousel">
-            <h3 className="carousel__title">{title}</h3>
+            <div className="carousel__head">
+                <h3 className="carousel__title">{title}</h3>
+
+                <span className="carousel__arrows">
+                    <button type="button" onClick={() => scrollTrack(trackRef.current, -1)} aria-label="앞쪽 영상 보기">
+                        <Icon name="prev" />
+                    </button>
+                    <button type="button" onClick={() => scrollTrack(trackRef.current, 1)} aria-label="뒤쪽 영상 보기">
+                        <Icon name="next" />
+                    </button>
+                </span>
+            </div>
 
             <ul
                 className="carousel__track"
@@ -917,7 +945,13 @@ function Carousel({ title, items }) {
                         <Link to={{ view: 'stream', id: stream.id }} className="tile" draggable="false">
                             <span className="tile__thumb">
                                 {stream.thumbnailUrl ? (
-                                    <img src={assetUrl(stream.thumbnailUrl)} alt="" draggable="false" />
+                                    <img
+                                        src={assetUrl(stream.thumbnailUrl)}
+                                        alt=""
+                                        draggable="false"
+                                        loading="lazy"
+                                        decoding="async"
+                                    />
                                 ) : (
                                     <span className="tile__blank">썸네일 없음</span>
                                 )}

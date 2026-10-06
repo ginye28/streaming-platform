@@ -12,7 +12,7 @@ export default function StreamList({ streams, empty = '영상이 없습니다.' 
                 <li key={stream.id} className="card">
                     <Link to={{ view: 'stream', id: stream.id }} className="card__thumb">
                         {stream.thumbnailUrl ? (
-                            <img src={assetUrl(stream.thumbnailUrl)} alt="" />
+                            <img src={assetUrl(stream.thumbnailUrl)} alt="" loading="lazy" decoding="async" />
                         ) : (
                             <div className="card__thumb--blank">썸네일 없음</div>
                         )}

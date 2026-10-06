@@ -97,7 +97,7 @@
       "pencil-gray": {
         "role": "neutral",
         "displayName": "연필 회색 Pencil Gray",
-        "canonical": "oklch(55.5% 0.012 150)",
+        "canonical": "oklch(53.8% 0.012 150)",
         "tonalRamp": [
           "oklch(15% 0.009 150)",
           "oklch(25% 0.010 150)",
@@ -290,9 +290,9 @@
       "name": "Text Input",
       "kind": "input",
       "refersTo": "input",
-      "description": "종이 바탕에 1px 선. 포커스하면 선이 초록으로 바뀐다.",
+      "description": "종이 바탕에 입력칸 전용 진한 선(배경과 3:1). 포커스하면 선이 초록으로 바뀐다.",
       "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"채널 이름 검색\" />",
-      "css": ".ds-input { padding: 9px 11px; border: 1px solid var(--border, #e2e6e3); border-radius: 0 10px 0 10px; background: var(--surface, #fff); color: var(--text, #161a18); font: inherit; font-size: 15px; } .ds-input::placeholder { color: var(--muted, #6e756f); } .ds-input:hover { border-color: var(--border-strong, #c7d0cb); } .ds-input:focus-visible { border-color: var(--accent, #17604f); outline: 2px solid var(--accent, #17604f); outline-offset: 0; }"
+      "css": ".ds-input { padding: 9px 11px; border: 1px solid var(--field-border, #868e88); border-radius: 0 10px 0 10px; background: var(--surface, #fff); color: var(--text, #161a18); font: inherit; font-size: 15px; } .ds-input::placeholder { color: var(--muted, #6e756f); } .ds-input:hover { border-color: var(--muted, #6a716c); } .ds-input:focus-visible { border-color: var(--accent, #17604f); outline: 2px solid var(--accent, #17604f); outline-offset: 0; }"
     },
     {
       "name": "Filter Chip",
@@ -394,6 +394,7 @@
       "Do 새 사각형은 --corner-xs / pill / sm / md / lg 중 크기에 맞는 변수를 쓴다. 변수를 쓰면 시그니처 모양이 저절로 따라온다.",
       "Do 색은 :root 변수(var(--accent), var(--surface) 등)로만 쓴다. 값을 직접 쓰면 나이트 모드에서 깨진다.",
       "Do 위험색(--danger) 바탕의 배지 글자는 #fff 대신 var(--on-danger) 를 쓴다.",
+      "Do 하트 색 번호 배지의 글자는 heartInk() 가 고른다. 흰 글자가 4.5:1을 못 넘는 밝은 색에는 어두운 글자를 쓴다.",
       "Do 확정하는 버튼에만 초록을 쓴다. 나머지 버튼은 눌린 종이 바탕으로 조용히 둔다.",
       "Do 새 색을 만들면 라이트와 :root[data-theme='dark'] 두 벌을 함께 만든다.",
       "Do 한국어 제목과 이름에 word-break: keep-all, 길면 두 줄에서 -webkit-line-clamp: 2 로 자른다.",

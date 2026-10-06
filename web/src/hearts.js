@@ -9,7 +9,17 @@ import { useSyncExternalStore } from 'react'
 const STORAGE_KEY = 'sp.hearts'
 
 /** 누른 순서대로 붙는 색. 명도가 서로 달라 색만으로 구분하지 않아도 되게 골랐다. */
-export const HEART_COLORS = ['#e0424f', '#e39a1c', '#3f7be0', '#2f9e68', '#9b5de5', '#e0679d', '#1aa3b8', '#8a6d3b']
+export const HEART_COLORS = ['#d33e4a', '#e39a1c', '#3b72d0', '#2f9e68', '#9257d7', '#e0679d', '#1aa3b8', '#8a6d3b']
+
+/** 하트 색 바탕 위의 글자색. 흰색이 4.5:1 을 못 넘는 밝은 색에는 어두운 글자를 쓴다. */
+export function heartInk(color) {
+    const [r, g, b] = [1, 3, 5]
+        .map((i) => parseInt(color.slice(i, i + 2), 16) / 255)
+        .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
+    const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+    return 1.05 / (luminance + 0.05) >= 4.5 ? '#ffffff' : '#161a18'
+}
 
 const listeners = new Set()
 let current = read()

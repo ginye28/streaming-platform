@@ -12,8 +12,10 @@
     --sunken: #f1f4f2;
     --border: #e2e6e3;
     --border-strong: #c7d0cb;
+    /* 입력칸 테두리. 비어 있는 칸도 어디까지인지 보이도록 배경과 3:1 이상을 지킨다. */
+    --field-border: #868e88;
     --text: #161a18;
-    --muted: #6e756f;
+    --muted: #6a716c;
     --accent: #17604f;
     --accent-hover: #114c3e;
     --accent-soft: #e6f0ec;
@@ -46,6 +48,7 @@
     --sunken: #0b0f0e;
     --border: #28312d;
     --border-strong: #3b4642;
+    --field-border: #6b7771;
     --text: #e8ecea;
     --muted: #929c97;
     --accent: #56c6a6;
@@ -218,6 +221,28 @@ h3 {
     font-weight: 800;
     line-height: 16px;
     text-align: center;
+}
+
+.skip-link {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 1000;
+    padding: 10px 16px;
+    border-radius: var(--corner-xs);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 700;
+    text-decoration: none;
+    transform: translateY(-200%);
+}
+
+.skip-link:focus-visible {
+    transform: none;
+}
+
+.main:focus {
+    outline: none;
 }
 
 .visually-hidden {
@@ -432,6 +457,13 @@ button {
     font-size: 15px;
 }
 
+/* 입력칸은 버튼·칩보다 진한 테두리를 쓴다. 비어 있어도 칸의 경계가 보여야 한다. */
+input,
+select,
+textarea {
+    border-color: var(--field-border);
+}
+
 input::placeholder,
 textarea::placeholder {
     color: var(--muted);
@@ -440,7 +472,7 @@ textarea::placeholder {
 input:hover,
 select:hover,
 textarea:hover {
-    border-color: var(--border-strong);
+    border-color: var(--muted);
 }
 
 input:focus-visible,
@@ -1205,7 +1237,7 @@ details li {
     display: grid;
     place-items: center;
     height: 100%;
-    color: var(--muted);
+    color: rgb(244 247 245 / 0.8);
     font-size: 12px;
     font-weight: 700;
 }
@@ -1322,8 +1354,35 @@ details li {
     min-width: 0;
 }
 
+.carousel__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
 .carousel__title {
-    margin: 0 0 12px;
+    margin: 0;
+}
+
+.carousel__arrows {
+    display: inline-flex;
+    gap: 8px;
+}
+
+.carousel__arrows button {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: var(--corner-pill);
+    color: var(--muted);
+}
+
+.carousel__arrows button:hover:not(:disabled) {
+    color: var(--text);
 }
 
 .carousel__track {
@@ -1601,10 +1660,10 @@ details li {
         transform 560ms cubic-bezier(0.34, 1.36, 0.64, 1),
         width 560ms cubic-bezier(0.34, 1.36, 0.64, 1),
         opacity 400ms ease;
-    will-change: transform, width;
 }
 
 .ring--dragging .ring__card {
+    will-change: transform, width;
     transition: none;
     cursor: grabbing;
 }
@@ -1643,7 +1702,7 @@ details li {
     display: grid;
     place-items: center;
     height: 100%;
-    color: var(--border-strong);
+    color: var(--muted);
     font-size: 40px;
     font-weight: 800;
 }
@@ -1670,6 +1729,7 @@ details li {
 .ring__order {
     left: 52px;
     background: var(--heart);
+    color: var(--on-heart, #fff);
 }
 
 .ring__info {
@@ -2239,8 +2299,24 @@ details li {
 /* ── 터치 화면 ──
  * 손가락으로 넘기는 화면에서는 화살표가 필요 없고, 칩은 44px 이상이어야 눌린다. */
 @media (hover: none) and (pointer: coarse) {
-    .strip__arrow {
+    .strip__arrow,
+    .carousel__arrows {
         display: none;
+    }
+
+    /* 머리 줄의 링크와 버튼도 손가락으로 누를 수 있게 44px 이상. */
+    .nav__links a,
+    .nav__account a,
+    .nav__theme,
+    .nav__account button {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+    }
+
+    .nav__links a,
+    .nav__account a {
+        padding: 0 6px;
     }
 
     .chip {

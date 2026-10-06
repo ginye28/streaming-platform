@@ -8,12 +8,13 @@ colors:
   live-red: "#c2352c"
   live-red-wash: "#fbecea"
   ink: "#161a18"
-  pencil-gray: "#6e756f"
+  pencil-gray: "#6a716c"
   daylight: "#fbfcfb"
   paper: "#ffffff"
   sunken-paper: "#f1f4f2"
   hairline: "#e2e6e3"
   hairline-strong: "#c7d0cb"
+  field-line: "#868e88"
   banner-black: "#0c100f"
   banner-text: "#f4f7f5"
   admin-ok: "#17795f"
@@ -25,6 +26,7 @@ colors:
   night-sunken: "#0b0f0e"
   night-hairline: "#28312d"
   night-hairline-strong: "#3b4642"
+  night-field-line: "#6b7771"
   night-ink: "#e8ecea"
   night-muted: "#929c97"
   mint: "#56c6a6"
@@ -161,11 +163,12 @@ components:
 
 ### Neutral
 - **잉크 Ink** (#161a18, `--text`): 본문과 제목 글자. 순수한 검정이 아니라 초록기가 도는 먹색이다.
-- **연필 회색 Pencil Gray** (#6e756f, `--muted`): 메타 정보, 설명, 선택 안 된 칩, 빈 상태 안내.
+- **연필 회색 Pencil Gray** (#6a716c, `--muted`): 메타 정보, 설명, 선택 안 된 칩, 빈 상태 안내. 눌린 종이 위에서도 4.5:1을 넘도록 맞춘 값이다.
 - **낮빛 Daylight** (#fbfcfb, `--bg`): 페이지 바탕.
 - **종이 Paper** (#ffffff, `--surface`): 머리 줄, 사이드바, 카드, 입력칸 같은 올라앉는 면.
 - **눌린 종이 Sunken Paper** (#f1f4f2, `--sunken`): 기본 버튼, 검색 입력칸, 썸네일 빈 칸, 코드 조각처럼 한 칸 눌린 면.
 - **머리카락 선 Hairline** (#e2e6e3, `--border`) / **진한 머리카락 선 Hairline Strong** (#c7d0cb, `--border-strong`): 면을 나누는 1px 선과 마우스를 올렸을 때의 선.
+- **입력칸 선 Field Line** (#868e88, `--field-border`): 입력칸·선택칸·글상자의 테두리. 비어 있어도 칸의 경계가 보이도록 배경과 3:1 이상이다. 나이트에서는 #6b7771. 버튼과 칩은 계속 머리카락 선을 쓴다.
 - **배너 먹색 Banner Black** (#0c100f)과 **배너 글자색 Banner Text** (#f4f7f5): 홈 상단 배너 전용. 테마와 상관없이 항상 어둡다. 어떤 썸네일이 와도 글자가 읽히게 하기 위해서다.
 
 ### 나이트 모드
@@ -272,7 +275,7 @@ SP의 모든 사각형은 같은 비율의 **시그니처 모서리**를 따른�
 - **접이식 칸(`details`):** 종이 바탕, 1px 선, xs 모서리. 요약 줄이 칸 전체를 덮고 호버하면 글자가 초록이 된다.
 
 ### Inputs / Fields
-- **Style:** 종이 바탕, 1px 머리카락 선, xs 모서리, 안쪽 여백 9px 11px. 검색 입력칸은 눌린 종이 바탕에 `0 16px 0 16px`.
+- **Style:** 종이 바탕, 1px 입력칸 선(`--field-border`), xs 모서리, 안쪽 여백 9px 11px. 호버하면 연필 회색으로 진해진다. 검색 입력칸은 눌린 종이 바탕에 `0 16px 0 16px`.
 - **Focus:** 선이 초록으로 바뀌고 2px 초록 포커스 링이 나타난다(`outline-offset: 0`). 호버는 선이 진해진다.
 - **Error:** 따로 입력칸 상태를 만들지 않고, 오류 상자(붉은 번짐 바탕 + 라이브 레드 선·글자, xs 모서리, 14px)를 폼 근처에 둔다.
 
@@ -300,6 +303,7 @@ SP의 모든 사각형은 같은 비율의 **시그니처 모서리**를 따른�
 - **Do** 한국어 제목과 이름에 `word-break: keep-all`, 길면 두 줄에서 `-webkit-line-clamp: 2` 로 자른다.
 - **Do** 썸네일이 없는 빈 칸도 디자인한다: 눌린 종이 바탕에 "썸네일 없음" 같은 흐린 글자, 같은 비율(16:9)과 같은 모서리.
 - **Do** 바탕이 이미지인 곳(배너)은 테마와 상관없는 고정된 어두운 그라디언트로 글자를 보호한다.
+- **Do** 하트 색 번호 배지의 글자는 `heartInk()` 가 고른다. 흰 글자가 4.5:1을 못 넘는 밝은 색(호박, 초록, 분홍, 청록)에는 어두운 글자를 쓴다.
 - **Do** 새 전환·애니메이션·부드러운 스크롤은 `prefers-reduced-motion` 에서 꺼지게 한다.
 - **Do** 새 카드나 목록은 375px 폭에서 가로로 넘치지 않는지 확인한다.
 
