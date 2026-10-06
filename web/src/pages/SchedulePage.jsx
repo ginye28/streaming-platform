@@ -19,7 +19,12 @@ const POLL_MS = 10000
  * 예약이 취소되거나 시각이 한참 지나 내려갔다면 그렇게 알려 준다.
  */
 export default function SchedulePage({ id }) {
-    const { data: schedule, error, loading, reload } = useAsyncData(() => getSchedule(id), [id])
+    // 주소에 id 가 없으면(손으로 고친 주소 등) 서버 오류 문구 대신 예정 목록이 있는 화면으로 보낸다.
+    useEffect(() => {
+        if (!id) navigate({ view: 'lives' })
+    }, [id])
+
+    const { data: schedule, error, loading, reload } = useAsyncData(() => (id ? getSchedule(id) : Promise.resolve(null)), [id])
 
     const waiting = schedule?.status === 'SCHEDULED'
 
