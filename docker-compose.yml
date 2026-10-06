@@ -48,6 +48,9 @@ services:
     ports:
       - "1935:1935"   # RTMP 송출
       - "8081:8081"   # HLS 재생
+    environment:
+      # API 의 RTMP_CALLBACK_TOKEN 과 같은 값. 비우면 콜백 검사를 하지 않는다(로컬 개발).
+      RTMP_CALLBACK_TOKEN: ${RTMP_CALLBACK_TOKEN:-}
     # 1936(안쪽 통로)은 일부러 공개하지 않는다.
     # 컨테이너 안에서 nginx 가 스스로에게 리다이렉트할 때만 쓴다.
     # nginx 가 호스트에서 도는 API(8080)로 on_publish 콜백을 보낼 수 있게 한다.
@@ -87,6 +90,8 @@ services:
       TOSS_WEBHOOK_TOKEN: ${TOSS_WEBHOOK_TOKEN:-}
       # streaming 서비스가 방송을 다시보기로 녹화하므로 켠다. 주소는 HLS_BASE_URL 옆의 /vod 가 된다.
       VOD_ENABLED: ${VOD_ENABLED:-true}
+      # nginx 콜백 검사용 비밀 값. streaming 서비스와 같은 값이어야 한다. 비우면 검사하지 않는다.
+      RTMP_CALLBACK_TOKEN: ${RTMP_CALLBACK_TOKEN:-}
     depends_on:
       mysql:
         condition: service_healthy

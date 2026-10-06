@@ -4,6 +4,9 @@ import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+
 @Getter
 @Component
 public class LiveProperties {
@@ -33,6 +36,24 @@ public class LiveProperties {
     /** 다시보기 재생 주소의 앞부분. 기본은 HLS 주소 옆의 /vod. */
     @Value("${app.vod.base-url:}")
     private String vodBaseUrl;
+
+    /**
+     * nginx-rtmp 콜백(/api/internal/rtmp/**)이 주소에 붙여 보내는 비밀 값.
+     * 비어 있으면 검사하지 않는다(내부망에서만 닿는 로컬 환경). 공개 서버에서는 반드시 채운다.
+     */
+    @Value("${app.rtmp.callback-token:}")
+    private String callbackToken;
+
+    public boolean callbackAllowed(String token) {
+
+        if (callbackToken == null || callbackToken.isBlank()) {
+            return true;
+        }
+
+        return token != null && MessageDigest.isEqual(
+                callbackToken.getBytes(StandardCharsets.UTF_8),
+                token.getBytes(StandardCharsets.UTF_8));
+    }
 
     public String redirectUrlFor(String publicName) {
         return rtmpRedirectBase + "/" + publicName;
