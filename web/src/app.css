@@ -2375,7 +2375,169 @@ a.donate__open:hover {
     width: 100%;
 }
 
+/* 같은 확정 행동이지만 한 화면에서 시선을 다투지 않아야 할 때(로그인하고 구독하기 등): 초록 윤곽과 옅은 바탕. */
+.cta--soft {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+.cta--soft:hover {
+    border-color: var(--accent-hover);
+    background: var(--accent-soft);
+    color: var(--accent-hover);
+}
+
 /* ── 영상 시청(VOD): 라이브와 같은 영상 상자 · 채널 줄 · 반응 줄 ── */
+.channel-row .meta a.channel-row__name {
+    color: var(--text);
+    font-weight: 700;
+}
+
+.like__hint {
+    font-size: 13px;
+}
+
+/* 설명은 눌린 종이 위의 메모처럼. 길면 세 줄만 보이고 "더보기"로 펼친다. */
+.description-box {
+    margin: 12px 0;
+    padding: 12px 14px;
+    border-radius: var(--corner-xs);
+    background: var(--sunken);
+}
+
+.description-box .description {
+    margin: 0;
+    color: var(--text);
+    font-size: 15px;
+}
+
+.description--clamped {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+}
+
+.description-box__toggle {
+    margin-top: 6px;
+    padding: 4px 10px;
+    font-size: 13px;
+}
+
+.comment__more {
+    margin: 4px 0 0 16px;
+    padding: 4px 10px;
+    font-size: 13px;
+}
+
+/* 같은 채널의 다른 영상: 시청이 끝난 뒤 갈 곳. 넓은 화면에서는 오른쪽 열, 좁은 화면에서는 영상 정보 아래 4개. */
+.more {
+    margin: 24px 0 0;
+}
+
+.more__title {
+    margin: 0 0 12px;
+    font-size: 16px;
+}
+
+.more__list {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.more__link {
+    display: grid;
+    grid-template-columns: 148px minmax(0, 1fr);
+    gap: 12px;
+    color: var(--text);
+    text-decoration: none;
+}
+
+.more__thumb {
+    display: block;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: var(--corner-sm);
+    background: var(--sunken);
+}
+
+.more__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.more__blank {
+    display: grid;
+    place-items: center;
+    height: 100%;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.more__text {
+    display: grid;
+    align-content: start;
+    gap: 4px;
+}
+
+.more__name {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.more__meta {
+    color: var(--muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+.more__link:hover .more__thumb {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+@media (max-width: 1199px) {
+    .more__item:nth-child(n + 5) {
+        display: none;
+    }
+}
+
+@media (min-width: 1200px) {
+    .stream {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 320px;
+        align-items: start;
+        column-gap: 24px;
+    }
+
+    .stream__main {
+        grid-column: 1;
+        grid-row: 1;
+        min-width: 0;
+    }
+
+    .stream__comments {
+        grid-column: 1;
+        grid-row: 2;
+        min-width: 0;
+    }
+
+    .more {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+        margin-top: 0;
+    }
+}
 .stream__info {
     margin-top: 12px;
 }
@@ -2808,7 +2970,9 @@ a.donate__open:hover {
         border-radius: 0;
     }
 
-    .stream > :not(.player-box) {
+    .stream__info,
+    .stream__comments,
+    .more {
         padding-right: 16px;
         padding-left: 16px;
     }
@@ -2894,7 +3058,9 @@ a.donate__open:hover {
         padding: 11px 16px;
     }
 
-    .cta--sm {
+    .cta--sm,
+    .description-box__toggle,
+    .comment__more {
         min-height: 44px;
     }
 }

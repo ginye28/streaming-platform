@@ -11,6 +11,7 @@ import {
 import { useAuth } from '../useAuth.js'
 import ChannelSubscribe from '../components/ChannelSubscribe.jsx'
 import FilePlayer from '../components/FilePlayer.jsx'
+import MoreStreams from '../components/MoreStreams.jsx'
 import OshiMark from '../components/OshiMark.jsx'
 import Pager from '../components/Pager.jsx'
 import { assetUrl } from '../assets.js'
@@ -32,6 +33,8 @@ export default function StreamPage({ id }) {
     const [deletingComment, setDeletingComment] = useState(null)
     // 좋아요·신고·삭제가 실패해도 영상과 댓글은 그대로 두고, 그 자리에서 알린다.
     const [actionError, setActionError] = useState(null)
+    // 답글이 많은 댓글은 접어 두고, 펼친 댓글의 id 를 기억한다.
+    const [openReplies, setOpenReplies] = useState([])
     const [posting, setPosting] = useState(false)
 
     // 신고 접수 같은 안내는 몇 초 뒤에 저절로 사라진다.
@@ -192,6 +195,7 @@ export default function StreamPage({ id }) {
 
     return (
         <section className="stream">
+          <div className="stream__main">
             <FilePlayer
                 src={assetUrl(stream.videoUrl)}
                 poster={assetUrl(stream.thumbnailUrl)}
@@ -202,8 +206,7 @@ export default function StreamPage({ id }) {
                 <h1>{stream.title}</h1>
 
                 <p className="meta">
-                    <Link to={{ view: 'channel', id: stream.userId }}>{stream.nickname}</Link>
-                    {' · '}조회 {stream.viewCount?.toLocaleString('ko-KR')}
+                    조회 {stream.viewCount?.toLocaleString('ko-KR')}
                     {stream.createdAt && (
                         <>
                             {' · '}
@@ -215,7 +218,7 @@ export default function StreamPage({ id }) {
                     {stream.categoryName && ` · ${stream.categoryName}`}
                 </p>
 
-                <ChannelSubscribe channelId={stream.userId} identity />
+                <ChannelSubscribe channelId={stream.userId} identity="named" />
 
                 <div className="stream__actions">
                     <button
@@ -230,6 +233,8 @@ export default function StreamPage({ id }) {
                         </svg>
                         좋아요 {stream.likeCount?.toLocaleString('ko-KR')}
                     </button>
+
+                    {!me && <span className="meta like__hint">로그인하면 누를 수 있어요</span>}
 
                     <div className="stream__manage">
                         {me && !mine && (
@@ -302,9 +307,13 @@ export default function StreamPage({ id }) {
                     </div>
                 )}
 
-                {stream.description && <p className="description">{stream.description}</p>}
+                {stream.description && <Description text={stream.description} />}
             </div>
+          </div>
 
+            <MoreStreams channelId={stream.userId} currentId={stream.id} nickname={stream.nickname} />
+
+          <div className="stream__comments">
             <h2 className="comments__title">댓글 {stream.commentCount}</h2>
 
             {commentsError && (
@@ -327,7 +336,7 @@ export default function StreamPage({ id }) {
                 </form>
             ) : (
                 <p className="stream__login">
-                    <Link to={loginTo()} className="cta cta--sm">
+                    <Link to={loginTo()} className="cta cta--sm cta--soft">
                         로그인하고 댓글 남기기
                     </Link>
                 </p>
@@ -348,7 +357,17 @@ export default function StreamPage({ id }) {
                             onDelete={() => handleDeleteComment(comment)}
                         />
 
-                        {comment.replies?.length > 0 && (
+                        {comment.replies?.length > 3 && !openReplies.includes(comment.id) && (
+                            <button
+                                type="button"
+                                className="comment__more"
+                                onClick={() => setOpenReplies((ids) => [...ids, comment.id])}
+                            >
+                                답글 {comment.replies.length}개 보기
+                            </button>
+                        )}
+
+                        {comment.replies?.length > 0 && (comment.replies.length <= 3 || openReplies.includes(comment.id)) && (
                             <ul className="comments comments--replies">
                                 {comment.replies.map((reply) => (
                                     <li key={reply.id}>
@@ -390,7 +409,26 @@ export default function StreamPage({ id }) {
             </ul>
 
             <Pager page={comments} onChange={setCommentPage} />
+          </div>
         </section>
+    )
+}
+
+/** 설명. 길면 세 줄까지만 보이고 "더보기"로 펼친다. */
+function Description({ text }) {
+    const [open, setOpen] = useState(false)
+    const long = text.length > 120 || text.split('\n').length > 3
+
+    return (
+        <div className="description-box">
+            <p className={`description${long && !open ? ' description--clamped' : ''}`}>{text}</p>
+
+            {long && (
+                <button type="button" className="description-box__toggle" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+                    {open ? '접기' : '더보기'}
+                </button>
+            )}
+        </div>
     )
 }
 

@@ -26,7 +26,7 @@ export default function SubscribeBar({ channel, onChanged, onFail }) {
     if (!me) {
         return (
             <div className="subscribe-bar">
-                <Link to={loginTo()} className="cta">
+                <Link to={loginTo()} className="cta cta--soft">
                     로그인하고 구독하기
                 </Link>
             </div>
