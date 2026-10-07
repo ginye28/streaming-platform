@@ -17,7 +17,12 @@ export default function ScheduleList({ schedules, empty = '예정된 방송이 �
         <ul className="schedule-list">
             {schedules.map((schedule) => (
                 <li key={schedule.id} className="schedule-list__item">
-                    <Link to={{ view: 'schedule', id: schedule.id }} className="schedule-list__thumb">
+                    <Link
+                        to={{ view: 'schedule', id: schedule.id }}
+                        className="schedule-list__thumb"
+                        aria-hidden="true"
+                        tabIndex={-1}
+                    >
                         {schedule.thumbnailUrl ? (
                             <img src={assetUrl(schedule.thumbnailUrl)} alt="" loading="lazy" decoding="async" />
                         ) : (

@@ -68,7 +68,7 @@ export default function SubscribeBar({ channel, onChanged, onFail }) {
         if (paymentConfig?.enabled) {
             return (
                 <div className="subscribe-bar">
-                    <button type="button" onClick={() => subscribe(false)} disabled={busy}>
+                    <button type="button" className="button--primary" onClick={() => subscribe(false)} disabled={busy}>
                         무료 구독
                     </button>
                     <PaidMembership channelId={channel.id} tier={null} paidUntil={null} onFail={onFail} />
@@ -81,7 +81,7 @@ export default function SubscribeBar({ channel, onChanged, onFail }) {
 
         return (
             <div className="subscribe-bar">
-                <button type="button" onClick={() => subscribe(false)} disabled={busy}>
+                <button type="button" className="button--primary" onClick={() => subscribe(false)} disabled={busy}>
                     무료 구독
                 </button>
                 <button
@@ -93,8 +93,8 @@ export default function SubscribeBar({ channel, onChanged, onFail }) {
                     유료 구독
                 </button>
                 <span className="meta">
-                    유료로 구독하면 채널이 정한 특별한 오시마크를 답니다 · 결제 연동 전이라 바로
-                    적용됩니다
+                    유료로 구독하면 채널이 정한 특별한 오시마크를 답니다 · 체험 모드라 결제 없이 바로
+                    적용돼요
                 </span>
             </div>
         )

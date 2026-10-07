@@ -64,3 +64,10 @@ export function timeAgo(value) {
 
     return Number.isNaN(time) ? '' : formatAgo(Date.now() - time)
 }
+
+/** "2025-03-12" 같은 날짜(시간 없음)를 "2025년 3월 12일" 로. 시간대에 따라 하루가 밀리지 않게 직접 쪼갠다. */
+export function formatDay(value) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value ?? '')
+
+    return match ? `${match[1]}년 ${Number(match[2])}월 ${Number(match[3])}일` : (value ?? '')
+}

@@ -49,7 +49,7 @@ function Routes() {
         case 'stream':
             return <StreamPage id={id} />
         case 'channel':
-            return <ChannelPage id={id} />
+            return <ChannelPage key={id} id={id} />
         case 'search':
             return <SearchPage keyword={keyword} />
         case 'subscribed':
