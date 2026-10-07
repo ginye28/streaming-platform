@@ -2461,19 +2461,11 @@ a.donate__open:hover {
     gap: 8px;
 }
 
-.player-box__wait--error {
-    inset: 0;
-    background: rgb(0 0 0 / 0.72);
-    pointer-events: auto;
-}
-
-.player-box__wait--error button {
-    margin-top: 6px;
-}
-
 /* ── 라이브 시청: 영상 · 채널 줄 · 채팅 ── */
 .player-box {
     position: relative;
+    /* 높이 상한(60vh)에 걸려도 16:9 를 지키도록 폭을 같이 줄인다. 안 그러면 큰 화면에서 좌우 검은 띠가 생긴다. */
+    max-width: calc(60vh * 16 / 9);
     background: #000;
     border-radius: var(--corner-xs);
 }
@@ -2516,6 +2508,40 @@ a.donate__open:hover {
 .player-box__wait span:not(.player-box__dots) {
     font-size: 13px;
     opacity: 0.8;
+}
+
+/* 불러오는 동안에도 영상 자리의 크기를 예약해, 영상이 오면 아래가 밀리지 않는다. */
+.player-box__ghost {
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    max-height: 60vh;
+    background: #000;
+    border-radius: var(--corner-xs);
+}
+
+.comments__title {
+    margin: 24px 0 8px;
+    font-size: 16px;
+}
+
+/* 실패: 영상 전체를 덮고, 안의 "다시 시도"를 누를 수 있어야 한다. 기본 규칙(.player-box__wait)보다 뒤에 있어야 이긴다. */
+.player-box__wait--error {
+    inset: 0;
+    background: rgb(0 0 0 / 0.85);
+    pointer-events: auto;
+}
+
+.player-box__wait--error button {
+    margin-top: 6px;
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 600;
+}
+
+.player-box__wait--error button:hover:not(:disabled) {
+    border-color: var(--accent-hover);
+    background: var(--accent-hover);
 }
 
 .player-box__dots {
@@ -2585,11 +2611,13 @@ a.donate__open:hover {
 }
 
 /* 채널명처럼 작은 링크는 보이는 크기는 두고, 누를 수 있는 영역만 사방으로 넓힌다. */
-.live .meta a {
+.live .meta a,
+.stream .meta a {
     position: relative;
 }
 
-.live .meta a::after {
+.live .meta a::after,
+.stream .meta a::after {
     content: '';
     position: absolute;
     inset: -14px -8px;
@@ -2758,6 +2786,39 @@ a.donate__open:hover {
     }
 }
 
+/* ── 영상 시청(VOD): 좁은 화면 ──
+ * 라이브와 같은 결로: 머리 줄은 한 줄로, 영상은 가장자리까지, 제목은 작게. */
+@media (max-width: 899px) {
+    .app:has(.stream) .nav {
+        flex-wrap: nowrap;
+    }
+
+    .app:has(.stream) .nav__search {
+        display: none;
+    }
+
+    .main:has(> .stream) {
+        max-width: none;
+        padding: 0 0 64px;
+    }
+
+    .stream .player-box,
+    .stream .player-box__ghost {
+        max-width: none;
+        border-radius: 0;
+    }
+
+    .stream > :not(.player-box) {
+        padding-right: 16px;
+        padding-left: 16px;
+    }
+
+    .stream__info h1 {
+        font-size: 18px;
+        line-height: 1.35;
+    }
+}
+
 /* 가로로 눕힌 휴대폰: 영상은 왼쪽, 채팅은 오른쪽으로 나눠 둘 다 보이게 한다. */
 @media (max-width: 899px) and (orientation: landscape) and (max-height: 520px) {
     .live {
@@ -2831,5 +2892,9 @@ a.donate__open:hover {
 
     .chip {
         padding: 11px 16px;
+    }
+
+    .cta--sm {
+        min-height: 44px;
     }
 }

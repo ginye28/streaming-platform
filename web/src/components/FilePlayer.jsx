@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSlow } from '../useSlow.js'
 
 /**
@@ -12,14 +12,25 @@ export default function FilePlayer({ src, poster, label }) {
     const [status, setStatus] = useState('loading')
     const [attempt, setAttempt] = useState(0)
     const slow = useSlow(status === 'loading')
+    const boxRef = useRef(null)
+    const retried = useRef(false)
+
+    // 다시 시도를 누르면 버튼이 사라지므로 포커스를 영상 상자로 돌려, 키보드 사용자가 맨 위로 튕기지 않게 한다.
+    useEffect(() => {
+        if (retried.current) {
+            boxRef.current?.querySelector('video')?.focus()
+            retried.current = false
+        }
+    }, [attempt])
 
     function retry() {
+        retried.current = true
         setStatus('loading')
         setAttempt((value) => value + 1)
     }
 
     return (
-        <div className="player-box">
+        <div className="player-box" ref={boxRef}>
             <video
                 // key 가 바뀌면 영상 요소를 새로 만들어 처음부터 다시 받는다.
                 key={attempt}

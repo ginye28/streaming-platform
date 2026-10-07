@@ -16,6 +16,7 @@ import Pager from '../components/Pager.jsx'
 import { assetUrl } from '../assets.js'
 import { loginTo, navigate } from '../router.js'
 import { timeAgo } from '../time.js'
+import { useSlow } from '../useSlow.js'
 import Link from '../components/Link.jsx'
 import { useAsyncData } from '../useAsyncData.js'
 
@@ -29,6 +30,9 @@ export default function StreamPage({ id }) {
     const [reason, setReason] = useState('')
     const [notice, setNotice] = useState(null)
     const [deletingComment, setDeletingComment] = useState(null)
+    // 좋아요·신고·삭제가 실패해도 영상과 댓글은 그대로 두고, 그 자리에서 알린다.
+    const [actionError, setActionError] = useState(null)
+    const [posting, setPosting] = useState(false)
 
     // 신고 접수 같은 안내는 몇 초 뒤에 저절로 사라진다.
     useEffect(() => {
@@ -44,14 +48,17 @@ export default function StreamPage({ id }) {
         error,
         loading,
         reload,
-        fail,
     } = useAsyncData(() => getStream(id), [id])
 
     const {
         data: comments,
+        error: commentsError,
         reload: reloadComments,
         fail: failComments,
     } = useAsyncData(() => getComments(id, commentPage), [id, commentPage])
+
+    // 무료 서버가 잠들어 있으면 첫 응답이 오래 걸린다. 그 이유를 알려 준다.
+    const slow = useSlow(loading)
 
     async function handleLike() {
         // 좋아요를 누르려는 바로 그 순간이 로그인을 권하기 가장 좋은 때다. 보던 영상으로 돌아오게 보낸다.
@@ -60,16 +67,19 @@ export default function StreamPage({ id }) {
             return
         }
 
+        setActionError(null)
+
         try {
             await toggleLike(id)
             reload()
         } catch (e) {
-            fail(e)
+            setActionError(`좋아요를 처리하지 못했어요. ${e.message}`)
         }
     }
 
     async function handleComment(event) {
         event.preventDefault()
+        setPosting(true)
 
         try {
             await createComment(id, content.trim())
@@ -78,11 +88,14 @@ export default function StreamPage({ id }) {
             reload()
         } catch (e) {
             failComments(e)
+        } finally {
+            setPosting(false)
         }
     }
 
     async function handleReply(event, parentId) {
         event.preventDefault()
+        setPosting(true)
 
         try {
             await createComment(id, replyContent.trim(), parentId)
@@ -91,6 +104,8 @@ export default function StreamPage({ id }) {
             reload()
         } catch (e) {
             failComments(e)
+        } finally {
+            setPosting(false)
         }
     }
 
@@ -130,7 +145,7 @@ export default function StreamPage({ id }) {
             closePanel()
             setNotice('신고가 접수되었어요.')
         } catch (e) {
-            fail(e)
+            setActionError(`신고를 접수하지 못했어요. ${e.message}`)
         }
     }
 
@@ -139,12 +154,38 @@ export default function StreamPage({ id }) {
             await deleteStream(id)
             navigate({ view: 'home' })
         } catch (e) {
-            fail(e)
+            closePanel()
+            setActionError(`영상을 삭제하지 못했어요. ${e.message}`)
         }
     }
 
-    if (loading) return <p className="empty">불러오는 중…</p>
-    if (error) return <p className="error">{error}</p>
+    if (loading) {
+        return (
+            <section className="stream">
+                <div className="player-box">
+                    <div className="player-box__ghost" />
+                    <div className="player-box__wait" role="status">
+                        <strong>영상을 불러오는 중</strong>
+                        {slow && <span>서버를 깨우는 중이에요. 최대 1분쯤 걸려요</span>}
+                        <span className="player-box__dots" aria-hidden="true">
+                            <i />
+                            <i />
+                            <i />
+                        </span>
+                    </div>
+                </div>
+            </section>
+        )
+    }
+
+    // 영상 정보 자체를 못 받았을 때만 페이지 전체를 오류로 바꾼다.
+    if (error && !stream) {
+        return (
+            <p className="error" role="alert">
+                {error} <button type="button" onClick={reload}>다시 시도</button>
+            </p>
+        )
+    }
     if (!stream) return null
 
     const mine = me?.id === stream.userId
@@ -216,6 +257,15 @@ export default function StreamPage({ id }) {
                     </p>
                 )}
 
+                {actionError && (
+                    <p className="error" role="alert">
+                        {actionError}{' '}
+                        <button type="button" onClick={() => setActionError(null)}>
+                            닫기
+                        </button>
+                    </p>
+                )}
+
                 {panel === 'report' && (
                     <form className="stream__panel" onSubmit={handleReport}>
                         <label>
@@ -255,7 +305,13 @@ export default function StreamPage({ id }) {
                 {stream.description && <p className="description">{stream.description}</p>}
             </div>
 
-            <h3>댓글 {stream.commentCount}</h3>
+            <h2 className="comments__title">댓글 {stream.commentCount}</h2>
+
+            {commentsError && (
+                <p className="error" role="alert">
+                    {commentsError} <button type="button" onClick={reloadComments}>다시 시도</button>
+                </p>
+            )}
 
             {me ? (
                 <form className="toolbar" onSubmit={handleComment}>
@@ -265,7 +321,9 @@ export default function StreamPage({ id }) {
                         placeholder="댓글을 입력하세요"
                         required
                     />
-                    <button type="submit">등록</button>
+                    <button type="submit" disabled={posting}>
+                        {posting ? '등록 중…' : '등록'}
+                    </button>
                 </form>
             ) : (
                 <p className="stream__login">
@@ -319,7 +377,9 @@ export default function StreamPage({ id }) {
                                     required
                                     autoFocus
                                 />
-                                <button type="submit">등록</button>
+                                <button type="submit" disabled={posting}>
+                                    {posting ? '등록 중…' : '등록'}
+                                </button>
                                 <button type="button" onClick={closeReply}>
                                     취소
                                 </button>
@@ -364,8 +424,16 @@ function CommentLine({ comment, me, confirming, onReply, onAskDelete, onCancelDe
             ) : (
                 (canReply || canDelete) && (
                     <div className="comment__actions">
-                        {canReply && <button onClick={onReply}>답글</button>}
-                        {canDelete && <button onClick={onAskDelete}>삭제</button>}
+                        {canReply && (
+                            <button type="button" onClick={onReply} aria-label={`${comment.nickname} 님의 댓글에 답글`}>
+                                답글
+                            </button>
+                        )}
+                        {canDelete && (
+                            <button type="button" onClick={onAskDelete} aria-label={`${comment.nickname} 님의 댓글 삭제`}>
+                                삭제
+                            </button>
+                        )}
                     </div>
                 )
             )}
