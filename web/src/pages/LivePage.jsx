@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { getChatHistory, getLive, getLiveIntro } from '../api.js'
 import { loginTo } from '../router.js'
+import { usePageTitle } from '../usePageTitle.js'
 import { useAuth } from '../useAuth.js'
 import ChannelSubscribe from '../components/ChannelSubscribe.jsx'
 import ChatPanel from '../components/ChatPanel.jsx'
@@ -25,6 +26,8 @@ export default function LivePage({ id }) {
     const { me } = useAuth()
 
     const { data: live, error, loading, reload } = useAsyncData(() => getLive(id), [id])
+
+    usePageTitle(live?.title)
 
     // 방송 정보와 나란히 받는다. 인트로 때문에 화면이 늦게 뜨면 안 된다.
     const { data: intro, loading: introLoading } = useAsyncData(
@@ -143,7 +146,7 @@ function LiveMeta({ live }) {
         <p className="meta">
             <Link to={{ view: 'channel', id: live.channelId }}>{live.nickname}</Link>
             {live.status === 'ENDED' && ' · 종료된 방송'}
-            {live.audience !== 'ALL' && ` · ${LOCK_COPY[live.audience].title}`}
+            {live.audience && live.audience !== 'ALL' && LOCK_COPY[live.audience] && ` · ${LOCK_COPY[live.audience].title}`}
         </p>
     )
 }

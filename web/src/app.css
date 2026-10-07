@@ -2413,6 +2413,8 @@ a.donate__open:hover {
 }
 
 .description--clamped {
+    /* 줄바꿈을 보존하면 빈 줄이 석 줄 안에 들어와 "…"만 남는다. 접혀 있을 때는 이어서 읽는다. */
+    white-space: normal;
     display: -webkit-box;
     overflow: hidden;
     -webkit-box-orient: vertical;
@@ -2423,6 +2425,15 @@ a.donate__open:hover {
     margin-top: 6px;
     padding: 4px 10px;
     font-size: 13px;
+}
+
+.button--danger {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.stream .comments p {
+    font-size: 15px;
 }
 
 .comment__more {
@@ -2506,13 +2517,14 @@ a.donate__open:hover {
     outline-offset: 2px;
 }
 
-@media (max-width: 1199px) {
+@media (max-width: 1399px) {
     .more__item:nth-child(n + 5) {
         display: none;
     }
 }
 
-@media (min-width: 1200px) {
+/* 2열은 뷰포트가 아니라 실제로 남는 폭으로 정한다. 사이드바와 오른쪽 열을 빼고도 영상이 충분히 커야 해서 1400px 이상에서만 나눈다. */
+@media (min-width: 1400px) {
     .stream {
         display: grid;
         grid-template-columns: minmax(0, 1fr) 320px;
@@ -2533,6 +2545,8 @@ a.donate__open:hover {
     }
 
     .more {
+        position: sticky;
+        top: 81px;
         grid-column: 2;
         grid-row: 1 / span 2;
         margin-top: 0;

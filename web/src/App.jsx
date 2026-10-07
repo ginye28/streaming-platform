@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { AuthProvider } from './auth.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx'
 import Layout from './components/Layout.jsx'
 import HomePage from './pages/HomePage.jsx'
 import { useRoute } from './router.js'
@@ -85,9 +86,11 @@ function App() {
     return (
         <AuthProvider>
             <Layout>
-                <Suspense fallback={<Loading />}>
-                    <Routes />
-                </Suspense>
+                <ErrorBoundary>
+                    <Suspense fallback={<Loading />}>
+                        <Routes />
+                    </Suspense>
+                </ErrorBoundary>
             </Layout>
         </AuthProvider>
     )

@@ -113,7 +113,7 @@ export default function SubscribeBar({ channel, onChanged, onFail }) {
             {confirming ? (
                 <span className="subscribe-bar__confirm" role="group" aria-label="구독 취소 확인">
                     <span className="meta">구독을 취소할까요?{paidNote}</span>
-                    <button type="button" onClick={unsubscribe} disabled={busy}>
+                    <button type="button" className="button--danger" onClick={unsubscribe} disabled={busy}>
                         구독 취소
                     </button>
                     <button type="button" onClick={() => setConfirming(false)}>

@@ -17,6 +17,7 @@ import Pager from '../components/Pager.jsx'
 import { assetUrl } from '../assets.js'
 import { loginTo, navigate } from '../router.js'
 import { timeAgo } from '../time.js'
+import { usePageTitle } from '../usePageTitle.js'
 import { useSlow } from '../useSlow.js'
 import Link from '../components/Link.jsx'
 import { useAsyncData } from '../useAsyncData.js'
@@ -36,6 +37,8 @@ export default function StreamPage({ id }) {
     // 답글이 많은 댓글은 접어 두고, 펼친 댓글의 id 를 기억한다.
     const [openReplies, setOpenReplies] = useState([])
     const [posting, setPosting] = useState(false)
+    // 댓글·답글 등록이 실패했을 때. 입력한 내용은 그대로 두고 그 자리에서 알린다.
+    const [postError, setPostError] = useState(null)
 
     // 신고 접수 같은 안내는 몇 초 뒤에 저절로 사라진다.
     useEffect(() => {
@@ -60,6 +63,8 @@ export default function StreamPage({ id }) {
         fail: failComments,
     } = useAsyncData(() => getComments(id, commentPage), [id, commentPage])
 
+    usePageTitle(stream?.title)
+
     // 무료 서버가 잠들어 있으면 첫 응답이 오래 걸린다. 그 이유를 알려 준다.
     const slow = useSlow(loading)
 
@@ -83,6 +88,7 @@ export default function StreamPage({ id }) {
     async function handleComment(event) {
         event.preventDefault()
         setPosting(true)
+        setPostError(null)
 
         try {
             await createComment(id, content.trim())
@@ -90,7 +96,7 @@ export default function StreamPage({ id }) {
             reloadComments()
             reload()
         } catch (e) {
-            failComments(e)
+            setPostError(`댓글을 등록하지 못했어요. 쓴 내용은 그대로예요. ${e.message}`)
         } finally {
             setPosting(false)
         }
@@ -99,6 +105,7 @@ export default function StreamPage({ id }) {
     async function handleReply(event, parentId) {
         event.preventDefault()
         setPosting(true)
+        setPostError(null)
 
         try {
             await createComment(id, replyContent.trim(), parentId)
@@ -106,7 +113,7 @@ export default function StreamPage({ id }) {
             reloadComments()
             reload()
         } catch (e) {
-            failComments(e)
+            setPostError(`답글을 등록하지 못했어요. 쓴 내용은 그대로예요. ${e.message}`)
         } finally {
             setPosting(false)
         }
@@ -226,7 +233,7 @@ export default function StreamPage({ id }) {
                         className="like"
                         aria-pressed={Boolean(stream.likedByMe)}
                         onClick={handleLike}
-                        title={me ? undefined : '로그인하면 좋아요를 누를 수 있어요'}
+                        title={me ? undefined : '누르면 로그인 화면으로 가요'}
                     >
                         <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z" />
@@ -234,7 +241,7 @@ export default function StreamPage({ id }) {
                         좋아요 {stream.likeCount?.toLocaleString('ko-KR')}
                     </button>
 
-                    {!me && <span className="meta like__hint">로그인하면 누를 수 있어요</span>}
+                    {!me && <span className="meta like__hint">누르면 로그인해요</span>}
 
                     <div className="stream__manage">
                         {me && !mine && (
@@ -297,7 +304,7 @@ export default function StreamPage({ id }) {
                     <div className="stream__panel" role="group" aria-label="영상 삭제 확인">
                         <p>이 영상을 삭제할까요? 삭제하면 되돌릴 수 없어요.</p>
                         <div className="stream__panel-actions">
-                            <button type="button" onClick={handleDelete}>
+                            <button type="button" className="button--danger" onClick={handleDelete}>
                                 삭제
                             </button>
                             <button type="button" onClick={closePanel}>
@@ -310,8 +317,6 @@ export default function StreamPage({ id }) {
                 {stream.description && <Description text={stream.description} />}
             </div>
           </div>
-
-            <MoreStreams channelId={stream.userId} currentId={stream.id} nickname={stream.nickname} />
 
           <div className="stream__comments">
             <h2 className="comments__title">댓글 {stream.commentCount}</h2>
@@ -342,6 +347,12 @@ export default function StreamPage({ id }) {
                 </p>
             )}
 
+            {postError && (
+                <p className="error" role="alert">
+                    {postError}
+                </p>
+            )}
+
             {comments?.content.length === 0 && <p className="empty">첫 댓글을 남겨보세요.</p>}
 
             <ul className="comments">
@@ -357,13 +368,20 @@ export default function StreamPage({ id }) {
                             onDelete={() => handleDeleteComment(comment)}
                         />
 
-                        {comment.replies?.length > 3 && !openReplies.includes(comment.id) && (
+                        {comment.replies?.length > 3 && (
                             <button
                                 type="button"
                                 className="comment__more"
-                                onClick={() => setOpenReplies((ids) => [...ids, comment.id])}
+                                aria-expanded={openReplies.includes(comment.id)}
+                                onClick={() =>
+                                    setOpenReplies((ids) =>
+                                        ids.includes(comment.id)
+                                            ? ids.filter((value) => value !== comment.id)
+                                            : [...ids, comment.id]
+                                    )
+                                }
                             >
-                                답글 {comment.replies.length}개 보기
+                                {openReplies.includes(comment.id) ? '답글 접기' : `답글 ${comment.replies.length}개 보기`}
                             </button>
                         )}
 
@@ -410,6 +428,8 @@ export default function StreamPage({ id }) {
 
             <Pager page={comments} onChange={setCommentPage} />
           </div>
+
+            <MoreStreams channelId={stream.userId} currentId={stream.id} nickname={stream.nickname} />
         </section>
     )
 }
@@ -452,7 +472,7 @@ function CommentLine({ comment, me, confirming, onReply, onAskDelete, onCancelDe
                     <span className="meta">
                         {hasReplies ? `답글 ${comment.replies.length}개도 함께 삭제돼요. 삭제할까요?` : '댓글을 삭제할까요?'}
                     </span>
-                    <button type="button" onClick={onDelete}>
+                    <button type="button" className="button--danger" onClick={onDelete}>
                         삭제
                     </button>
                     <button type="button" onClick={onCancelDelete}>
