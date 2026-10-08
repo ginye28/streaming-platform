@@ -2375,6 +2375,76 @@ a.donate__open:hover {
     width: 100%;
 }
 
+/* ── 로그인 · 회원가입 ── */
+.auth {
+    display: flex;
+    justify-content: center;
+    padding-top: 16px;
+}
+
+.auth__card {
+    width: min(100%, 440px);
+    padding: 28px;
+    border: 1px solid var(--border);
+    border-radius: var(--corner-md);
+    background: var(--surface);
+}
+
+.auth__card h1 {
+    margin: 12px 0 8px;
+}
+
+.auth__context {
+    margin: 0 0 8px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+/* 16px 미만이면 iOS 가 포커스할 때 화면을 확대한다. */
+.auth input,
+.auth .form label input {
+    font-size: 16px;
+}
+
+.auth__password {
+    display: flex;
+    gap: 8px;
+}
+
+.auth__password input {
+    flex: 1;
+    min-width: 0;
+}
+
+.auth .form {
+    margin: 16px 0 8px;
+}
+
+.auth .form button[type='submit'] {
+    align-self: stretch;
+}
+
+.auth__switch {
+    margin: 12px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.auth__switch .empty__link {
+    margin: 0;
+    font-size: 14px;
+}
+
+@media (max-width: 899px) {
+    .app:has(.auth) .nav {
+        flex-wrap: nowrap;
+    }
+
+    .app:has(.auth) .nav__search {
+        display: none;
+    }
+}
+
 /* ── 채널 페이지: 얼굴 · 방송 중 카드 · 지난 방송 ── */
 .channel__head {
     display: flex;

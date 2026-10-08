@@ -69,7 +69,7 @@ export default function Layout({ children }) {
                             <button onClick={logout}>로그아웃</button>
                         </>
                     ) : (
-                        <Link to={loginTo()}>로그인</Link>
+                        view !== 'auth' && <Link to={loginTo()}>로그인</Link>
                     )}
                 </div>
             </header>

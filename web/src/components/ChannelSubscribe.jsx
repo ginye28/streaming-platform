@@ -43,7 +43,7 @@ export default function ChannelSubscribe({ channelId, onChanged, identity = fals
                         {channel.profileImage ? (
                             <img src={assetUrl(channel.profileImage)} alt="" loading="lazy" decoding="async" />
                         ) : (
-                            channel.nickname.slice(0, 1)
+                            channel.nickname?.slice(0, 1)
                         )}
                     </Link>
 
