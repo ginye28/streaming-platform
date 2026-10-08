@@ -40,7 +40,7 @@ export default function LivesPage() {
                     <li key={live.id} className="card">
                         <Link to={{ view: 'live', id: live.id }} className="card__thumb">
                             {live.thumbnailUrl ? (
-                                <img src={assetUrl(live.thumbnailUrl)} alt="" />
+                                <img src={assetUrl(live.thumbnailUrl)} alt="" loading="lazy" decoding="async" />
                             ) : (
                                 <div className="card__thumb--blank">LIVE</div>
                             )}

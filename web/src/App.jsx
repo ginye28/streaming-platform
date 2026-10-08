@@ -1,23 +1,38 @@
-import AdminApp from './admin/AdminApp.jsx'
+import { lazy, Suspense } from 'react'
 import { AuthProvider } from './auth.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx'
 import Layout from './components/Layout.jsx'
-import AuthPage from './pages/AuthPage.jsx'
-import BroadcastPage from './pages/BroadcastPage.jsx'
-import ChannelPage from './pages/ChannelPage.jsx'
 import HomePage from './pages/HomePage.jsx'
-import LivePage from './pages/LivePage.jsx'
-import LivesPage from './pages/LivesPage.jsx'
-import MePage from './pages/MePage.jsx'
-import NotificationsPage from './pages/NotificationsPage.jsx'
-import PayFailPage from './pages/PayFailPage.jsx'
-import PayResultPage from './pages/PayResultPage.jsx'
-import SchedulePage from './pages/SchedulePage.jsx'
-import SearchPage from './pages/SearchPage.jsx'
-import StreamPage from './pages/StreamPage.jsx'
-import SubscribedPage from './pages/SubscribedPage.jsx'
-import UploadPage from './pages/UploadPage.jsx'
 import { useRoute } from './router.js'
 import './app.css'
+
+/**
+ * 첫 화면(홈)만 처음 번들에 넣고 나머지 화면은 열 때 받는다.
+ * 재생기(hls.js)와 채팅(stomp)처럼 무거운 것이 홈을 열 때 같이 내려오지 않게 하려는 것이다.
+ */
+const AdminApp = lazy(() => import('./admin/AdminApp.jsx'))
+const AuthPage = lazy(() => import('./pages/AuthPage.jsx'))
+const BroadcastPage = lazy(() => import('./pages/BroadcastPage.jsx'))
+const ChannelPage = lazy(() => import('./pages/ChannelPage.jsx'))
+const LivePage = lazy(() => import('./pages/LivePage.jsx'))
+const LivesPage = lazy(() => import('./pages/LivesPage.jsx'))
+const MePage = lazy(() => import('./pages/MePage.jsx'))
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage.jsx'))
+const PayFailPage = lazy(() => import('./pages/PayFailPage.jsx'))
+const PayResultPage = lazy(() => import('./pages/PayResultPage.jsx'))
+const SchedulePage = lazy(() => import('./pages/SchedulePage.jsx'))
+const SearchPage = lazy(() => import('./pages/SearchPage.jsx'))
+const StreamPage = lazy(() => import('./pages/StreamPage.jsx'))
+const SubscribedPage = lazy(() => import('./pages/SubscribedPage.jsx'))
+const UploadPage = lazy(() => import('./pages/UploadPage.jsx'))
+
+function Loading() {
+    return (
+        <p className="empty" role="status">
+            불러오는 중…
+        </p>
+    )
+}
 
 function Routes() {
     const { view, id, keyword } = useRoute()
@@ -34,7 +49,7 @@ function Routes() {
         case 'stream':
             return <StreamPage id={id} />
         case 'channel':
-            return <ChannelPage id={id} />
+            return <ChannelPage key={id} id={id} />
         case 'search':
             return <SearchPage keyword={keyword} />
         case 'subscribed':
@@ -61,13 +76,21 @@ function App() {
 
     // 관리자 화면은 자체 레이아웃과 로그인 흐름을 가진다.
     if (view === 'admin') {
-        return <AdminApp />
+        return (
+            <Suspense fallback={<Loading />}>
+                <AdminApp />
+            </Suspense>
+        )
     }
 
     return (
         <AuthProvider>
             <Layout>
-                <Routes />
+                <ErrorBoundary>
+                    <Suspense fallback={<Loading />}>
+                        <Routes />
+                    </Suspense>
+                </ErrorBoundary>
             </Layout>
         </AuthProvider>
     )

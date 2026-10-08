@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { getMySubscriptions, getUnreadCount } from '../api.js'
 import { assetUrl } from '../assets.js'
 import { useAuth } from '../useAuth.js'
-import { navigate, useRoute } from '../router.js'
+import { loginTo, navigate, useRoute } from '../router.js'
 import Link from '../components/Link.jsx'
 import ThemeToggle from '../components/ThemeToggle.jsx'
 import { useAsyncData } from '../useAsyncData.js'
@@ -26,6 +26,10 @@ export default function Layout({ children }) {
 
     return (
         <div className="app">
+            <a href="#main" className="skip-link" onClick={skipToMain}>
+                본문으로 건너뛰기
+            </a>
+
             <header className="nav">
                 <Link to={{ view: 'home' }} className="nav__brand" aria-label="Streaming Platform 홈">
                     <span className="nav__mark" aria-hidden="true">SP</span>
@@ -65,14 +69,14 @@ export default function Layout({ children }) {
                             <button onClick={logout}>로그아웃</button>
                         </>
                     ) : (
-                        <Link to={{ view: 'auth' }}>로그인</Link>
+                        view !== 'auth' && <Link to={loginTo()}>로그인</Link>
                     )}
                 </div>
             </header>
 
             <div className="shell">
                 <aside className="side" aria-label="사이드 메뉴">
-                    <nav className="side__nav">
+                    <nav className="side__nav" aria-label="주요 메뉴">
                         <SideLink to={{ view: 'home' }} active={view === 'home'}>
                             홈
                         </SideLink>
@@ -94,10 +98,18 @@ export default function Layout({ children }) {
                     {me && <SideSubscriptions />}
                 </aside>
 
-                <main className="main">{children}</main>
+                <main className="main" id="main" tabIndex={-1}>
+                    {children}
+                </main>
             </div>
         </div>
     )
+}
+
+/** 주소에 #main 을 남기지 않고 본문으로 초점만 옮긴다. */
+function skipToMain(event) {
+    event.preventDefault()
+    document.getElementById('main')?.focus()
 }
 
 function SideLink({ to, active, children }) {
@@ -129,7 +141,7 @@ function SideSubscriptions() {
                         <Link to={{ view: 'channel', id: channel.id }} className="side__channel">
                             <span className={`side__face${channel.live ? ' side__face--live' : ''}`}>
                                 {channel.profileImage ? (
-                                    <img src={assetUrl(channel.profileImage)} alt="" />
+                                    <img src={assetUrl(channel.profileImage)} alt="" loading="lazy" decoding="async" />
                                 ) : (
                                     channel.nickname.slice(0, 1)
                                 )}

@@ -17,6 +17,14 @@ function clearTokens() {
     localStorage.removeItem(REFRESH_TOKEN_KEY)
 }
 
+async function fetchOrExplain(url, options) {
+    try {
+        return await fetch(url, options)
+    } catch {
+        throw new Error('서버에 연결하지 못했어요. 네트워크를 확인하고 잠시 뒤 다시 시도해 주세요.')
+    }
+}
+
 /** 서버가 돌려주는 { success, data, message } 봉투를 벗기고, 실패면 message 로 예외를 던진다. */
 async function unwrap(response) {
     const body = await response.json().catch(() => null)
@@ -29,7 +37,8 @@ async function unwrap(response) {
 }
 
 function request(path, { method = 'GET', body, token, formData } = {}) {
-    return fetch(`${API_BASE_URL}${path}`, {
+    // 네트워크가 안 닿으면 브라우저가 영어 메시지("Failed to fetch")를 던진다. 화면에는 한국어로 알린다.
+    return fetchOrExplain(`${API_BASE_URL}${path}`, {
         method,
         headers: {
             // FormData 는 브라우저가 boundary 를 붙여야 해서 Content-Type 을 직접 넣으면 안 된다.
@@ -337,11 +346,62 @@ export const createCategory = (name) =>
 
 // ---- 파일 업로드 ----
 
-export async function uploadFile(file) {
-    const formData = new FormData()
-    formData.append('file', file)
+/**
+ * 파일 하나를 올린다. fetch 는 보내는 진행률을 알려 주지 않아 XMLHttpRequest 를 쓴다.
+ * onProgress(0~1) 로 진행률을 받고, signal 로 중간에 멈출 수 있다(멈추면 AbortError).
+ * 액세스 토큰이 만료돼 401 이 오면 authorized 처럼 한 번 재발급해서 다시 보낸다.
+ */
+export async function uploadFile(file, { onProgress, signal } = {}) {
+    const send = () =>
+        new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest()
+            const token = getAccessToken()
 
-    return authorized('/api/files/upload', { method: 'POST', formData })
+            xhr.open('POST', `${API_BASE_URL}/api/files/upload`)
+
+            if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+
+            xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable) onProgress?.(event.loaded / event.total)
+            }
+            xhr.onload = () => {
+                let body = null
+
+                try {
+                    body = JSON.parse(xhr.responseText)
+                } catch {
+                    // 본문이 JSON 이 아니면(프록시 오류 등) 상태 코드로만 알린다.
+                }
+
+                resolve({ status: xhr.status, body })
+            }
+            xhr.onerror = () =>
+                reject(new Error('서버에 연결하지 못했어요. 네트워크를 확인하고 다시 시도해 주세요.'))
+            xhr.onabort = () => reject(new DOMException('업로드를 취소했어요.', 'AbortError'))
+
+            signal?.addEventListener('abort', () => xhr.abort(), { once: true })
+
+            const formData = new FormData()
+            formData.append('file', file)
+            xhr.send(formData)
+        })
+
+    let result = await send()
+
+    if (result.status === 401) {
+        if (!(await tryRefresh())) {
+            clearTokens()
+            throw new Error('로그인이 만료되었습니다. 다시 로그인해 주세요.')
+        }
+
+        result = await send()
+    }
+
+    if (result.status < 200 || result.status >= 300) {
+        throw new Error(result.body?.message ?? `업로드에 실패했습니다. (HTTP ${result.status})`)
+    }
+
+    return result.body?.data
 }
 
 // ---- 관리자 ----

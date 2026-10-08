@@ -10,7 +10,6 @@ export default function ThemeToggle({ className }) {
             type="button"
             className={className}
             onClick={() => setTheme(dark ? 'light' : 'dark')}
-            aria-pressed={dark}
             title={dark ? '밝은 화면으로 바꾸기' : '어두운 화면으로 바꾸기'}
         >
             {dark ? '밝게' : '어둡게'}

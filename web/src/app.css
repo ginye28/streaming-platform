@@ -12,14 +12,18 @@
     --sunken: #f1f4f2;
     --border: #e2e6e3;
     --border-strong: #c7d0cb;
+    /* 입력칸 테두리. 비어 있는 칸도 어디까지인지 보이도록 배경과 3:1 이상을 지킨다. */
+    --field-border: #868e88;
     --text: #161a18;
-    --muted: #6e756f;
+    --muted: #6a716c;
     --accent: #17604f;
     --accent-hover: #114c3e;
     --accent-soft: #e6f0ec;
     --on-accent: #ffffff;
     --danger: #c2352c;
     --danger-soft: #fbecea;
+    /* 위험색 바탕(LIVE · 알림 배지) 위의 글자색. 나이트 모드의 코랄은 밝아서 흰 글자가 안 읽힌다. */
+    --on-danger: #ffffff;
 
     --radius: 6px;
     --gap: 20px;
@@ -33,6 +37,7 @@
     --corner-xs: 0 10px 0 10px;
     --corner-pill: 0 14px 0 14px;
     --corner-sm: 0 18px 0 18px;
+    --corner-2xs: 0 6px 0 6px;
 }
 
 :root[data-theme='dark'] {
@@ -43,6 +48,7 @@
     --sunken: #0b0f0e;
     --border: #28312d;
     --border-strong: #3b4642;
+    --field-border: #6b7771;
     --text: #e8ecea;
     --muted: #929c97;
     --accent: #56c6a6;
@@ -51,6 +57,7 @@
     --on-accent: #0c1211;
     --danger: #ef8479;
     --danger-soft: #2f1e1c;
+    --on-danger: #0c1211;
 
     --shadow: 0 1px 2px rgb(0 0 0 / 0.4);
 }
@@ -61,6 +68,9 @@
 
 body {
     margin: 0;
+    /* 한글은 어절 중간에서 끊지 않는다. 너무 긴 한 덩어리(주소 등)만 끊어서 넘치지 않게 한다. */
+    word-break: keep-all;
+    overflow-wrap: break-word;
     background: var(--bg);
     color: var(--text);
     font-family: 'Gothic A1', system-ui, -apple-system, 'Segoe UI', 'Malgun Gothic', sans-serif;
@@ -72,6 +82,22 @@ a {
     color: inherit;
 }
 
+/* 브라우저 기본 표면도 팔레트를 따른다: 글자 선택, 입력 커서, 체크박스·라디오. */
+::selection {
+    background: var(--accent);
+    color: var(--on-accent);
+}
+
+input,
+textarea {
+    caret-color: var(--accent);
+}
+
+body {
+    accent-color: var(--accent);
+}
+
+h1,
 h2 {
     margin: 0 0 16px;
     font-size: 22px;
@@ -121,7 +147,7 @@ h3 {
     place-items: center;
     width: 40px;
     height: 40px;
-    border-radius: 0 14px 0 14px;
+    border-radius: var(--corner-pill);
     background: var(--accent);
     color: var(--on-accent);
     font-size: 15px;
@@ -175,7 +201,7 @@ h3 {
 .nav__search input {
     flex: 1;
     min-width: 0;
-    border-radius: 0 16px 0 16px;
+    border-radius: var(--corner-sm);
     background: var(--sunken);
 }
 
@@ -194,11 +220,33 @@ h3 {
     padding: 1px 6px;
     border-radius: var(--corner-xs);
     background: var(--danger);
-    color: #fff;
+    color: var(--on-danger);
     font-size: 11px;
     font-weight: 800;
     line-height: 16px;
     text-align: center;
+}
+
+.skip-link {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 1000;
+    padding: 10px 16px;
+    border-radius: var(--corner-xs);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 700;
+    text-decoration: none;
+    transform: translateY(-200%);
+}
+
+.skip-link:focus-visible {
+    transform: none;
+}
+
+.main:focus {
+    outline: none;
 }
 
 .visually-hidden {
@@ -221,7 +269,7 @@ h3 {
     top: 64px;
     flex: 0 0 248px;
     box-sizing: border-box;
-    height: calc(100vh - 64px);
+    height: calc(100vh - 65px);
     overflow-y: auto;
     padding: 20px 16px;
     border-right: 1px solid var(--border);
@@ -238,7 +286,7 @@ h3 {
     align-items: center;
     height: 44px;
     padding: 0 14px;
-    border-radius: 0 16px 0 16px;
+    border-radius: var(--corner-sm);
     color: var(--text);
     font-size: 15px;
     font-weight: 600;
@@ -281,7 +329,7 @@ h3 {
     align-items: center;
     gap: 10px;
     padding: 6px;
-    border-radius: 0 12px 0 12px;
+    border-radius: var(--corner-pill);
     color: var(--text);
     font-size: 14px;
     font-weight: 600;
@@ -299,7 +347,7 @@ h3 {
     width: 28px;
     height: 28px;
     overflow: hidden;
-    border-radius: 0 9px 0 9px;
+    border-radius: var(--corner-xs);
     background: var(--accent-soft);
     color: var(--accent);
     font-size: 12px;
@@ -327,9 +375,9 @@ h3 {
 
 .side__live {
     padding: 0 6px;
-    border-radius: 0 6px 0 6px;
+    border-radius: var(--corner-2xs);
     background: var(--danger);
-    color: #fff;
+    color: var(--on-danger);
     font-size: 10px;
     font-weight: 800;
     letter-spacing: 0.04em;
@@ -413,6 +461,13 @@ button {
     font-size: 15px;
 }
 
+/* 입력칸은 버튼·칩보다 진한 테두리를 쓴다. 비어 있어도 칸의 경계가 보여야 한다. */
+input,
+select,
+textarea {
+    border-color: var(--field-border);
+}
+
 input::placeholder,
 textarea::placeholder {
     color: var(--muted);
@@ -421,7 +476,7 @@ textarea::placeholder {
 input:hover,
 select:hover,
 textarea:hover {
-    border-color: var(--border-strong);
+    border-color: var(--muted);
 }
 
 input:focus-visible,
@@ -514,6 +569,23 @@ button[type='submit']:hover:not(:disabled),
     font-size: 14px;
 }
 
+.notice {
+    margin: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--corner-xs);
+    background: var(--sunken);
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.error button {
+    margin-left: 6px;
+    padding: 4px 10px;
+    font-size: 13px;
+}
+
 .empty {
     padding: 40px 0;
     color: var(--muted);
@@ -523,8 +595,14 @@ button[type='submit']:hover:not(:disabled),
 .empty__link {
     display: inline-block;
     margin-top: 10px;
+    padding: 0;
+    border: 0;
+    background: none;
     color: var(--accent);
+    font: inherit;
     text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
 }
 
 .description {
@@ -534,7 +612,7 @@ button[type='submit']:hover:not(:disabled),
 
 code {
     padding: 2px 6px;
-    border-radius: 0 6px 0 6px;
+    border-radius: var(--corner-2xs);
     background: var(--sunken);
     font-size: 14px;
     overflow-wrap: anywhere;
@@ -544,6 +622,8 @@ code {
 .player {
     width: 100%;
     max-height: 60vh;
+    /* 방송이 없을 때도 영상 자리의 크기가 같아서, 영상이 붙어도 아래 내용이 밀리지 않는다. */
+    aspect-ratio: 16 / 9;
     border-radius: var(--corner-xs);
     background: #000;
 }
@@ -1101,6 +1181,9 @@ details li {
 }
 
 .hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     margin-top: 4px;
     padding: 11px 22px;
     border-radius: var(--corner-pill);
@@ -1160,7 +1243,7 @@ details li {
     display: grid;
     place-items: center;
     height: 100%;
-    color: var(--muted);
+    color: rgb(244 247 245 / 0.8);
     font-size: 12px;
     font-weight: 700;
 }
@@ -1204,7 +1287,8 @@ details li {
 
 .pill--live {
     background: var(--danger);
-    color: #fff;
+    color: var(--on-danger);
+    font-weight: 800;
 }
 
 .pill--live::before {
@@ -1219,12 +1303,34 @@ details li {
 .home__filters {
     display: flex;
     flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 12px 20px;
+}
+
+/* 카테고리 묶음과 정렬 묶음. 줄이 바뀌어도 서로 다른 묶음으로 읽혀야 한다. */
+.home__filter-group {
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 8px;
 }
 
-.home__filters-gap {
-    flex: 1 1 20px;
+.home__filter-group:first-child {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+/* 좁은 화면: 정렬은 자기 줄을 갖고, 가는 선으로 카테고리와 나눈다. */
+@media (max-width: 640px) {
+    .home__filter-group:first-child {
+        flex-basis: 100%;
+    }
+
+    .home__filter-group--sort {
+        flex-basis: 100%;
+        padding-top: 12px;
+        border-top: 1px solid var(--border);
+    }
 }
 
 .chip {
@@ -1255,8 +1361,35 @@ details li {
     min-width: 0;
 }
 
+.carousel__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
 .carousel__title {
-    margin: 0 0 12px;
+    margin: 0;
+}
+
+.carousel__arrows {
+    display: inline-flex;
+    gap: 8px;
+}
+
+.carousel__arrows button {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: var(--corner-pill);
+    color: var(--muted);
+}
+
+.carousel__arrows button:hover:not(:disabled) {
+    color: var(--text);
 }
 
 .carousel__track {
@@ -1325,6 +1458,7 @@ details li {
 }
 
 .tile__meta {
+    font-variant-numeric: tabular-nums;
     color: var(--muted);
     font-size: 12px;
 }
@@ -1383,13 +1517,19 @@ details li {
 
 .strip__arrow,
 .ring__arrows button {
+    display: grid;
     flex: 0 0 40px;
+    place-items: center;
     width: 40px;
     height: 40px;
     padding: 0;
-    border-radius: 0 14px 0 14px;
-    font-size: 22px;
-    line-height: 1;
+    border-radius: var(--corner-pill);
+    color: var(--muted);
+}
+
+.strip__arrow:hover:not(:disabled),
+.ring__arrows button:hover:not(:disabled) {
+    color: var(--text);
 }
 
 .strip__track {
@@ -1468,6 +1608,7 @@ details li {
 
 .strip__meta {
     margin-top: -4px;
+    font-variant-numeric: tabular-nums;
     color: var(--muted);
     font-size: 11px;
     font-weight: 700;
@@ -1526,10 +1667,10 @@ details li {
         transform 560ms cubic-bezier(0.34, 1.36, 0.64, 1),
         width 560ms cubic-bezier(0.34, 1.36, 0.64, 1),
         opacity 400ms ease;
-    will-change: transform, width;
 }
 
 .ring--dragging .ring__card {
+    will-change: transform, width;
     transition: none;
     cursor: grabbing;
 }
@@ -1568,7 +1709,7 @@ details li {
     display: grid;
     place-items: center;
     height: 100%;
-    color: var(--border-strong);
+    color: var(--muted);
     font-size: 40px;
     font-weight: 800;
 }
@@ -1578,7 +1719,7 @@ details li {
     position: absolute;
     top: 8px;
     padding: 1px 7px;
-    border-radius: 0 6px 0 6px;
+    border-radius: var(--corner-2xs);
     color: #fff;
     font-size: 10px;
     font-weight: 800;
@@ -1589,11 +1730,13 @@ details li {
 .ring__live {
     left: 8px;
     background: var(--danger);
+    color: var(--on-danger);
 }
 
 .ring__order {
     left: 52px;
     background: var(--heart);
+    color: var(--on-heart, #fff);
 }
 
 .ring__info {
@@ -1630,6 +1773,7 @@ details li {
 }
 
 .ring__viewers {
+    font-variant-numeric: tabular-nums;
     color: var(--muted);
     font-size: 12px;
     font-weight: 700;
@@ -1652,11 +1796,14 @@ details li {
 }
 
 .ring__go {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     position: absolute;
     top: -18px;
     right: 12px;
     padding: 8px 14px;
-    border-radius: 0 12px 0 12px;
+    border-radius: var(--corner-pill);
     background: var(--text);
     color: var(--bg);
     font-size: 13px;
@@ -1707,9 +1854,20 @@ details li {
 .ring--flat {
     display: flex;
     gap: 16px;
-    padding-bottom: 28px;
+    padding: 4px 4px 28px;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
+    scroll-padding-left: 4px;
+    scrollbar-width: none;
+}
+
+.ring--flat::-webkit-scrollbar {
+    display: none;
+}
+
+/* 스크롤 상자가 그림자를 잘라 회색 띠가 생기므로 납작한 줄에서는 그림자를 얕게 쓴다. */
+.ring--flat .ring__card--front {
+    box-shadow: 0 6px 16px rgb(12 18 16 / 0.08);
 }
 
 .ring--flat .ring__card {
@@ -1757,35 +1915,41 @@ details li {
 
 /* ── 채팅 운영 · 후원 · 고정 ── */
 
-/* 후원 단계 색. 1(작은 후원) ~ 5(큰 후원). */
+/* 후원 단계 색. 1(작은 후원) ~ 5(큰 후원). 1~3 은 사이트의 초록을 점점 짙게, 4~5(큰 후원)만 따뜻한 호박색이다.
+ * 파랑·청록·빨강은 쓰지 않는다(빨강은 LIVE·오류 신호색이다). --on-tier 는 그 색 바탕 위 글자색(4.5:1 이상)이다. */
 .chat-line--t1,
 .chat-donation--t1,
 .donate__amount--t1 {
-    --tier: #2b7fd1;
+    --tier: #2f7a68;
+    --on-tier: #ffffff;
 }
 
 .chat-line--t2,
 .chat-donation--t2,
 .donate__amount--t2 {
-    --tier: #14909f;
+    --tier: #17604f;
+    --on-tier: #ffffff;
 }
 
 .chat-line--t3,
 .chat-donation--t3,
 .donate__amount--t3 {
-    --tier: #c98a00;
+    --tier: #0f4a3d;
+    --on-tier: #ffffff;
 }
 
 .chat-line--t4,
 .chat-donation--t4,
 .donate__amount--t4 {
-    --tier: #d9690a;
+    --tier: #c98a00;
+    --on-tier: #161a18;
 }
 
 .chat-line--t5,
 .chat-donation--t5,
 .donate__amount--t5 {
-    --tier: #d1342b;
+    --tier: #d9690a;
+    --on-tier: #161a18;
 }
 
 .chat__tools {
@@ -1823,7 +1987,7 @@ details li {
 .chat__pinned-label {
     flex: none;
     padding: 1px 6px;
-    border-radius: 4px;
+    border-radius: var(--corner-2xs);
     background: var(--accent);
     color: var(--on-accent);
     font-size: 11px;
@@ -1851,7 +2015,6 @@ details li {
 
 .chat-donation {
     padding: 6px 14px;
-    border-left: 4px solid var(--tier);
     background: color-mix(in srgb, var(--tier) 16%, transparent);
     font-size: 13px;
     overflow-wrap: anywhere;
@@ -1863,22 +2026,67 @@ details li {
 
 .chat-line--donation {
     padding: 6px 8px;
-    border-left: 4px solid var(--tier);
-    border-radius: 4px;
+    border: 1px solid color-mix(in srgb, var(--tier) 45%, transparent);
+    border-radius: var(--corner-2xs);
     background: color-mix(in srgb, var(--tier) 14%, transparent);
 }
 
-.chat-line__amount {
-    color: var(--tier);
+/* 금액은 등급색 바탕에 대비가 확보된 글자색을 얹은 칩이다. 글자만 색을 입히면 읽히지 않는다. */
+.chat-line__amount,
+.chat-amount {
+    display: inline-block;
+    margin-bottom: 2px;
+    padding: 0 6px;
+    border-radius: var(--corner-2xs);
+    background: var(--tier);
+    color: var(--on-tier);
     font-size: 12px;
     font-weight: 700;
+    line-height: 18px;
+}
+
+/* 채팅 줄에서는 금액 칩이 한 줄을 차지하고 그 아래에 이름과 글이 온다. */
+.chat-line__amount {
+    display: block;
+    width: fit-content;
+}
+
+/* 금액이 클수록 눈에 띈다: 1~2 는 줄 위에 칩만, 3 은 카드, 4~5 는 더 크고 굵은 칩과 두꺼운 선. */
+.chat-line--t1,
+.chat-line--t2 {
+    padding: 2px 0;
+    border-color: transparent;
+    background: transparent;
+}
+
+.chat-line--t4 .chat-line__amount,
+.chat-line--t5 .chat-line__amount {
+    padding: 1px 8px;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.chat-line--t5 .chat-line__amount {
+    font-size: 14px;
+}
+
+.chat-line--t4 {
+    border-width: 1.5px;
+    border-color: color-mix(in srgb, var(--tier) 70%, transparent);
+}
+
+.chat-line--t5 {
+    padding: 8px 10px;
+    border-width: 2px;
+    border-color: var(--tier);
+    background: color-mix(in srgb, var(--tier) 18%, transparent);
 }
 
 .chat-badge {
     display: inline-block;
     margin-right: 4px;
     padding: 0 5px;
-    border-radius: 4px;
+    border-radius: var(--corner-2xs);
     font-size: 11px;
     font-weight: 700;
     vertical-align: 1px;
@@ -1944,6 +2152,24 @@ details li {
     width: 100%;
 }
 
+/* 로그아웃 상태의 후원 진입은 링크지만 버튼과 같은 모양이다. */
+a.donate__open {
+    display: block;
+    box-sizing: border-box;
+    padding: 9px 11px;
+    border: 1px solid var(--border);
+    border-radius: var(--corner-xs);
+    background: var(--sunken);
+    color: var(--text);
+    font-size: 15px;
+    text-align: center;
+    text-decoration: none;
+}
+
+a.donate__open:hover {
+    border-color: var(--border-strong);
+}
+
 .donate__amounts,
 .donate__actions {
     display: flex;
@@ -1958,7 +2184,7 @@ details li {
 
 .donate__amount[aria-pressed='true'] {
     background: var(--tier);
-    color: #fff;
+    color: var(--on-tier);
 }
 
 .donate .meta {
@@ -2015,7 +2241,7 @@ details li {
     width: 96px;
     aspect-ratio: 16 / 9;
     overflow: hidden;
-    border-radius: 4px;
+    border-radius: var(--corner-2xs);
     background: var(--sunken);
 }
 
@@ -2077,8 +2303,10 @@ details li {
 /* 브라우저로 방송하기 */
 .broadcast__preview {
     position: relative;
-    margin: 12px 0;
-    border-radius: var(--corner-xs);
+    /* 데스크톱 첫 화면에서 시작 버튼이 접힘 아래로 밀리지 않게, 화면 높이의 반쯤까지만 키운다. */
+    width: min(100%, calc(50vh * 16 / 9));
+    margin: 16px 0;
+    border-radius: var(--corner-sm);
     background: #000;
     aspect-ratio: 16 / 9;
     overflow: hidden;
@@ -2095,8 +2323,149 @@ details li {
     inset: 0;
     display: grid;
     place-items: center;
-    padding: 0;
+    padding: 16px;
     color: #fff;
+    font-size: 15px;
+    text-align: center;
+}
+
+.broadcast h1 {
+    margin: 0 0 6px;
+}
+
+.broadcast .upload__lede {
+    max-width: 640px;
+}
+
+/* 시작 전 점검: 시청자에게 어떤 제목·공개 범위로 나가는지. */
+.broadcast__setup {
+    max-width: 560px;
+    margin: 12px 0;
+    padding: 12px 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--corner-sm);
+    background: var(--surface);
+}
+
+.broadcast__setup p {
+    margin: 0;
+}
+
+.broadcast__setup-title {
+    font-size: 16px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.broadcast__source {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    max-width: 560px;
+    margin: 12px 0;
+    padding: 0;
+    border: 0;
+}
+
+.broadcast__source legend {
+    float: left;
+    width: 100%;
+    padding: 0;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.broadcast__choice,
+.broadcast__mic {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--field-border);
+    border-radius: var(--corner-xs);
+    background: var(--surface);
+    cursor: pointer;
+}
+
+.broadcast__choice {
+    flex: 1 1 200px;
+}
+
+.broadcast__mic {
+    flex: 1 1 100%;
+    border-style: dashed;
+}
+
+.broadcast__choice--on {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.broadcast__choice input,
+.broadcast__mic input {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    margin: 2px 0 0;
+    accent-color: var(--accent);
+}
+
+.broadcast__choice span,
+.broadcast__mic span {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.broadcast__choice small,
+.broadcast__mic small {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.broadcast__source:disabled .broadcast__choice,
+.broadcast__source:disabled .broadcast__mic,
+.broadcast__choice:has(input:disabled) {
+    cursor: default;
+    opacity: 0.6;
+}
+
+.broadcast__live {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 14px;
+}
+
+.broadcast__live .meta {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+}
+
+.broadcast__confirm {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    max-width: 560px;
+    padding: 12px 14px;
+    border: 1px solid var(--danger);
+    border-radius: var(--corner-sm);
+    background: var(--danger-soft);
+}
+
+.broadcast__confirm p {
+    flex: 1 1 100%;
+    margin: 0;
+    font-weight: 600;
+}
+
+.broadcast > .error,
+.broadcast > .notice {
+    max-width: 560px;
+    margin: 12px 0;
 }
 
 .broadcast__status {
@@ -2117,5 +2486,1194 @@ details li {
 @keyframes broadcast-pulse {
     50% {
         opacity: 0.35;
+    }
+}
+
+/* 링크지만 버튼처럼 보이는 확정 행동(로그인하고 구독, 로그인하고 채팅). 확정하는 곳에만 초록을 쓴다. */
+.cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 16px;
+    border: 1px solid var(--accent);
+    border-radius: var(--corner-xs);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.cta:hover {
+    border-color: var(--accent-hover);
+    background: var(--accent-hover);
+}
+
+.cta--sm {
+    padding: 6px 14px;
+    font-size: 14px;
+}
+
+.cta--block {
+    width: 100%;
+}
+
+/* ── 로그인 · 회원가입 ── */
+.auth {
+    display: flex;
+    justify-content: center;
+    padding-top: 16px;
+}
+
+.auth__card {
+    width: min(100%, 440px);
+    padding: 28px;
+    border: 1px solid var(--border);
+    border-radius: var(--corner-md);
+    background: var(--surface);
+}
+
+.auth__card h1 {
+    margin: 12px 0 8px;
+}
+
+.auth__context {
+    margin: 0 0 8px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+/* 16px 미만이면 iOS 가 포커스할 때 화면을 확대한다. */
+.auth input,
+.auth .form label input {
+    font-size: 16px;
+}
+
+.auth__password {
+    display: flex;
+    gap: 8px;
+}
+
+.auth__password input {
+    flex: 1;
+    min-width: 0;
+}
+
+.auth .form {
+    margin: 16px 0 8px;
+}
+
+.auth .form button[type='submit'] {
+    align-self: stretch;
+}
+
+.auth__switch {
+    margin: 12px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.auth__switch .empty__link {
+    margin: 0;
+    font-size: 14px;
+}
+
+@media (max-width: 899px) {
+    .app:has(.auth) .nav__search {
+        display: none;
+    }
+}
+
+/* ── 채널 페이지: 얼굴 · 방송 중 카드 · 지난 방송 ── */
+.channel__head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.channel__avatar {
+    display: grid;
+    flex: 0 0 72px;
+    place-items: center;
+    width: 72px;
+    height: 72px;
+    overflow: hidden;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.channel__avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 방송 중이면 사이드바의 채널 얼굴과 같은 빨간 윤곽. */
+.channel__avatar--live {
+    box-shadow:
+        0 0 0 3px var(--bg),
+        0 0 0 5px var(--danger);
+}
+
+.channel__who {
+    min-width: 0;
+}
+
+.channel__who h1 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 4px;
+}
+
+.channel__who .pill {
+    font-size: 12px;
+}
+
+.channel__manage {
+    margin: 8px 0;
+}
+
+.channel > h2 {
+    margin-top: 28px;
+}
+
+/* 지금 방송 중인 채널이면 첫 화면에서 가장 눈에 띄는 카드. */
+.live-card {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    align-items: center;
+    gap: 14px;
+    margin: 16px 0;
+    padding: 12px;
+    border: 2px solid var(--danger);
+    border-radius: var(--corner-sm);
+    background: var(--danger-soft);
+    color: var(--text);
+    text-decoration: none;
+}
+
+.live-card__thumb {
+    position: relative;
+    display: block;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: var(--corner-xs);
+    background: #000;
+}
+
+.live-card__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.live-card__thumb .pill {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+}
+
+.live-card__text {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+
+.live-card__title {
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.live-card__meta {
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.past {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.past__link {
+    display: grid;
+    gap: 2px;
+    min-height: 44px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--corner-xs);
+    background: var(--surface);
+    color: var(--text);
+    text-decoration: none;
+}
+
+a.past__link:hover {
+    border-color: var(--border-strong);
+}
+
+.past__link--off {
+    background: transparent;
+    color: var(--muted);
+}
+
+.past__title {
+    font-weight: 600;
+}
+
+.past__meta {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.past__chip {
+    padding: 0 6px;
+    border-radius: var(--corner-2xs);
+    background: var(--sunken);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.past__chip--on {
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+@media (max-width: 640px) {
+    .live-card {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 확정은 아니지만 이 줄의 주 행동(무료 구독)은 초록 바탕으로 올린다. */
+.button--primary {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 600;
+}
+
+.button--primary:hover:not(:disabled) {
+    border-color: var(--accent-hover);
+    background: var(--accent-hover);
+}
+
+/* 같은 확정 행동이지만 한 화면에서 시선을 다투지 않아야 할 때(로그인하고 구독하기 등): 초록 윤곽과 옅은 바탕. */
+.cta--soft {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+.cta--soft:hover {
+    border-color: var(--accent-hover);
+    background: var(--accent-soft);
+    color: var(--accent-hover);
+}
+
+/* ── 영상 시청(VOD): 라이브와 같은 영상 상자 · 채널 줄 · 반응 줄 ── */
+.channel-row .meta a.channel-row__name {
+    color: var(--text);
+    font-weight: 700;
+}
+
+.like__hint {
+    font-size: 13px;
+}
+
+/* 설명은 눌린 종이 위의 메모처럼. 길면 세 줄만 보이고 "더보기"로 펼친다. */
+.description-box {
+    margin: 12px 0;
+    padding: 12px 14px;
+    border-radius: var(--corner-xs);
+    background: var(--sunken);
+}
+
+.description-box .description {
+    margin: 0;
+    color: var(--text);
+    font-size: 15px;
+}
+
+.description--clamped {
+    /* 줄바꿈을 보존하면 빈 줄이 석 줄 안에 들어와 "…"만 남는다. 접혀 있을 때는 이어서 읽는다. */
+    white-space: normal;
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+}
+
+.description-box__toggle {
+    margin-top: 6px;
+    padding: 4px 10px;
+    font-size: 13px;
+}
+
+.button--danger {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.stream .comments p {
+    font-size: 15px;
+}
+
+.comment__more {
+    margin: 4px 0 0 16px;
+    padding: 4px 10px;
+    font-size: 13px;
+}
+
+/* 같은 채널의 다른 영상: 시청이 끝난 뒤 갈 곳. 넓은 화면에서는 오른쪽 열, 좁은 화면에서는 영상 정보 아래 4개. */
+.more {
+    margin: 24px 0 0;
+}
+
+.more__title {
+    margin: 0 0 12px;
+    font-size: 16px;
+}
+
+.more__list {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.more__link {
+    display: grid;
+    grid-template-columns: 148px minmax(0, 1fr);
+    gap: 12px;
+    color: var(--text);
+    text-decoration: none;
+}
+
+.more__thumb {
+    display: block;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: var(--corner-sm);
+    background: var(--sunken);
+}
+
+.more__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.more__blank {
+    display: grid;
+    place-items: center;
+    height: 100%;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.more__text {
+    display: grid;
+    align-content: start;
+    gap: 4px;
+}
+
+.more__name {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.more__meta {
+    color: var(--muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+.more__link:hover .more__thumb {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+@media (max-width: 1399px) {
+    .more__item:nth-child(n + 5) {
+        display: none;
+    }
+}
+
+/* 2열은 뷰포트가 아니라 실제로 남는 폭으로 정한다. 사이드바와 오른쪽 열을 빼고도 영상이 충분히 커야 해서 1400px 이상에서만 나눈다. */
+@media (min-width: 1400px) {
+    .stream {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 320px;
+        align-items: start;
+        column-gap: 24px;
+    }
+
+    .stream__main {
+        grid-column: 1;
+        grid-row: 1;
+        min-width: 0;
+    }
+
+    .stream__comments {
+        grid-column: 1;
+        grid-row: 2;
+        min-width: 0;
+    }
+
+    .more {
+        position: sticky;
+        top: 81px;
+        grid-column: 2;
+        grid-row: 1 / span 2;
+        margin-top: 0;
+    }
+}
+.stream__info {
+    margin-top: 12px;
+}
+
+.stream__info h1 {
+    margin-bottom: 4px;
+}
+
+.stream__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+/* 좋아요는 이 화면에서 가장 가벼운 참여다. 누른 상태는 초록 하트로 보인다. */
+.like {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+}
+
+.like svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linejoin: round;
+}
+
+.like[aria-pressed='true'] {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+.like[aria-pressed='true'] svg {
+    fill: currentColor;
+}
+
+/* 수정·삭제·신고는 반응과 떨어진 보조 묶음이다. */
+.stream__manage {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.stream__panel {
+    display: grid;
+    gap: 8px;
+    margin: 8px 0 12px;
+    padding: 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--corner-xs);
+    background: var(--sunken);
+}
+
+.stream__panel p {
+    margin: 0;
+}
+
+.stream__panel label {
+    display: grid;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.stream__panel-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.stream__login {
+    margin: 8px 0 16px;
+}
+
+.subscribe-bar__confirm {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ── 라이브 시청: 영상 · 채널 줄 · 채팅 ── */
+.player-box {
+    position: relative;
+    /* 높이 상한(60vh)에 걸려도 16:9 를 지키도록 폭을 같이 줄인다. 안 그러면 큰 화면에서 좌우 검은 띠가 생긴다. */
+    max-width: calc(60vh * 16 / 9);
+    background: #000;
+    border-radius: var(--corner-xs);
+}
+
+.player-box .player {
+    display: block;
+}
+
+:root[data-theme='dark'] .player-box {
+    box-shadow: 0 0 0 1px var(--border-strong);
+}
+
+.player-box__badges {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    gap: 6px;
+    pointer-events: none;
+}
+
+/* 송출이 아직 오지 않을 때. 고장이 아니라 기다리는 중이므로 빨강 대신 영상 면 안의 차분한 안내로 보인다. */
+.player-box__wait {
+    position: absolute;
+    inset: 0 0 48px;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 6px;
+    padding: 16px;
+    color: #f4f7f5;
+    text-align: center;
+    pointer-events: none;
+}
+
+.player-box__wait strong {
+    font-size: 17px;
+}
+
+.player-box__wait span:not(.player-box__dots) {
+    font-size: 13px;
+    opacity: 0.8;
+}
+
+/* 불러오는 동안에도 영상 자리의 크기를 예약해, 영상이 오면 아래가 밀리지 않는다. */
+.player-box__ghost {
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    max-height: 60vh;
+    background: #000;
+    border-radius: var(--corner-xs);
+}
+
+.comments__title {
+    margin: 24px 0 8px;
+    font-size: 16px;
+}
+
+/* 실패: 영상 전체를 덮고, 안의 "다시 시도"를 누를 수 있어야 한다. 기본 규칙(.player-box__wait)보다 뒤에 있어야 이긴다. */
+.player-box__wait--error {
+    inset: 0;
+    background: rgb(0 0 0 / 0.85);
+    pointer-events: auto;
+}
+
+.player-box__wait--error button {
+    margin-top: 6px;
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 600;
+}
+
+.player-box__wait--error button:hover:not(:disabled) {
+    border-color: var(--accent-hover);
+    background: var(--accent-hover);
+}
+
+.player-box__dots {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.player-box__dots i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: broadcast-pulse 1.4s ease-in-out infinite;
+}
+
+.player-box__dots i:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.player-box__dots i:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+.channel-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin: 12px 0;
+}
+
+.channel-row__body {
+    min-width: 0;
+}
+
+.channel-row__body .meta {
+    margin: 0 0 4px;
+}
+
+.channel-row__body .subscribe-bar {
+    margin: 0;
+}
+
+.channel-avatar {
+    display: grid;
+    flex: 0 0 40px;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    overflow: hidden;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 16px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.channel-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.live__quick {
+    display: none;
+}
+
+/* 채널명처럼 작은 링크는 보이는 크기는 두고, 누를 수 있는 영역만 사방으로 넓힌다. */
+.live .meta a,
+.stream .meta a {
+    position: relative;
+}
+
+.live .meta a::after,
+.stream .meta a::after {
+    content: '';
+    position: absolute;
+    inset: -14px -8px;
+}
+
+.chat__body {
+    position: relative;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* 위로 올려 읽는 동안 쌓인 새 메시지. 누르면 맨 아래로 돌아가 다시 따라간다. */
+.chat__jump {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    padding: 6px 14px;
+    border-color: var(--accent);
+    border-radius: var(--corner-pill);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    transform: translateX(-50%);
+}
+
+.chat__jump:hover:not(:disabled) {
+    border-color: var(--accent-hover);
+    background: var(--accent-hover);
+}
+
+/* ── 라이브 시청: 좁은 화면 ──
+ * 영상과 채팅이 한 화면에 함께 보여야 한다. 페이지는 스크롤하지 않고,
+ * 영상(16:9) · 제목 줄 · 채팅이 위에서 아래로 쌓이며 채팅만 안에서 스크롤한다.
+ * 입력줄은 화면 맨 아래에 있어 엄지가 닿는다. */
+.live__toggle {
+    display: none;
+}
+
+@media (max-width: 899px) {
+    /* 보는 동안은 검색이 필요 없다. 머리 줄을 한 줄로 줄여 영상에 자리를 준다. */
+    .app:has(.live) .nav__search {
+        display: none;
+    }
+
+    .main:has(> .live) {
+        max-width: none;
+        padding: 0;
+    }
+
+    .live {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        height: calc(100vh - 65px);
+        height: calc(100dvh - 65px);
+    }
+
+    .live__main {
+        flex: 0 0 auto;
+        min-width: 0;
+    }
+
+    .live .player {
+        max-height: none;
+    }
+
+    .live .player-box {
+        border-radius: 0;
+    }
+
+    .live__head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 16px;
+    }
+
+    .live__titles {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .live__titles h1 {
+        margin: 0;
+        overflow: hidden;
+        font-size: 16px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .live__titles .meta {
+        margin: 0;
+        overflow: hidden;
+        font-size: 13px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .live__quick {
+        display: inline-flex;
+        flex: 0 0 auto;
+    }
+
+    .live__toggle {
+        display: inline-block;
+        flex: 0 0 auto;
+        min-height: 44px;
+        padding: 0 14px;
+        font-size: 14px;
+    }
+
+    /* 펼친 정보는 채팅을 밀어내지 않고 그 위에 시트로 얹힌다. 채팅의 크기와 입력줄은 그대로다. */
+    .live__info {
+        position: relative;
+        z-index: 3;
+    }
+
+    .live__more {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        display: none;
+        max-height: 45dvh;
+        padding: 4px 16px 14px;
+        overflow-y: auto;
+        border-bottom: 1px solid var(--border-strong);
+        background: var(--surface);
+        box-shadow: 0 14px 24px rgb(12 18 16 / 0.12);
+    }
+
+    .live__info--open .live__more {
+        display: block;
+    }
+
+    .live .chat__header {
+        padding: 8px 14px;
+    }
+
+    .live__quick {
+        min-height: 44px;
+    }
+
+    .live .chat {
+        flex: 1;
+        height: auto;
+        min-height: 0;
+        border-width: 1px 0 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    /* 고정 메시지·후원 띠·후원 칸이 붙어도 입력줄이 화면 밖으로 밀리지 않게 목록이 줄어든다. */
+    .live .chat__body,
+    .live .chat > .chat__list {
+        flex: 1 1 0;
+        min-height: 80px;
+    }
+}
+
+/* ── 영상 시청(VOD): 좁은 화면 ──
+ * 라이브와 같은 결로: 머리 줄은 한 줄로, 영상은 가장자리까지, 제목은 작게. */
+@media (max-width: 899px) {
+    .app:has(.stream) .nav__search {
+        display: none;
+    }
+
+    .main:has(> .stream) {
+        max-width: none;
+        padding: 0 0 64px;
+    }
+
+    .stream .player-box,
+    .stream .player-box__ghost {
+        max-width: none;
+        border-radius: 0;
+    }
+
+    .stream__info,
+    .stream__comments,
+    .more {
+        padding-right: 16px;
+        padding-left: 16px;
+    }
+
+    .stream__info h1 {
+        font-size: 18px;
+        line-height: 1.35;
+    }
+}
+
+/* 가로로 눕힌 휴대폰: 영상은 왼쪽, 채팅은 오른쪽으로 나눠 둘 다 보이게 한다. */
+@media (max-width: 899px) and (orientation: landscape) and (max-height: 520px) {
+    .live {
+        flex-direction: row;
+    }
+
+    .live__main {
+        flex: 1 1 0;
+        min-width: 0;
+        overflow-y: auto;
+    }
+
+    .live .player {
+        max-height: calc(100dvh - 65px - 56px);
+    }
+
+    .live .chat {
+        flex: 0 0 min(42%, 340px);
+        border-width: 0 0 0 1px;
+    }
+}
+
+/* ── 올리기·수정 ──
+ * 영상이 먼저고 가장 크다. 영상과 썸네일은 눌린 종이 바탕의 칸에서 고르고 올리는 상태를 그 자리에서 보여 준다.
+ * 입력은 16px(iOS 가 포커스에서 확대하지 않게), 선택 목록도 44px. */
+.upload h1 {
+    margin: 0 0 6px;
+}
+
+.upload__lede {
+    margin: 0 0 8px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.upload .form label input,
+.upload .form label select,
+.upload .form label textarea {
+    font-size: 16px;
+}
+
+.upload .form label select {
+    min-height: 44px;
+}
+
+.upload__label,
+.upload .form label > span:first-child {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.upload__tag {
+    padding: 1px 7px;
+    border-radius: var(--corner-2xs);
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.upload__tag--soft {
+    background: var(--sunken);
+    color: var(--muted);
+}
+
+.upload__slot {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* 영상 고르기: 이 화면에서 가장 큰 행동이라 가장 큰 칸. */
+.upload__drop {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 140px;
+    padding: 20px;
+    border: 1.5px dashed var(--field-border);
+    border-radius: var(--corner-sm);
+    background: var(--sunken);
+    color: var(--text);
+    text-align: center;
+    cursor: pointer;
+}
+
+.upload__drop strong {
+    font-size: 16px;
+}
+
+.upload__drop span {
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.upload__drop:hover,
+.upload__drop--over {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.upload__done,
+.upload__progress {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--corner-sm);
+    background: var(--surface);
+}
+
+.upload__done p,
+.upload__progress p {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.upload__done > p {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.upload__bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.upload__bar progress {
+    flex: 1;
+    height: 8px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--corner-2xs);
+    background: var(--border);
+    accent-color: var(--accent);
+}
+
+.upload__bar progress::-webkit-progress-bar {
+    border-radius: var(--corner-2xs);
+    background: var(--border);
+}
+
+.upload__bar progress::-webkit-progress-value {
+    border-radius: var(--corner-2xs);
+    background: var(--accent);
+}
+
+.upload__bar progress::-moz-progress-bar {
+    border-radius: var(--corner-2xs);
+    background: var(--accent);
+}
+
+.upload__bar span {
+    min-width: 3ch;
+    color: var(--muted);
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.upload__thumb-side,
+.upload__thumb-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.upload__thumb-side .meta,
+.upload__thumb-empty .meta {
+    margin: 0;
+}
+
+.upload__broken {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 240px;
+    max-width: 100%;
+    aspect-ratio: 16 / 9;
+    margin: 0;
+    padding: 8px;
+    border: 1px dashed var(--field-border);
+    border-radius: var(--corner-xs);
+    background: var(--sunken);
+    color: var(--muted);
+    font-size: 14px;
+    text-align: center;
+}
+
+.upload__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 12px;
+}
+
+.upload__hint {
+    margin: 0;
+}
+
+.upload .form .error {
+    margin: 0;
+}
+
+/* 좁은 화면: 머리 줄은 한 줄로(검색은 숨김), 썸네일 미리보기는 위, 버튼은 아래로. */
+@media (max-width: 899px) {
+    .app:has(.upload) .nav__search,
+    .app:has(.broadcast) .nav__search {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .upload .thumbnail-preview {
+        flex-direction: column;
+    }
+
+    .upload .thumbnail-preview img {
+        width: 100%;
+    }
+
+    .upload__actions .button--primary {
+        flex: 1 1 100%;
+        min-height: 44px;
+    }
+}
+
+/* ── 움직임 줄이기 ──
+ * OS 에서 "동작 줄이기"를 켠 사람에게는 튕기는 전환, 깜빡임, 부드러운 스크롤을 없앤다.
+ * 카드 위치는 그대로 바뀌고 걸리는 시간만 없어진다. 바퀴 카드는 JS 가 인라인으로
+ * 전환을 넣기 때문에 !important 로 덮는다. */
+@media (prefers-reduced-motion: reduce) {
+    .ring__card,
+    .ring__heart,
+    .wheel__card {
+        transition: none !important;
+    }
+
+    .ring__heart:hover:not(:disabled) {
+        transform: none;
+    }
+
+    .broadcast__dot,
+    .player-box__dots i {
+        animation: none;
+    }
+
+    .carousel__track,
+    .strip__track {
+        scroll-behavior: auto;
+    }
+}
+
+/* ── 터치 화면 ──
+ * 손가락으로 넘기는 화면에서는 화살표가 필요 없고, 칩은 44px 이상이어야 눌린다. */
+@media (hover: none) and (pointer: coarse) {
+    .strip__arrow,
+    .carousel__arrows {
+        display: none;
+    }
+
+    /* 머리 줄의 링크와 버튼도 손가락으로 누를 수 있게 44px 이상. */
+    .nav__links a,
+    .nav__account a,
+    .nav__theme,
+    .nav__account button {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+    }
+
+    .nav__links a,
+    .nav__account a {
+        padding: 0 6px;
+    }
+
+    .chip {
+        padding: 11px 16px;
+    }
+
+    .cta--sm,
+    .description-box__toggle,
+    .comment__more {
+        min-height: 44px;
     }
 }

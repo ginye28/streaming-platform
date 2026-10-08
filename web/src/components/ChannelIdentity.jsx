@@ -1,4 +1,5 @@
 import { assetUrl } from '../assets.js'
+import { formatDay } from '../time.js'
 
 /** 맡은 일의 한국어 이름. 서버는 코드로만 보낸다. */
 const CREDIT_ROLES = {
@@ -61,9 +62,9 @@ export default function ChannelIdentity({ profile }) {
 
             {(profile.debutOn || profile.graduatedOn) && (
                 <p className="meta">
-                    {profile.debutOn && `데뷔 ${profile.debutOn}`}
+                    {profile.debutOn && `데뷔 ${formatDay(profile.debutOn)}`}
                     {profile.debutOn && profile.graduatedOn && ' · '}
-                    {profile.graduatedOn && `졸업 ${profile.graduatedOn}`}
+                    {profile.graduatedOn && `졸업 ${formatDay(profile.graduatedOn)}`}
                 </p>
             )}
 

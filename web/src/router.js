@@ -11,7 +11,33 @@ function read() {
         view: params.get('view') ?? 'home',
         id: params.get('id'),
         keyword: params.get('keyword'),
+        next: params.get('next'),
     }
+}
+
+/**
+ * 로그인 화면으로 보내되, 로그인이 끝나면 지금 보던 화면으로 돌아오게 한다.
+ * 이미 로그인 화면이면 그대로 둔다.
+ */
+export function loginTo() {
+    if (read().view === 'auth') return { view: 'auth' }
+
+    return { view: 'auth', next: window.location.search.slice(1) }
+}
+
+/**
+ * 로그인 뒤에 돌아갈 곳. 이 사이트 안의 화면(view · id · keyword)만 받고,
+ * 그 밖의 값이나 로그인·관리자 화면은 버려서 바깥 주소로 튀는 일이 없게 한다.
+ */
+export function parseNext(next) {
+    if (!next) return null
+
+    const params = new URLSearchParams(next)
+    const view = params.get('view')
+
+    if (!view || !/^[a-z-]+$/.test(view) || view === 'auth' || view === 'admin') return null
+
+    return { view, id: params.get('id'), keyword: params.get('keyword') }
 }
 
 const listeners = new Set()
@@ -24,7 +50,21 @@ export function toSearch(params) {
     return `?${search}`
 }
 
+// 화면이 "지금 나가면 잃는 것이 있다"(방송 중 등)고 알릴 때 쓰는 이탈 가드.
+// fn(이동할 곳)이 false 를 돌려주면 이동하지 않는다. 그 화면이 인라인으로 확인을 묻는다.
+let leaveGuard = null
+
+export function setLeaveGuard(fn) {
+    leaveGuard = fn
+
+    return () => {
+        if (leaveGuard === fn) leaveGuard = null
+    }
+}
+
 export function navigate(params) {
+    if (leaveGuard && leaveGuard(params) === false) return
+
     window.history.pushState({}, '', toSearch(params))
     listeners.forEach((listener) => listener())
     window.scrollTo(0, 0)
