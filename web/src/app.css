@@ -2436,10 +2436,6 @@ a.donate__open:hover {
 }
 
 @media (max-width: 899px) {
-    .app:has(.auth) .nav {
-        flex-wrap: nowrap;
-    }
-
     .app:has(.auth) .nav__search {
         display: none;
     }
@@ -3089,10 +3085,6 @@ a.past__link:hover {
 
 @media (max-width: 899px) {
     /* 보는 동안은 검색이 필요 없다. 머리 줄을 한 줄로 줄여 영상에 자리를 준다. */
-    .app:has(.live) .nav {
-        flex-wrap: nowrap;
-    }
-
     .app:has(.live) .nav__search {
         display: none;
     }
@@ -3216,10 +3208,6 @@ a.past__link:hover {
 /* ── 영상 시청(VOD): 좁은 화면 ──
  * 라이브와 같은 결로: 머리 줄은 한 줄로, 영상은 가장자리까지, 제목은 작게. */
 @media (max-width: 899px) {
-    .app:has(.stream) .nav {
-        flex-wrap: nowrap;
-    }
-
     .app:has(.stream) .nav__search {
         display: none;
     }
@@ -3267,6 +3255,222 @@ a.past__link:hover {
     .live .chat {
         flex: 0 0 min(42%, 340px);
         border-width: 0 0 0 1px;
+    }
+}
+
+/* ── 올리기·수정 ──
+ * 영상이 먼저고 가장 크다. 영상과 썸네일은 눌린 종이 바탕의 칸에서 고르고 올리는 상태를 그 자리에서 보여 준다.
+ * 입력은 16px(iOS 가 포커스에서 확대하지 않게), 선택 목록도 44px. */
+.upload h1 {
+    margin: 0 0 6px;
+}
+
+.upload__lede {
+    margin: 0 0 8px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.upload .form label input,
+.upload .form label select,
+.upload .form label textarea {
+    font-size: 16px;
+}
+
+.upload .form label select {
+    min-height: 44px;
+}
+
+.upload__label,
+.upload .form label > span:first-child {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.upload__tag {
+    padding: 1px 7px;
+    border-radius: var(--corner-2xs);
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.upload__tag--soft {
+    background: var(--sunken);
+    color: var(--muted);
+}
+
+.upload__slot {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* 영상 고르기: 이 화면에서 가장 큰 행동이라 가장 큰 칸. */
+.upload__drop {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 140px;
+    padding: 20px;
+    border: 1.5px dashed var(--field-border);
+    border-radius: var(--corner-sm);
+    background: var(--sunken);
+    color: var(--text);
+    text-align: center;
+    cursor: pointer;
+}
+
+.upload__drop strong {
+    font-size: 16px;
+}
+
+.upload__drop span {
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.upload__drop:hover,
+.upload__drop--over {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.upload__done,
+.upload__progress {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--corner-sm);
+    background: var(--surface);
+}
+
+.upload__done p,
+.upload__progress p {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.upload__done > p {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.upload__bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.upload__bar progress {
+    flex: 1;
+    height: 8px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--corner-2xs);
+    background: var(--border);
+    accent-color: var(--accent);
+}
+
+.upload__bar progress::-webkit-progress-bar {
+    border-radius: var(--corner-2xs);
+    background: var(--border);
+}
+
+.upload__bar progress::-webkit-progress-value {
+    border-radius: var(--corner-2xs);
+    background: var(--accent);
+}
+
+.upload__bar progress::-moz-progress-bar {
+    border-radius: var(--corner-2xs);
+    background: var(--accent);
+}
+
+.upload__bar span {
+    min-width: 3ch;
+    color: var(--muted);
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.upload__thumb-side,
+.upload__thumb-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.upload__thumb-side .meta,
+.upload__thumb-empty .meta {
+    margin: 0;
+}
+
+.upload__broken {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 240px;
+    max-width: 100%;
+    aspect-ratio: 16 / 9;
+    margin: 0;
+    padding: 8px;
+    border: 1px dashed var(--field-border);
+    border-radius: var(--corner-xs);
+    background: var(--sunken);
+    color: var(--muted);
+    font-size: 14px;
+    text-align: center;
+}
+
+.upload__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 12px;
+}
+
+.upload__hint {
+    margin: 0;
+}
+
+.upload .form .error {
+    margin: 0;
+}
+
+/* 좁은 화면: 머리 줄은 한 줄로(검색은 숨김), 썸네일 미리보기는 위, 버튼은 아래로. */
+@media (max-width: 899px) {
+    .app:has(.upload) .nav__search {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .upload .thumbnail-preview {
+        flex-direction: column;
+    }
+
+    .upload .thumbnail-preview img {
+        width: 100%;
+    }
+
+    .upload__actions .button--primary {
+        flex: 1 1 100%;
+        min-height: 44px;
     }
 }
 

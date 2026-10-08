@@ -15,6 +15,7 @@ import MoreStreams from '../components/MoreStreams.jsx'
 import OshiMark from '../components/OshiMark.jsx'
 import Pager from '../components/Pager.jsx'
 import { assetUrl } from '../assets.js'
+import { clearFlash, peekFlash } from '../flash.js'
 import { loginTo, navigate } from '../router.js'
 import { timeAgo } from '../time.js'
 import { usePageTitle } from '../usePageTitle.js'
@@ -30,7 +31,8 @@ export default function StreamPage({ id }) {
     const [replyContent, setReplyContent] = useState('')
     const [panel, setPanel] = useState(null)
     const [reason, setReason] = useState('')
-    const [notice, setNotice] = useState(null)
+    // 올리기·수정 화면에서 넘어왔다면 "올렸어요" 같은 안내를 한 번 보여 준다.
+    const [notice, setNotice] = useState(peekFlash)
     const [deletingComment, setDeletingComment] = useState(null)
     // 좋아요·신고·삭제가 실패해도 영상과 댓글은 그대로 두고, 그 자리에서 알린다.
     const [actionError, setActionError] = useState(null)
@@ -39,6 +41,8 @@ export default function StreamPage({ id }) {
     const [posting, setPosting] = useState(false)
     // 댓글·답글 등록이 실패했을 때. 입력한 내용은 그대로 두고 그 자리에서 알린다.
     const [postError, setPostError] = useState(null)
+
+    useEffect(() => clearFlash(), [])
 
     // 신고 접수 같은 안내는 몇 초 뒤에 저절로 사라진다.
     useEffect(() => {
