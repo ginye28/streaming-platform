@@ -50,7 +50,21 @@ export function toSearch(params) {
     return `?${search}`
 }
 
+// 화면이 "지금 나가면 잃는 것이 있다"(방송 중 등)고 알릴 때 쓰는 이탈 가드.
+// fn(이동할 곳)이 false 를 돌려주면 이동하지 않는다. 그 화면이 인라인으로 확인을 묻는다.
+let leaveGuard = null
+
+export function setLeaveGuard(fn) {
+    leaveGuard = fn
+
+    return () => {
+        if (leaveGuard === fn) leaveGuard = null
+    }
+}
+
 export function navigate(params) {
+    if (leaveGuard && leaveGuard(params) === false) return
+
     window.history.pushState({}, '', toSearch(params))
     listeners.forEach((listener) => listener())
     window.scrollTo(0, 0)

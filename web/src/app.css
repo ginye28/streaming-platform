@@ -2303,8 +2303,10 @@ a.donate__open:hover {
 /* 브라우저로 방송하기 */
 .broadcast__preview {
     position: relative;
-    margin: 12px 0;
-    border-radius: var(--corner-xs);
+    /* 데스크톱 첫 화면에서 시작 버튼이 접힘 아래로 밀리지 않게, 화면 높이의 반쯤까지만 키운다. */
+    width: min(100%, calc(50vh * 16 / 9));
+    margin: 16px 0;
+    border-radius: var(--corner-sm);
     background: #000;
     aspect-ratio: 16 / 9;
     overflow: hidden;
@@ -2321,8 +2323,149 @@ a.donate__open:hover {
     inset: 0;
     display: grid;
     place-items: center;
-    padding: 0;
+    padding: 16px;
     color: #fff;
+    font-size: 15px;
+    text-align: center;
+}
+
+.broadcast h1 {
+    margin: 0 0 6px;
+}
+
+.broadcast .upload__lede {
+    max-width: 640px;
+}
+
+/* 시작 전 점검: 시청자에게 어떤 제목·공개 범위로 나가는지. */
+.broadcast__setup {
+    max-width: 560px;
+    margin: 12px 0;
+    padding: 12px 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--corner-sm);
+    background: var(--surface);
+}
+
+.broadcast__setup p {
+    margin: 0;
+}
+
+.broadcast__setup-title {
+    font-size: 16px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.broadcast__source {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    max-width: 560px;
+    margin: 12px 0;
+    padding: 0;
+    border: 0;
+}
+
+.broadcast__source legend {
+    float: left;
+    width: 100%;
+    padding: 0;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.broadcast__choice,
+.broadcast__mic {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--field-border);
+    border-radius: var(--corner-xs);
+    background: var(--surface);
+    cursor: pointer;
+}
+
+.broadcast__choice {
+    flex: 1 1 200px;
+}
+
+.broadcast__mic {
+    flex: 1 1 100%;
+    border-style: dashed;
+}
+
+.broadcast__choice--on {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.broadcast__choice input,
+.broadcast__mic input {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    margin: 2px 0 0;
+    accent-color: var(--accent);
+}
+
+.broadcast__choice span,
+.broadcast__mic span {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.broadcast__choice small,
+.broadcast__mic small {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.broadcast__source:disabled .broadcast__choice,
+.broadcast__source:disabled .broadcast__mic,
+.broadcast__choice:has(input:disabled) {
+    cursor: default;
+    opacity: 0.6;
+}
+
+.broadcast__live {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 14px;
+}
+
+.broadcast__live .meta {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+}
+
+.broadcast__confirm {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    max-width: 560px;
+    padding: 12px 14px;
+    border: 1px solid var(--danger);
+    border-radius: var(--corner-sm);
+    background: var(--danger-soft);
+}
+
+.broadcast__confirm p {
+    flex: 1 1 100%;
+    margin: 0;
+    font-weight: 600;
+}
+
+.broadcast > .error,
+.broadcast > .notice {
+    max-width: 560px;
+    margin: 12px 0;
 }
 
 .broadcast__status {
@@ -3454,7 +3597,8 @@ a.past__link:hover {
 
 /* 좁은 화면: 머리 줄은 한 줄로(검색은 숨김), 썸네일 미리보기는 위, 버튼은 아래로. */
 @media (max-width: 899px) {
-    .app:has(.upload) .nav__search {
+    .app:has(.upload) .nav__search,
+    .app:has(.broadcast) .nav__search {
         display: none;
     }
 }
