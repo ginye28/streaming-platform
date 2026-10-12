@@ -453,6 +453,11 @@ body::before {
     box-shadow: 0 0 12px var(--accent);
 }
 
+.c-dock__link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
 .c-dock__channels {
     min-height: 0;
     margin-top: 8px;
@@ -768,8 +773,16 @@ body::before {
 }
 
 .c-hero__hit:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 4px;
+    outline: 3px solid var(--accent);
+    outline-offset: 5px;
+}
+
+.c-hero:has(.c-hero__hit:focus-visible) .c-hero__frame {
+    box-shadow: 0 30px 80px rgb(0 0 0 / 0.35), 0 0 56px rgb(53 214 160 / 0.3);
+}
+
+.c-hero:has(.c-hero__hit:focus-visible) .c-hero__cue {
+    color: #7cf5d0;
 }
 
 .c-hero__top,
@@ -1082,7 +1095,9 @@ body::before {
 
 /* 나뭇잎 카드: 왼쪽위·오른쪽아래가 큰 잎, --b 는 좌우를 뒤집은 잎 */
 .c-frame {
-    --R: 64px;
+    /* --Rb 는 카드마다 정한 기준 반지름. 좁은 화면에서는 아래 미디어 쿼리가 비율로 줄인다 */
+    --Rb: 64px;
+    --R: var(--Rb);
     --r: 8px;
     position: relative;
     flex: 0 0 auto;
@@ -1113,6 +1128,29 @@ body::before {
     display: block;
     color: #f4f7f5;
     text-decoration: none;
+}
+
+/* 카드 안쪽 링크의 기본 윤곽은 카드의 overflow 에 잘리므로 끄고, 바깥 카드에 잎 모양을 따르는 링을 건다 */
+.c-frame__link:focus-visible {
+    outline: none;
+}
+
+.c-frame:has(.c-frame__link:focus-visible) {
+    outline: 3px solid var(--accent);
+    outline-offset: 5px;
+    transform: translateY(-12px) rotate(-1.2deg) scale(1.03);
+    box-shadow: 0 30px 60px rgb(19 24 32 / 0.3), 0 0 38px rgb(53 214 160 / 0.4);
+}
+
+.c-frame:has(.c-frame__link:focus-visible) .c-frame__art {
+    transform: scale(1.08);
+}
+
+/* 키보드로 들어오면 홀로 재생 표시도 마우스를 올린 때처럼 깨어난다 */
+.c-frame:has(.c-frame__link:focus-visible) .c-holo {
+    opacity: 1;
+    transform: scale(1.12);
+    filter: drop-shadow(0 0 12px rgb(95 224 184 / 0.8));
 }
 
 .c-frame__art {
@@ -1433,6 +1471,11 @@ body::before {
     opacity: 1;
 }
 
+.c-tier:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 4px;
+}
+
 .c-later__row:hover .c-tier:not(:hover) {
     opacity: 0.62;
 }
@@ -1585,9 +1628,21 @@ body::before {
         display: none;
     }
 
+    /* 카드가 82% 로 줄어드는 만큼 큰 모서리도 줄이되(66%), 작은 모서리는 6px 로 두어 뾰족함이 살아 있게 한다.
+     * 세로 카드의 큰 반지름이 폭의 절반을 넘으면 찌그러져 보이므로 폭의 45% 를 넘기지 않는다. */
     .c-frame {
+        --R: min(calc(var(--Rb) * 0.66), calc(var(--w) * 0.82 * 0.45));
+        --r: 6px;
         width: calc(var(--w) * 0.82);
         height: calc(var(--h) * 0.82);
+    }
+
+    .c-tier {
+        border-radius: 24px 8px 24px 8px;
+    }
+
+    .c-menu__list {
+        border-radius: 22px 7px 22px 7px;
     }
 }
 
@@ -1632,12 +1687,14 @@ body::before {
 
     .c-frame:hover,
     .c-frame:focus-within,
+    .c-frame:has(.c-frame__link:focus-visible),
     .c-tier:hover,
     .c-tier:focus-visible {
         transform: none;
     }
 
-    .c-frame:hover .c-frame__art {
+    .c-frame:hover .c-frame__art,
+    .c-frame:has(.c-frame__link:focus-visible) .c-frame__art {
         transform: none;
     }
 }
