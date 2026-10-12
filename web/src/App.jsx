@@ -35,7 +35,7 @@ function Loading() {
 }
 
 function Routes() {
-    const { view, id, keyword } = useRoute()
+    const { view, id, keyword, params } = useRoute()
 
     switch (view) {
         case 'lives':
@@ -63,9 +63,9 @@ function Routes() {
         case 'auth':
             return <AuthPage />
         case 'pay-result':
-            return <PayResultPage />
+            return <PayResultPage params={params} />
         case 'pay-fail':
-            return <PayFailPage />
+            return <PayFailPage params={params} />
         default:
             return <HomePage />
     }

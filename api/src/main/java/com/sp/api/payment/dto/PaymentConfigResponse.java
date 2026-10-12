@@ -14,6 +14,8 @@ public record PaymentConfigResponse(
         /** 후원으로 고를 수 있는 금액(원). */
         List<Integer> donationAmounts,
         /** 후원과 함께 남길 수 있는 말의 최대 길이. */
-        int donationMessageMaxLength
+        int donationMessageMaxLength,
+        /** 고를 수 있는 구독 기간 상품. 첫 번째가 기본(1개월)이다. priceKrw·periodDays 는 이 첫 상품과 같다. */
+        List<MembershipPlanResponse> plans
 ) {
 }

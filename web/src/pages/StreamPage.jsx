@@ -17,7 +17,7 @@ import Pager from '../components/Pager.jsx'
 import { assetUrl } from '../assets.js'
 import { clearFlash, peekFlash } from '../flash.js'
 import { loginTo, navigate } from '../router.js'
-import { timeAgo } from '../time.js'
+import { formatDateTime, timeAgo } from '../time.js'
 import { usePageTitle } from '../usePageTitle.js'
 import { useSlow } from '../useSlow.js'
 import Link from '../components/Link.jsx'
@@ -503,6 +503,3 @@ function CommentLine({ comment, me, confirming, onReply, onAskDelete, onCancelDe
     )
 }
 
-function formatDateTime(value) {
-    return value ? value.replace('T', ' ').slice(0, 16) : ''
-}

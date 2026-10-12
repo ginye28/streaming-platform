@@ -9,11 +9,11 @@ import {
 import { assetUrl } from '../assets.js'
 import Link from '../components/Link.jsx'
 import { loginTo } from '../router.js'
-import { HEART_COLORS, heartInk, toggleHeart, useHearts } from '../hearts.js'
+import { HEART_COLORS, heartInk, pruneHearts, toggleHeart, useHearts } from '../hearts.js'
 import { useAsyncData } from '../useAsyncData.js'
 import { useAuth } from '../useAuth.js'
 import { useSlow } from '../useSlow.js'
-import { formatAgo } from '../time.js'
+import { formatAgo, serverTimeMs } from '../time.js'
 
 const SORTS = [
     { value: 'LATEST', label: '최신순' },
@@ -339,22 +339,27 @@ function LiveRing({ lives, loading, error, onRetry }) {
         // 방송이 하나도 없을 때는 상자가 그려지지 않는다. 방송이 생기면 그때 붙잡는다.
     }, [hasLives])
 
-    // 하트를 누른 순서대로 앞에, 나머지는 시청자가 많은 순서로 잇는다.
+    // 끝난 방송의 하트는 정리한다. 목록을 아직 못 받은 동안(빈 목록)에는 지우지 않는다.
+    useEffect(() => {
+        if (!loading && !error) pruneHearts(lives.map((live) => live.id))
+    }, [lives, loading, error])
+
+    // 하트를 누른 순서대로 앞에, 나머지는 시청자가 많은 순서로 잇는다. 하트는 방송 하나(live.id)마다 붙는다.
     const heartedLives = hearts
-        .map((channelId) => lives.find((live) => live.channelId === channelId))
+        .map((liveId) => lives.find((live) => live.id === liveId))
         .filter(Boolean)
     const ordered = [
         ...heartedLives,
         ...lives
-            .filter((live) => !hearts.includes(live.channelId))
+            .filter((live) => !hearts.includes(live.id))
             .sort((a, b) => b.viewerCount - a.viewerCount),
     ]
     const n = ordered.length
     const scale = Math.min(1, width / RING_BASE_W)
     const flat = width < RING_MIN_W
 
-    function handleHeart(channelId) {
-        toggleHeart(channelId)
+    function handleHeart(liveId) {
+        toggleHeart(liveId)
         // 하트 줄이 맨 앞부터 서도록 처음 자리로 돌린다.
         setTurn(0)
     }
@@ -578,7 +583,7 @@ function RingCard({ live, color, order, size, front, onBringFront, onHeart, styl
                 className="ring__heart"
                 aria-pressed={hearted}
                 aria-label={`${live.nickname} 하트${hearted ? ' 빼기' : ''}`}
-                onClick={() => onHeart(live.channelId)}
+                onClick={() => onHeart(live.id)}
             >
                 <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z" />
@@ -629,10 +634,9 @@ function mod(value, n) {
     return ((value % n) + n) % n
 }
 
-/** 서버는 시간대 없는 LocalDateTime 을 준다. 같은 시간대라고 보고 읽는다. */
+/** 서버 시각(시간대 표시 없는 UTC)을 밀리초로. 읽을 수 없으면 fallback. */
 function toTime(value, fallback = Date.now()) {
-    const time = value ? new Date(value).getTime() : NaN
-    return Number.isNaN(time) ? fallback : time
+    return serverTimeMs(value, fallback)
 }
 
 /** 3:41 처럼 시:분. */

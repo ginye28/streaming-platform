@@ -1,8 +1,7 @@
 import Link from '../components/Link.jsx'
 
 /** 토스 결제창에서 결제가 안 됐거나 닫았을 때 돌아오는 곳. 주소의 message · code 를 그대로 보여 준다. */
-export default function PayFailPage() {
-    const params = new URLSearchParams(window.location.search)
+export default function PayFailPage({ params = new URLSearchParams(window.location.search) }) {
     const message = params.get('message') ?? '결제가 취소되었거나 완료되지 않았습니다.'
     const code = params.get('code')
 

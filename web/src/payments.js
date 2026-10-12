@@ -36,8 +36,8 @@ export function usePaymentConfig() {
 
 export const won = (amount) => `${Number(amount).toLocaleString('ko-KR')}원`
 
-/** 서버가 주는 "2026-11-01T12:00:00" 에서 날짜만. */
-export const dateOnly = (value) => (value ? value.slice(0, 10) : '')
+/** 서버가 주는 "2026-11-01T12:00:00"(UTC)의 날짜. 이 브라우저의 시간대 기준이다. */
+export { formatDate as dateOnly } from './time.js'
 
 let sdkPromise = null
 
@@ -62,7 +62,7 @@ function loadSdk() {
 }
 
 /**
- * 서버가 만든 주문으로 토스 결제창을 연다. 성공하면 토스가 ?view=pay-result 로 되돌려 보내고, 거기서 승인한다.
+ * 서버가 만든 주문으로 토스 결제창을 연다. 성공하면 토스가 /pay-result 로 되돌려 보내고, 거기서 승인한다.
  * 이 함수가 끝났다는 것은 결제창으로 넘어갔다는 뜻이다(보통은 그 전에 페이지가 떠난다).
  *
  * 구독과 후원이 같은 결제창·같은 복귀 주소를 쓴다. 승인 쪽이 주문의 종류를 보고 알아서 처리한다.
@@ -81,8 +81,10 @@ async function openCheckout(config, order, method) {
         amount: { currency: 'KRW', value: order.amount },
         orderId: order.orderId,
         orderName: order.orderName,
-        successUrl: `${origin}/?view=pay-result`,
-        failUrl: `${origin}/?view=pay-fail`,
+        // 쿼리 없는 깨끗한 주소를 준다. 토스가 ?paymentKey=… 를 붙일 때 이미 있던 ?view= 와 섞여
+        // 주소가 깨지는 일이 없다. 이 경로는 router.js 가 알아보고, Vercel 은 vercel.json 이 index.html 로 보낸다.
+        successUrl: `${origin}/pay-result`,
+        failUrl: `${origin}/pay-fail`,
         customerEmail: order.customerEmail,
         customerName: order.customerName,
     })
@@ -102,12 +104,13 @@ async function requireEnabledConfig() {
  * 유료 구독 결제창을 연다.
  *
  * @param method 'CARD'(카드 · 간편결제) 또는 'TRANSFER'(계좌이체)
+ * @param months 구독 기간(달). 결제 설정의 plans 에 있는 값. 금액은 서버가 상품에서 정한다.
  * @throws 사용자가 결제창을 닫으면 code 가 USER_CANCEL 인 오류. 호출하는 쪽에서 조용히 넘긴다.
  */
-export async function startMembershipPayment(channelId, method) {
+export async function startMembershipPayment(channelId, method, months = 1) {
     const config = await requireEnabledConfig()
 
-    await openCheckout(config, await createMembershipOrder(channelId), method)
+    await openCheckout(config, await createMembershipOrder(channelId, months), method)
 }
 
 /**

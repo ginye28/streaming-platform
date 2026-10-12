@@ -6,6 +6,8 @@ public record MembershipOrderResponse(
         String orderName,
         int amount,
         String customerEmail,
-        String customerName
+        String customerName,
+        /** 이 주문으로 늘어나는 이용 기간(일). */
+        int periodDays
 ) {
 }

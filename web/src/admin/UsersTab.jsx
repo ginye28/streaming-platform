@@ -1,3 +1,4 @@
+import { formatDate } from '../time.js'
 import { useState } from 'react'
 import { changeUserRole, getUsers } from '../api.js'
 import Pager from '../components/Pager.jsx'
@@ -120,6 +121,3 @@ export default function UsersTab({ myId }) {
     )
 }
 
-function formatDate(value) {
-    return value ? value.slice(0, 10) : ''
-}

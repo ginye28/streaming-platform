@@ -243,9 +243,9 @@ export const updateSubscription = (channelId, payload) =>
 /** 결제가 켜져 있는지, 금액·기간은 얼마인지. 로그인 없이 읽는다. */
 export const getPaymentConfig = async () => unwrap(await request('/api/payments/config'))
 
-/** 1단계 — 유료 구독 주문을 만든다. 돌려받은 값으로 결제창을 연다. */
-export const createMembershipOrder = (channelId) =>
-    authorized(`/api/channels/${channelId}/membership/orders`, { method: 'POST' })
+/** 1단계 — 유료 구독 주문을 만든다. months 는 구독 기간(달, 설정에 있는 값). 돌려받은 값으로 결제창을 연다. */
+export const createMembershipOrder = (channelId, months = 1) =>
+    authorized(`/api/channels/${channelId}/membership/orders`, { method: 'POST', body: { months } })
 
 /** 3단계 — 결제창에서 돌아온 값으로 승인하고 유료 구독을 시작한다. */
 export const confirmPayment = ({ paymentKey, orderId, amount }) =>

@@ -186,6 +186,7 @@ nginx-rtmp 의 `on_publish` 로 한 줄이 생기고, `on_publish_done` 으로 `
 | live_stream_id | bigint | null 허용 | 후원이 들어간 방송. 구독 결제는 null |
 | donation_message | varchar(100) | null 허용 | 후원과 함께 남긴 말. 승인되면 채팅에 올라간다 |
 | amount | int | NOT NULL | 서버가 정한 금액(원) |
+| period_days | int | null 허용 | 이 결제로 늘어나는 유료 기간(일). 주문을 만들 때 정해지고 환불하면 이만큼 되돌린다. 후원은 null (V6) |
 | status | enum('DONE','FAILED','READY','CANCELED') | NOT NULL | 승인 완료 · 실패 · 주문 · 환불(취소). 값은 끝에 덧붙여 늘렸다 |
 | method | varchar(50) | null 허용 | 카드 · 간편결제 · 계좌이체 등 |
 | receipt_url | varchar(500) | null 허용 | 토스 영수증 주소 |

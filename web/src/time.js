@@ -1,8 +1,62 @@
+/**
+ * 서버가 주는 시각을 읽는다.
+ *
+ * 서버(Render)는 UTC 기준 시계를 쓰고, 대부분의 시각을 시간대 표시가 없는 문자열("2026-10-05T11:00:00")로 준다.
+ * 브라우저의 `new Date("2026-10-05T11:00:00")` 은 이것을 **내 시간대의 시각**으로 읽어서
+ * 한국에서는 모든 시각이 9시간 어긋난다(방금 시작한 방송이 "9:04째" 로 보이던 문제).
+ * 그래서 시간대 표시가 없으면 UTC 로 보고 읽는다. 표시가 있는 값("...+09:00", "...Z")은 그대로 둔다.
+ *
+ * @returns {Date | null} 읽을 수 없으면 null
+ */
+export function parseServerTime(value) {
+    if (value == null || value === '') return null
+
+    if (value instanceof Date) return value
+
+    let text = String(value).trim()
+
+    // 날짜와 시각이 있고(T 로 이어짐) 시간대 표시(Z, +09:00, +0900)가 없을 때만 UTC 로 본다.
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(text) && !/(Z|[+-]\d{2}:?\d{2})$/i.test(text)) {
+        text += 'Z'
+    }
+
+    const date = new Date(text)
+
+    return Number.isNaN(date.getTime()) ? null : date
+}
+
+/** 밀리초로. 읽을 수 없으면 fallback. */
+export function serverTimeMs(value, fallback = NaN) {
+    const date = parseServerTime(value)
+
+    return date ? date.getTime() : fallback
+}
+
+const pad = (value) => String(value).padStart(2, '0')
+
+/** "2026-10-05" — 이 브라우저의 시간대 기준 날짜. UTC 날짜를 그대로 자르지 않는다. */
+export function formatDate(value) {
+    const date = parseServerTime(value)
+
+    return date ? `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` : ''
+}
+
+/** "2026-10-05 20:14" — 이 브라우저의 시간대 기준 날짜와 시각. */
+export function formatDateTime(value) {
+    const date = parseServerTime(value)
+
+    return date ? `${formatDate(date)} ${pad(date.getHours())}:${pad(date.getMinutes())}` : ''
+}
+
 /** 서버가 주는 시간대 붙은 시각("2026-10-05T20:00:00+09:00")을 이 브라우저의 시간대로 보기 좋게. */
 export function formatWhen(iso) {
     if (!iso) return ''
 
-    return new Date(iso).toLocaleString('ko-KR', {
+    const date = parseServerTime(iso)
+
+    if (!date) return ''
+
+    return date.toLocaleString('ko-KR', {
         month: 'long',
         day: 'numeric',
         weekday: 'short',
@@ -13,8 +67,9 @@ export function formatWhen(iso) {
 
 /** 서버 시각 문자열을 <input type="datetime-local"> 이 받는 모양("2026-10-05T20:00")으로. 이 브라우저의 시간대 기준이다. */
 export function toLocalInput(iso) {
-    const date = new Date(iso)
-    const pad = (value) => String(value).padStart(2, '0')
+    const date = parseServerTime(iso)
+
+    if (!date) return ''
 
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
@@ -29,7 +84,7 @@ export function fromLocalInput(value) {
 
 /** 지금부터 target 까지 남은 시간을 { days, hours, minutes, seconds, done } 으로. */
 export function countdown(target, now = Date.now()) {
-    const left = Math.max(0, new Date(target).getTime() - now)
+    const left = Math.max(0, serverTimeMs(target, now) - now)
     const seconds = Math.floor(left / 1000)
 
     return {
@@ -53,14 +108,9 @@ export function formatAgo(ms) {
     return `${Math.floor(days / 30)}달 전`
 }
 
-/**
- * 서버가 주는 시간대 없는 시각("2026-10-05T21:14:00")을 "3일 전" 처럼.
- * 서버는 시간대 없는 LocalDateTime 을 주므로 이 브라우저와 같은 시간대라고 보고 읽는다.
- */
+/** 서버가 주는 시각("2026-10-05T21:14:00", UTC)을 "3일 전" 처럼. */
 export function timeAgo(value) {
-    if (!value) return ''
-
-    const time = new Date(value).getTime()
+    const time = serverTimeMs(value)
 
     return Number.isNaN(time) ? '' : formatAgo(Date.now() - time)
 }

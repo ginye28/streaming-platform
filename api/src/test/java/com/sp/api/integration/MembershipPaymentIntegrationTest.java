@@ -148,6 +148,96 @@ class MembershipPaymentIntegrationTest extends IntegrationTestSupport {
                 .andReturn()).path("data");
     }
 
+    // ---- 기간 상품(장기 구독) ----
+
+    private String createOrderWithMonths(String token, long channelId, int months) throws Exception {
+        return mockMvc.perform(post("/api/channels/" + channelId + "/membership/orders")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"months\":" + months + "}"))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+    }
+
+    @Test
+    @DisplayName("결제 설정이 구독 기간 상품(1·3·6·12개월)과 서버가 정한 금액을 알려 준다")
+    void configListsPlans() throws Exception {
+
+        mockMvc.perform(get("/api/payments/config"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.plans.length()").value(4))
+                .andExpect(jsonPath("$.data.plans[0].months").value(1))
+                .andExpect(jsonPath("$.data.plans[0].amountKrw").value(4900))
+                .andExpect(jsonPath("$.data.plans[0].days").value(30))
+                .andExpect(jsonPath("$.data.plans[1].months").value(3))
+                .andExpect(jsonPath("$.data.plans[1].amountKrw").value(13900))
+                .andExpect(jsonPath("$.data.plans[1].discountPercent").value(5))
+                .andExpect(jsonPath("$.data.plans[2].months").value(6))
+                .andExpect(jsonPath("$.data.plans[2].amountKrw").value(26400))
+                .andExpect(jsonPath("$.data.plans[3].months").value(12))
+                .andExpect(jsonPath("$.data.plans[3].amountKrw").value(49900))
+                .andExpect(jsonPath("$.data.plans[3].days").value(360));
+    }
+
+    @Test
+    @DisplayName("3개월 주문은 할인된 금액·90일로 만들어지고, 승인되면 유료 기간이 90일 늘어난다")
+    void threeMonthPlanExtendsNinetyDays() throws Exception {
+
+        String owner = signupAndLogin("plan-owner1@test.com", "기간주인1");
+        String fan = signupAndLogin("plan-fan1@test.com", "기간팬1");
+        long channelId = myUserId(owner);
+
+        JsonNode order = objectMapper.readTree(createOrderWithMonths(fan, channelId, 3)).path("data");
+
+        assertThat(order.path("amount").asInt()).isEqualTo(13900);
+        assertThat(order.path("periodDays").asInt()).isEqualTo(90);
+        assertThat(order.path("orderName").asString()).contains("3개월(90일)");
+
+        confirm(fan, "pk_plan3", order.path("orderId").asString(), 13900).andExpect(status().isOk());
+
+        Subscribe subscribe = subscribeRepository.findAll().stream()
+                .filter(item -> item.getChannel().getId().equals(channelId))
+                .findFirst().orElseThrow();
+
+        assertThat(subscribe.getPaidUntil())
+                .isAfter(LocalDateTime.now().plusDays(89))
+                .isBefore(LocalDateTime.now().plusDays(91));
+
+        // 내 결제 내역에도 기간이 남는다
+        mockMvc.perform(get("/api/users/me/payments").header("Authorization", "Bearer " + fan))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].periodDays").value(90))
+                .andExpect(jsonPath("$.data.content[0].amount").value(13900));
+    }
+
+    @Test
+    @DisplayName("설정에 없는 기간은 주문을 만들어 주지 않는다")
+    void unknownPlanIsRejected() throws Exception {
+
+        String owner = signupAndLogin("plan-owner2@test.com", "기간주인2");
+        String fan = signupAndLogin("plan-fan2@test.com", "기간팬2");
+
+        mockMvc.perform(post("/api/channels/" + myUserId(owner) + "/membership/orders")
+                        .header("Authorization", "Bearer " + fan)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"months\":2}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("주문의 금액과 다른 금액으로는 승인되지 않는다 — 3개월 주문을 한 달 금액으로 승인하려 해도 거절")
+    void planAmountCannotBeSwapped() throws Exception {
+
+        String owner = signupAndLogin("plan-owner3@test.com", "기간주인3");
+        String fan = signupAndLogin("plan-fan3@test.com", "기간팬3");
+
+        JsonNode order = objectMapper.readTree(createOrderWithMonths(fan, myUserId(owner), 12)).path("data");
+
+        confirm(fan, "pk_plan12", order.path("orderId").asString(), 4900).andExpect(status().isBadRequest());
+
+        assertThat(gateway.confirmCalls).isZero();
+    }
+
     // ---- 설정 · 주문 ----
 
     @Test
