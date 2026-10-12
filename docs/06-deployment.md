@@ -104,6 +104,7 @@ nginx:1.27-alpine  →  dist/ 를 :80 으로
 | `VOD_ENABLED` | `false` (compose 는 `true`) | 스트리밍 서버가 방송을 녹화하는지. 켜면 방송이 끝날 때 다시보기 주소를 내려 준다. **녹화하지 않는 서버에서 켜면 없는 주소를 가리킨다** |
 | `VOD_BASE_URL` | 비어 있음 | 다시보기 재생 주소의 앞부분. 비우면 `HLS_BASE_URL` 옆의 `/vod` 를 쓴다 |
 | `RTMP_CALLBACK_TOKEN` | 비어 있음 | nginx 가 송출 시작·종료 콜백 주소에 `?token=` 으로 붙이는 비밀 값. **스트리밍 서버와 API 에 같은 값**을 넣는다. 비워 두면 검사하지 않으므로 콜백이 바깥에 열린 서버에서는 반드시 채운다(영문·숫자만 쓸 것). 틀리면 403 |
+| `SWAGGER_ENABLED` | `false` | 컨테이너(docker 프로필)에서 API 문서(`/swagger`, `/v3/api-docs`)를 켤지. 문서를 만드는 데 메모리를 꽤 써서 무료 서버(512MB)에서는 끈다 |
 | `LOG_LEVEL` | `INFO` | |
 
 ### 결제(토스페이먼츠) 켜기
@@ -231,3 +232,15 @@ VITE_API_BASE_URL=https://api.내도메인 docker compose --profile full up -d -
 - **HTTPS.** 인증서와 리버스 프록시가 없습니다.
   실제 도메인에 붙일 때는 `web` 앞에 프록시를 하나 더 두는 게 편합니다.
 - **DB 백업.** `mysql-data` 볼륨에만 있습니다.
+
+### 메모리 (무료 서버 512MB)
+
+Render 무료 서비스는 메모리가 512MB 를 넘으면 서버가 죽고 다시 켜진다(기동에 약 3분 — 그동안 화면에는 "서버를 깨우는 중" 이 뜬다).
+실제로 겪은 일과 그에 대한 조치.
+
+- **영상 썸네일**: 4K HEVC(아이폰 `.mov` 등) 영상 한 장을 뽑는 데 ffmpeg 가 기본 설정으로 **약 510MB** 를 써서 서버가 죽었다.
+  `-threads 1 -skip_frame nokey` 로 약 50MB 가 된다(`VideoThumbnailService`). 키프레임만 읽는 방식이 안 맞는 파일은 스레드만 1개로 줄인 방식으로 한 번 더 시도한다.
+- **자바**: 힙은 `JAVA_TOOL_OPTIONS=-Xmx300m …` 이 정한다. 이미지(`api/Dockerfile`)에서 JIT 를 C1 만 쓰고 스레드 스택·직접 메모리를 줄였다.
+- **API 문서**: 운영에서는 끈다(`SWAGGER_ENABLED`).
+- **웹 방송**: ffmpeg 가 방송당 약 60MB. 동시 1개로 막아 두었다.
+- 서버가 메모리로 죽었는지는 Render → 서비스 → Events 의 "Ran out of memory" 로 확인한다.
