@@ -393,3 +393,17 @@ ENUM 으로 두면 종류를 하나 늘릴 때 기존 칸을 넓혀 주지 못�
 | created_at | datetime(6) | | |
 
 로그아웃하면 지웁니다.
+
+## stored_files · stored_file_chunks — 업로드 파일 사본
+
+Render 무료 서버는 디스크가 임시라서 올린 파일을 DB 에도 담아 둡니다(V7). 엔티티 없이 `JdbcTemplate` 으로만 다룹니다.
+
+| 표 | 칸 | 설명 |
+|---|---|---|
+| stored_files | name (PK, varchar(120)) | `{uuid}.{확장자}`. `/uploads/` 뒤의 이름과 같다 |
+| | size_bytes | 원래 파일 크기. 되살릴 때 조각이 온전한지 비교한다 |
+| | created_at | |
+| stored_file_chunks | (file_name, seq) PK | 1MB 조각 번호 |
+| | data | longblob. TiDB 한 줄 6MB 제한을 피하려고 조각냈다 |
+
+`stored_files` 줄은 조각을 다 넣은 뒤 마지막에 넣는다. 이 줄이 있어야 되살린다.

@@ -1,4 +1,5 @@
 import { assetUrl } from '../assets.js'
+import AssetImage from './AssetImage.jsx'
 
 /**
  * 이름 옆에 붙는 오시마크. 채팅과 댓글이 같이 쓴다.
@@ -11,7 +12,7 @@ export default function OshiMark({ url, tier }) {
     const label = paid ? '유료 구독자' : '구독자'
 
     return (
-        <img
+        <AssetImage
             className={paid ? 'oshi-mark oshi-mark--paid' : 'oshi-mark'}
             src={assetUrl(url)}
             alt={label}

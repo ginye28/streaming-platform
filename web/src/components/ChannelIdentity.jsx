@@ -1,5 +1,6 @@
 import { assetUrl } from '../assets.js'
 import { formatDay } from '../time.js'
+import AssetImage from './AssetImage.jsx'
 
 /** 맡은 일의 한국어 이름. 서버는 코드로만 보낸다. */
 const CREDIT_ROLES = {
@@ -32,7 +33,7 @@ export default function ChannelIdentity({ profile }) {
         <div className="identity">
             <div className="identity__badges">
                 {profile.oshiMarkUrl && (
-                    <img
+                    <AssetImage
                         className="identity__mark"
                         src={assetUrl(profile.oshiMarkUrl)}
                         alt="오시마크"
@@ -41,7 +42,7 @@ export default function ChannelIdentity({ profile }) {
                 )}
 
                 {profile.paidOshiMarkUrl && (
-                    <img
+                    <AssetImage
                         className="identity__mark identity__mark--paid"
                         src={assetUrl(profile.paidOshiMarkUrl)}
                         alt="유료 구독자 오시마크"

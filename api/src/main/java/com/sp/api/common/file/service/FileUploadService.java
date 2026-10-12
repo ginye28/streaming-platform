@@ -28,13 +28,16 @@ public class FileUploadService {
 
     private final Path uploadRoot;
     private final VideoThumbnailService thumbnailService;
+    private final StoredFileBackup backup;
 
     public FileUploadService(
             @Value("${file.upload-dir}") String uploadDir,
-            VideoThumbnailService thumbnailService
+            VideoThumbnailService thumbnailService,
+            StoredFileBackup backup
     ) {
         this.uploadRoot = Paths.get(uploadDir).toAbsolutePath().normalize();
         this.thumbnailService = thumbnailService;
+        this.backup = backup;
     }
 
     public UploadResponse upload(MultipartFile file) throws IOException {
@@ -59,6 +62,9 @@ public class FileUploadService {
 
         file.transferTo(target);
 
+        // 무료 서버는 디스크가 임시라서, DB 에도 담아 둬야 재시작 뒤에도 파일이 남는다.
+        backup.save(fileName, target);
+
         log.debug("파일 업로드 완료: {}", fileName);
 
         return new UploadResponse("/uploads/" + fileName, thumbnailUrl(target, baseName, extension));
@@ -73,7 +79,18 @@ public class FileUploadService {
 
         String thumbnailName = thumbnailService.generate(video, baseName);
 
-        return thumbnailName == null ? null : "/uploads/" + thumbnailName;
+        if (thumbnailName == null) {
+            return null;
+        }
+
+        try {
+            backup.save(thumbnailName, video.resolveSibling(thumbnailName));
+        } catch (Exception e) {
+            // 썸네일 사본이 없어도 영상은 올라간 것이다. 다만 서버가 재시작하면 썸네일이 사라질 수 있다.
+            log.warn("썸네일을 DB 에 담지 못했습니다: {}", thumbnailName, e);
+        }
+
+        return "/uploads/" + thumbnailName;
     }
 
     private String extractExtension(String originalFilename) {
