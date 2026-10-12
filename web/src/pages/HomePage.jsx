@@ -13,6 +13,7 @@ import LeafLoader from '../components/LeafLoader.jsx'
 import Link from '../components/Link.jsx'
 import { loginTo } from '../router.js'
 import { HEART_COLORS, pruneHearts, toggleHeart, useHearts } from '../hearts.js'
+import { useLiveViewerCount } from '../liveViewers.js'
 import { useAsyncData } from '../useAsyncData.js'
 import { useAuth } from '../useAuth.js'
 import { useSlow } from '../useSlow.js'
@@ -207,7 +208,7 @@ function Hero({ live, liveCount, loading, error, onRetry }) {
                     <i aria-hidden="true" />
                     LIVE
                 </span>
-                <span className="c-chip-soft">시청 {formatCount(live.viewerCount)}</span>
+                <HeroViewers live={live} />
                 {tournament && <span className="c-chip-soft c-chip-soft--tag">대회 중계</span>}
             </div>
 
@@ -491,49 +492,12 @@ function Film({
 }
 
 function Frame({ item, index }) {
-    const hearts = useHearts()
     const size = FRAME_SIZES[index % FRAME_SIZES.length]
     // 짝수는 왼쪽위·오른쪽아래가 큰 잎, 홀수는 좌우를 뒤집은 잎.
     const flip = index % 2 === 1
 
     if (item.kind === 'live') {
-        const { live } = item
-        const hearted = hearts.includes(live.id)
-        const color = hearted ? HEART_COLORS[hearts.indexOf(live.id) % HEART_COLORS.length] : null
-
-        return (
-            <li
-                className={`c-frame${flip ? ' c-frame--b' : ''}`}
-                style={{ '--w': `${size.w}px`, '--h': `${size.h}px`, '--R': `${size.r}px` }}
-            >
-                <Link to={{ view: 'live', id: live.id }} className="c-frame__link" draggable="false">
-                    <FrameArt src={live.thumbnailUrl} name={live.nickname} />
-                    <span className="c-frame__cap">
-                        <span className="c-frame__cat">LIVE · {formatCount(live.viewerCount)}</span>
-                        <span className="c-frame__name">
-                            <Avatar name={live.nickname} size={22} src={live.profileImage} className="c-avatar--inline" />
-                            {live.title}
-                        </span>
-                    </span>
-                </Link>
-
-                <Holo />
-                <span className="c-voice" aria-hidden="true">
-                    <b /><b /><b /><b /><b />
-                    <em>LIVE</em>
-                </span>
-                <button
-                    type="button"
-                    className="c-heart c-frame__heart"
-                    aria-pressed={hearted}
-                    aria-label={`${live.nickname} 방송 하트${hearted ? ' 빼기' : ''}`}
-                    style={color ? { '--heart': color } : undefined}
-                    onClick={() => toggleHeart(live.id)}
-                >
-                    <HeartIcon />
-                </button>
-            </li>
-        )
+        return <LiveFrame live={item.live} size={size} flip={flip} />
     }
 
     const { stream } = item
@@ -558,6 +522,59 @@ function Frame({ item, index }) {
             </Link>
 
             <Holo />
+        </li>
+    )
+}
+
+/**
+ * 방송 중인 카드. 시청자 수는 WebSocket 으로 밀려 오는 값을 쓰고, 마우스를 올리거나 포커스하면
+ * "방송 시간 · 지금 시청 · 최고 시청" 진행 상태가 아래에서 펼쳐진다.
+ */
+function LiveFrame({ live, size, flip }) {
+    const hearts = useHearts()
+    const now = useNow()
+    const viewers = useLiveViewerCount(live.id, live.viewerCount)
+    const hearted = hearts.includes(live.id)
+    const color = hearted ? HEART_COLORS[hearts.indexOf(live.id) % HEART_COLORS.length] : null
+    const peak = Math.max(live.peakViewerCount ?? 0, viewers)
+    const uptime = formatUptimeKorean(now - toTime(live.startedAt))
+
+    return (
+        <li
+            className={`c-frame${flip ? ' c-frame--b' : ''}`}
+            style={{ '--w': `${size.w}px`, '--h': `${size.h}px`, '--R': `${size.r}px` }}
+        >
+            <Link to={{ view: 'live', id: live.id }} className="c-frame__link" draggable="false">
+                <FrameArt src={live.thumbnailUrl} name={live.nickname} />
+                <span className="c-frame__cap">
+                    <span className="c-frame__cat">LIVE · {formatCount(viewers)}</span>
+                    <span className="c-frame__name">
+                        <Avatar name={live.nickname} size={22} src={live.profileImage} className="c-avatar--inline" />
+                        {live.title}
+                    </span>
+                    <span className="c-frame__progress">
+                        <span className="c-frame__progress-inner">
+                            {uptime} · 지금 {viewers.toLocaleString('ko-KR')}명 · 최고 {peak.toLocaleString('ko-KR')}명
+                        </span>
+                    </span>
+                </span>
+            </Link>
+
+            <Holo />
+            <span className="c-voice" aria-hidden="true">
+                <b /><b /><b /><b /><b />
+                <em>LIVE</em>
+            </span>
+            <button
+                type="button"
+                className="c-heart c-frame__heart"
+                aria-pressed={hearted}
+                aria-label={`${live.nickname} 방송 하트${hearted ? ' 빼기' : ''}`}
+                style={color ? { '--heart': color } : undefined}
+                onClick={() => toggleHeart(live.id)}
+            >
+                <HeartIcon />
+            </button>
         </li>
     )
 }
@@ -759,6 +776,27 @@ function toTime(value, fallback = Date.now()) {
 function formatUptime(ms) {
     const minutes = Math.max(0, Math.floor(ms / 60000))
     return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`
+}
+
+/** 큰 화면의 시청자 수. 서버가 밀어 주는 값으로 바로 바뀐다. */
+function HeroViewers({ live }) {
+    const viewers = useLiveViewerCount(live.id, live.viewerCount)
+
+    return <span className="c-chip-soft">시청 {formatCount(viewers)}</span>
+}
+
+/** 방송 시간을 말로. 막 시작했으면 "방금 시작", 아니면 "12분째 방송" · "1시간 5분째 방송". */
+function formatUptimeKorean(ms) {
+    const minutes = Math.max(0, Math.floor(ms / 60000))
+
+    if (minutes < 1) return '방금 시작'
+
+    const hours = Math.floor(minutes / 60)
+    const rest = minutes % 60
+
+    if (hours === 0) return `${rest}분째 방송`
+
+    return rest === 0 ? `${hours}시간째 방송` : `${hours}시간 ${rest}분째 방송`
 }
 
 /** 10000 → 1만. 자릿수가 커져도 한 줄이 밀리지 않게 줄여 쓴다. */

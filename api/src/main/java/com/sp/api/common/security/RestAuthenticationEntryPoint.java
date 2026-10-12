@@ -1,5 +1,6 @@
 package com.sp.api.common.security;
 
+import com.sp.api.common.web.ClientIp;
 import tools.jackson.databind.ObjectMapper;
 import com.sp.api.common.response.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,11 +23,15 @@ import java.nio.charset.StandardCharsets;
 public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     private final ObjectMapper objectMapper;
+    private final SecurityEventRecorder securityEvents;
 
     @Override
     public void commence(HttpServletRequest request,
                          HttpServletResponse response,
                          AuthenticationException authException) throws IOException {
+
+        securityEvents.record(SecurityEventRecorder.Type.UNAUTHORIZED, ClientIp.of(request),
+                request.getMethod() + " " + request.getRequestURI(), "");
 
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { getMySubscriptions, getUnreadCount } from '../api.js'
 import { useAuth } from '../useAuth.js'
 import { loginTo, navigate, useRoute } from '../router.js'
+import { setPerfMode, usePerf } from '../perf.js'
 import { setTheme, useTheme } from '../theme.js'
 import Avatar from '../components/Avatar.jsx'
 import Link from '../components/Link.jsx'
@@ -259,6 +260,7 @@ function AccountMenu({ me, onLogout }) {
     const listRef = useRef(null)
     const theme = useTheme()
     const dark = theme === 'dark'
+    const perf = usePerf()
 
     useEffect(() => {
         if (!open) return undefined
@@ -335,6 +337,21 @@ function AccountMenu({ me, onLogout }) {
                     >
                         <span>화면 모드</span>
                         <span className="c-menu__value">{dark ? '어둡게 → 밝게' : '밝게 → 어둡게'}</span>
+                    </button>
+                    <button
+                        type="button"
+                        role="menuitem"
+                        className="c-menu__item"
+                        onClick={() => {
+                            // 자동 → 가볍게 → 전체 → 자동. 느린 기기에서 사용자가 직접 줄이거나 되돌릴 수 있다.
+                            setPerfMode({ auto: 'lite', lite: 'full', full: 'auto' }[perf.mode])
+                            close(true)
+                        }}
+                    >
+                        <span>화면 효과</span>
+                        <span className="c-menu__value">
+                            {{ auto: `자동 (${perf.level === 'lite' ? '가볍게' : '전체'})`, lite: '가볍게', full: '전체' }[perf.mode]}
+                        </span>
                     </button>
                     <button
                         type="button"

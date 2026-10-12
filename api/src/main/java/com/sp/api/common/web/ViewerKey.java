@@ -15,18 +15,6 @@ public final class ViewerKey {
     }
 
     public static String of(String email, HttpServletRequest request) {
-        return email != null ? "user:" + email : "ip:" + clientIp(request);
-    }
-
-    /** nginx 를 앞에 두면 실제 접속 IP 가 X-Forwarded-For 의 첫 번째 값으로 온다. */
-    private static String clientIp(HttpServletRequest request) {
-
-        String forwarded = request.getHeader("X-Forwarded-For");
-
-        if (forwarded == null || forwarded.isBlank()) {
-            return request.getRemoteAddr();
-        }
-
-        return forwarded.split(",")[0].trim();
+        return email != null ? "user:" + email : "ip:" + ClientIp.of(request);
     }
 }

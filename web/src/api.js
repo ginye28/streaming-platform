@@ -287,6 +287,8 @@ export const getMyEarnings = () => authorized('/api/users/me/earnings')
 export const getAdminPayments = (status, page = 0) =>
     authorized(`/api/admin/payments${query({ status, page })}`)
 
+export const getAdminSecurityEvents = () => authorized('/api/admin/security/events')
+
 export const adminCancelPayment = (id, reason) =>
     authorized(`/api/admin/payments/${id}/cancel`, { method: 'POST', body: { reason } })
 

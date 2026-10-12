@@ -1,5 +1,6 @@
 package com.sp.api.chat.dto;
 
+import com.sp.api.common.validation.SafeText;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -12,7 +13,7 @@ import jakarta.validation.constraints.Size;
 public record RestrictRequest(
         @NotNull(message = "제한할 사람이 필요합니다.") Long userId,
         Integer minutes,
-        @Size(max = 100) String reason,
+        @Size(max = 100) @SafeText String reason,
         Boolean purge
 ) {
 }

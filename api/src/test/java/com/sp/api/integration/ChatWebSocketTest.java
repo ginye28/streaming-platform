@@ -198,6 +198,37 @@ class ChatWebSocketTest {
     }
 
     @Test
+    @DisplayName("HTML 태그가 들어 있는 채팅은 방에 퍼지지 않고, 보낸 사람에게만 이유를 알려 준다")
+    void markupChatIsRejected() throws Exception {
+
+        String ownerToken = signupAndLogin("markown@test.com", "태그방주인");
+        String viewerToken = signupAndLogin("markview@test.com", "태그시청자");
+        long liveId = startBroadcastAndGetLiveId(ownerToken);
+
+        StompSession session = connect(viewerToken);
+
+        BlockingQueue<String> room = new LinkedBlockingQueue<>();
+        BlockingQueue<String> errors = new LinkedBlockingQueue<>();
+
+        subscribe(session, "/topic/lives/" + liveId, room);
+        subscribe(session, "/user/queue/chat-errors", errors);
+
+        send(session, "/app/lives/" + liveId + "/chat", "{\"content\":\"<img src=x onerror=alert(1)>\"}");
+
+        assertThat(objectMapper.readTree(poll(errors)).path("message").asString())
+                .contains("HTML 태그");
+
+        assertThat(room.poll(2, TimeUnit.SECONDS)).isNull();
+
+        // 부등호가 있어도 태그가 아니면 평범한 글이다
+        send(session, "/app/lives/" + liveId + "/chat", "{\"content\":\"1 < 2 그리고 <3\"}");
+
+        assertThat(objectMapper.readTree(poll(room)).path("content").asString()).isEqualTo("1 < 2 그리고 <3");
+
+        session.disconnect();
+    }
+
+    @Test
     @DisplayName("메시지를 지우면 방에 DELETE 이벤트가 나간다")
     void deleteEventIsBroadcast() throws Exception {
 

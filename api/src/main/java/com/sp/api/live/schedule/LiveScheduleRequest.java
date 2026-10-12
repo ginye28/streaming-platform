@@ -1,5 +1,7 @@
 package com.sp.api.live.schedule;
 
+import com.sp.api.common.validation.SafeUrl;
+import com.sp.api.common.validation.SafeText;
 import com.sp.api.live.entity.Audience;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -14,9 +16,9 @@ import java.time.OffsetDateTime;
  * 서버가 도는 곳의 시간대(무료 서버는 UTC)로 읽혀서, 한국에서 20시에 한 예약이 9시간 어긋난다.
  */
 public record LiveScheduleRequest(
-        @NotBlank @Size(max = 100) String title,
-        String description,
-        String thumbnailUrl,
+        @NotBlank @Size(max = 100) @SafeText String title,
+        @Size(max = 2000) @SafeText String description,
+        @Size(max = 255) @SafeUrl String thumbnailUrl,
         @NotNull(message = "방송 시각이 필요합니다.") OffsetDateTime scheduledAt,
         Audience audience,
         Audience chatAudience

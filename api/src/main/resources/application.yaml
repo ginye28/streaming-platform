@@ -88,6 +88,25 @@ app:
     # 프론트엔드 오리진. 배포 시 실제 도메인으로 교체할 것.
     allowed-origins: http://localhost:5173,http://localhost:3000
 
+  # 요청 속도 제한. 값은 접속 IP(또는 계정) 하나당이다. 넘치면 429 와 Retry-After 로 돌려보낸다.
+  # 메모리에서 세므로 서버를 여러 대로 늘리면 인스턴스마다 따로 센다.
+  # 영상 조각(/live-hls)·업로드 파일(/uploads)·nginx 콜백·토스 웹훅은 제한하지 않는다.
+  rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    # 로그인·가입·토큰 갱신(분당)
+    auth-per-minute: ${RATE_LIMIT_AUTH_PER_MINUTE:20}
+    # 같은 이메일로 하는 로그인 시도(IP 를 바꿔도 한 계정에는 이만큼만) 와 그 시간(분)
+    login-per-email: ${RATE_LIMIT_LOGIN_PER_EMAIL:10}
+    login-per-email-window-minutes: ${RATE_LIMIT_LOGIN_PER_EMAIL_WINDOW_MINUTES:5}
+    # 글쓰기·좋아요·구독 같은 변경 요청, 목록·상세 조회, 파일 업로드(분당)
+    write-per-minute: ${RATE_LIMIT_WRITE_PER_MINUTE:120}
+    read-per-minute: ${RATE_LIMIT_READ_PER_MINUTE:600}
+    upload-per-minute: ${RATE_LIMIT_UPLOAD_PER_MINUTE:20}
+    # WebSocket 연결(채팅·시청자 수·브라우저 방송)(분당)
+    connect-per-minute: ${RATE_LIMIT_CONNECT_PER_MINUTE:60}
+    # 채팅 한 사람이 10초에 보낼 수 있는 글(슬로우 모드와 별개)
+    chat-per-ten-seconds: ${RATE_LIMIT_CHAT_PER_TEN_SECONDS:8}
+
   hls:
     # 시청자에게 내려줄 HLS 주소. streaming/docker-compose.yml 의 8081 포트.
     base-url: http://localhost:8081/hls

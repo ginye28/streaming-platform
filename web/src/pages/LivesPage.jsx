@@ -4,6 +4,7 @@ import Pager from '../components/Pager.jsx'
 import { assetUrl } from '../assets.js'
 import Link from '../components/Link.jsx'
 import ScheduleList from '../components/ScheduleList.jsx'
+import { useLiveViewerCount } from '../liveViewers.js'
 import { useAsyncData } from '../useAsyncData.js'
 
 export default function LivesPage() {
@@ -59,7 +60,7 @@ export default function LivesPage() {
                             </Link>
 
                             <p className="card__meta">
-                                시청자 {live.viewerCount}명
+                                <LiveViewers live={live} />
                                 {live.audience === 'SUBSCRIBERS' && ' · 구독자 전용'}
                                 {live.audience === 'PAID' && ' · 유료 구독자 전용'}
                             </p>
@@ -71,4 +72,11 @@ export default function LivesPage() {
             <Pager page={page} onChange={setPageNumber} />
         </section>
     )
+}
+
+/** 시청자 수. 서버가 밀어 주는 값으로 목록을 새로 받지 않아도 바로 바뀐다. */
+function LiveViewers({ live }) {
+    const viewers = useLiveViewerCount(live.id, live.viewerCount)
+
+    return <>시청자 {viewers.toLocaleString('ko-KR')}명</>
 }

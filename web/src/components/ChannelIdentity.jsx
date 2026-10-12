@@ -1,4 +1,4 @@
-import { assetUrl } from '../assets.js'
+import { assetUrl, isSafeLink } from '../assets.js'
 import { formatDay } from '../time.js'
 import AssetImage from './AssetImage.jsx'
 
@@ -79,7 +79,7 @@ export default function ChannelIdentity({ profile }) {
                                 <span className="identity__role">
                                     {CREDIT_ROLES[credit.role] ?? credit.role}
                                 </span>{' '}
-                                {credit.link ? (
+                                {isSafeLink(credit.link) ? (
                                     <a href={credit.link} target="_blank" rel="noreferrer noopener">
                                         {credit.name}
                                     </a>

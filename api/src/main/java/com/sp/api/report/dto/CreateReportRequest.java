@@ -1,5 +1,6 @@
 package com.sp.api.report.dto;
 
+import com.sp.api.common.validation.SafeText;
 import com.sp.api.report.entity.Report;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -19,5 +20,6 @@ public class CreateReportRequest {
 
     @NotBlank
     @Size(max = 500)
+    @SafeText
     private String reason;
 }

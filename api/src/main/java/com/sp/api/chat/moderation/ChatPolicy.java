@@ -2,6 +2,8 @@ package com.sp.api.chat.moderation;
 
 import com.sp.api.common.exception.BadRequestException;
 import com.sp.api.common.exception.ForbiddenException;
+import com.sp.api.common.ratelimit.RateLimitProperties;
+import com.sp.api.common.ratelimit.RateLimiter;
 import com.sp.api.live.access.LiveAccessService;
 import com.sp.api.live.entity.Audience;
 import com.sp.api.live.entity.LiveStream;
@@ -18,7 +20,7 @@ import java.util.Locale;
  * 이 사람이 지금 이 방송에 이 글을 쓸 수 있는지 정하는 규칙 한 곳.
  * 채팅 전송과 후원(후원 메시지도 채팅에 올라가므로)이 같은 규칙을 쓴다.
  *
- * 검사 순서: 제한(일시 정지·강퇴) → 채팅 가능 대상 → 금칙어 → 슬로우 모드.
+ * 검사 순서: 도배 방지 → 제한(일시 정지·강퇴) → 채팅 가능 대상 → 금칙어 → 슬로우 모드.
  * 슬로우 모드를 맨 뒤에 두는 이유는 다른 이유로 거절된 글이 대기 시간을 쓰지 않게 하려는 것이다.
  * 채널 주인과 매니저는 전부 건너뛴다.
  */
@@ -32,6 +34,8 @@ public class ChatPolicy {
     private final ChannelBannedWordRepository bannedWordRepository;
     private final LiveAccessService accessService;
     private final SlowModeLimiter slowModeLimiter;
+    private final RateLimiter rateLimiter;
+    private final RateLimitProperties rateLimitProperties;
 
     /**
      * @param applySlowMode 후원은 슬로우 모드를 적용하지 않는다(돈을 낸 메시지를 대기 시간으로 막지 않는다)
@@ -44,6 +48,10 @@ public class ChatPolicy {
 
         if (roleService.roleOf(channelId, user.getId()) != null) {
             return;
+        }
+
+        if (applySlowMode && rateLimitProperties.isEnabled()) {
+            floodGuard(user.getId());
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -79,6 +87,21 @@ public class ChatPolicy {
             if (wait > 0) {
                 throw new BadRequestException("슬로우 모드예요. " + wait + "초 뒤에 다시 보낼 수 있어요.");
             }
+        }
+    }
+
+    /**
+     * 방장이 슬로우 모드를 켜 두지 않은 방송에서도 한 사람이 채팅을 도배하지 못하게 한다.
+     * 거절된 글도 센다(금칙어를 반복해서 보내는 것도 도배다).
+     */
+    private void floodGuard(Long userId) {
+
+        RateLimiter.Decision decision = rateLimiter.tryConsume(
+                "chat:" + userId, rateLimitProperties.getChatPerTenSeconds(), Duration.ofSeconds(10));
+
+        if (!decision.allowed()) {
+            throw new BadRequestException(
+                    "너무 빠르게 보내고 있어요. " + decision.retryAfterSeconds() + "초 뒤에 다시 보내 주세요.");
         }
     }
 
