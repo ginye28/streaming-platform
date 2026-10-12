@@ -21,6 +21,7 @@ import {
 import { assetUrl } from '../assets.js'
 import { useAuth } from '../useAuth.js'
 import { AUDIENCE_OPTIONS, SLOW_MODE_CHOICES } from '../audience.js'
+import AssetImage from '../components/AssetImage.jsx'
 import { CREDIT_ROLES } from '../components/ChannelIdentity.jsx'
 import ChatTools from '../components/ChatTools.jsx'
 import Link from '../components/Link.jsx'
@@ -622,7 +623,17 @@ function MarkField({ label, hint, value, onUpload, onClear }) {
             <p className="meta">{hint}</p>
             {value && (
                 <p className="meta">
-                    <img className="identity__mark" src={assetUrl(value)} alt="" /> {value}{' '}
+                    <AssetImage
+                        className="identity__mark"
+                        src={assetUrl(value)}
+                        alt=""
+                        fallback={
+                            <span className="error">
+                                이미지를 불러오지 못해요. 다시 올려 주세요.
+                            </span>
+                        }
+                    />{' '}
+                    {value}{' '}
                     <button type="button" onClick={onClear}>
                         지우기
                     </button>

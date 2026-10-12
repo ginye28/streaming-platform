@@ -706,6 +706,9 @@ code {
     width: 24px;
     height: 24px;
     object-fit: contain;
+    /* 좁은 줄에서 찌그러져 타원이 되지 않게 한다. */
+    flex: none;
+    aspect-ratio: 1;
 }
 
 .identity__tag {
@@ -746,6 +749,8 @@ code {
     vertical-align: -2px;
     margin-right: 4px;
     border-radius: 50%;
+    flex: none;
+    aspect-ratio: 1;
 }
 
 .oshi-mark--paid {

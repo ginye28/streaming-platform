@@ -53,6 +53,10 @@ eclipse-temurin:21-jre  →  java -jar app.jar
   빼면 업로드는 되지만 썸네일이 안 붙습니다.
 - 루트가 아닌 `app` 사용자로 돕니다.
 - 업로드 파일은 `/app/uploads` 에 쌓이고, compose 가 `api-uploads` 볼륨을 붙여 둡니다.
+- **Render 무료 서버는 디스크가 임시**라서 재시작·재배포·잠들었다 깰 때 `/app/uploads` 가 비워집니다.
+  그래서 업로드한 파일은 DB(`stored_files`, `stored_file_chunks`, 1MB 조각)에도 담아 두고,
+  `/uploads/{이름}` 요청 때 디스크에 없으면 DB 에서 되살립니다(`UploadRestoreFilter`).
+  파일 한 개 최대 100MB 이고, TiDB 무료 저장 공간(5GiB)을 같이 씁니다. 이 기능이 들어오기 전에 올린 파일은 복구할 수 없습니다.
   `docker compose down` 으로는 지워지지 않습니다. 지우려면 `down -v`.
 
 ### `web/Dockerfile`
