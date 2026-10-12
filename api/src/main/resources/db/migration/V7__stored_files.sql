@@ -4,7 +4,7 @@
 --
 -- 한 줄이 TiDB 의 한 줄 크기 제한(기본 6MB)을 넘지 않도록 파일을 1MB 조각으로 나눠 담는다.
 -- stored_files 줄은 조각을 다 넣은 뒤 마지막에 넣는다(이 줄이 있으면 조각이 온전하다는 표시).
--- 테스트(H2)가 이 파일을 그대로 실행하므로 IF NOT EXISTS 를 쓰고 MySQL·H2 공통 문법만 쓴다.
+-- 테스트(H2)는 src/test/resources/test-stored-files.sql 로 같은 모양을 만든다.
 
 CREATE TABLE IF NOT EXISTS stored_files (
     name        VARCHAR(120) NOT NULL,
