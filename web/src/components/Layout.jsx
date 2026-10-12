@@ -4,6 +4,7 @@ import { assetUrl } from '../assets.js'
 import { useAuth } from '../useAuth.js'
 import { loginTo, navigate, useRoute } from '../router.js'
 import Link from '../components/Link.jsx'
+import ServerWaking from '../components/ServerWaking.jsx'
 import ThemeToggle from '../components/ThemeToggle.jsx'
 import { useAsyncData } from '../useAsyncData.js'
 
@@ -26,6 +27,7 @@ export default function Layout({ children }) {
 
     return (
         <div className="app">
+            <ServerWaking />
             <a href="#main" className="skip-link" onClick={skipToMain}>
                 본문으로 건너뛰기
             </a>

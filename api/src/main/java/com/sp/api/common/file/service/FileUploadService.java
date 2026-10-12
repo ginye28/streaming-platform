@@ -21,7 +21,8 @@ import java.util.UUID;
 public class FileUploadService {
 
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
-            "mp4", "mov", "webm", "m4v",
+            // mkv 는 OBS 가 녹화할 때 기본으로 쓰는 형식이다. 크롬·엣지는 H.264 mkv 도 재생한다.
+            "mp4", "mov", "webm", "m4v", "mkv",
             "jpg", "jpeg", "png", "webp", "gif"
     );
 

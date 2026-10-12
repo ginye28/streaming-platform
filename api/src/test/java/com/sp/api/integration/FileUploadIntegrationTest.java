@@ -64,6 +64,31 @@ class FileUploadIntegrationTest extends IntegrationTestSupport {
     }
 
     @Test
+    @DisplayName("OBS 가 기본으로 만드는 mkv 영상도 올릴 수 있다")
+    void acceptsMkvVideo() throws Exception {
+
+        String token = signupAndLogin("upload-mkv@test.com", "mkv올리는사람");
+
+        mockMvc.perform(multipart("/api/files/upload")
+                        .file(new MockMultipartFile("file", "obs.mkv", "video/x-matroska", new byte[]{1, 2, 3}))
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.url").value(org.hamcrest.Matchers.endsWith(".mkv")));
+    }
+
+    @Test
+    @DisplayName("지원하지 않는 형식은 400 이고 허용 형식을 알려 준다")
+    void rejectsUnsupportedVideoFormat() throws Exception {
+
+        String token = signupAndLogin("upload-avi@test.com", "avi올리는사람");
+
+        mockMvc.perform(multipart("/api/files/upload")
+                        .file(new MockMultipartFile("file", "old.avi", "video/x-msvideo", new byte[]{1}))
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     @DisplayName("확장자가 없는 파일은 400 이다")
     void rejectsFileWithoutExtension() throws Exception {
 

@@ -1,0 +1,32 @@
+# 무료 Render 서버는 15분 동안 요청이 없으면 잠들고, 깨는 데 최대 3분이 걸린다.
+# 잠든 사이에 접속한 사람은 오류를 보게 되므로, 10분마다 가벼운 공개 API 를 한 번 불러 깨워 둔다.
+#
+# 한계: GitHub Actions 의 예약 실행은 몇 분씩 밀릴 수 있고, 저장소가 60일 동안 조용하면 GitHub 이 멈춘다.
+# 과제 제출·시연 기간에 서버를 깨워 두려는 용도다.
+name: 서버 깨워 두기
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: API 호출
+        run: |
+          set -u
+          URL="https://sp-api-5mal.onrender.com/api/payments/config"
+          # 서버가 잠들어 있으면 응답까지 오래 걸린다. 깨어날 때까지 기다리며 몇 번 시도한다.
+          for i in 1 2 3 4 5; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 90 "$URL" || true)
+            echo "시도 $i: HTTP $code"
+            if [ "$code" = "200" ]; then exit 0; fi
+            sleep 20
+          done
+          echo "서버가 응답하지 않았습니다." >&2
+          exit 1

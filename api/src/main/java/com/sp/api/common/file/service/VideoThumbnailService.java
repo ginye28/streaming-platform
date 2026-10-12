@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class VideoThumbnailService {
 
-    private static final Set<String> VIDEO_EXTENSIONS = Set.of("mp4", "mov", "webm", "m4v");
+    private static final Set<String> VIDEO_EXTENSIONS = Set.of("mp4", "mov", "webm", "m4v", "mkv");
 
     /** 맨 앞은 검은 화면인 경우가 많아 1초 지점을 먼저 시도한다. 그보다 짧은 영상이면 맨 앞으로 물러선다. */
     private static final List<String> SEEK_CANDIDATES = List.of("00:00:01", "00:00:00");

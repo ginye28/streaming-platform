@@ -1,3 +1,4 @@
+import { reportUnreachable } from './serverStatus.js'
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
 
 const ACCESS_TOKEN_KEY = 'sp.accessToken'
@@ -17,12 +18,33 @@ function clearTokens() {
     localStorage.removeItem(REFRESH_TOKEN_KEY)
 }
 
+/** 서버가 깨어 있는지. 가벼운 공개 API 하나로 확인한다. */
+async function serverIsUp() {
+    const response = await fetch(`${API_BASE_URL}/api/payments/config`, { cache: 'no-store' })
+
+    return response.ok
+}
+
+/** 잠든 서버를 깨우는 동안 프록시가 돌려주는 상태 코드. */
+const UNREACHABLE_STATUS = new Set([502, 503, 504])
+
 async function fetchOrExplain(url, options) {
+    let response
+
     try {
-        return await fetch(url, options)
+        response = await fetch(url, options)
     } catch {
-        throw new Error('서버에 연결하지 못했어요. 네트워크를 확인하고 잠시 뒤 다시 시도해 주세요.')
+        // 무료 서버가 잠들었다 깨는 중이면 CORS 헤더도 없는 오류 응답이 와서 여기로 떨어진다.
+        reportUnreachable(serverIsUp)
+
+        throw new Error('서버에 연결하지 못했어요. 서버가 깨어나는 중일 수 있어요. 잠시 뒤 다시 시도해 주세요.')
     }
+
+    if (UNREACHABLE_STATUS.has(response.status)) {
+        reportUnreachable(serverIsUp)
+    }
+
+    return response
 }
 
 /** 서버가 돌려주는 { success, data, message } 봉투를 벗기고, 실패면 message 로 예외를 던진다. */
