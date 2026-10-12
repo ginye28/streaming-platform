@@ -1,5 +1,5 @@
 /*
- * 디자인 방향 B "낮의 서재".
+ * 디자인 방향 B "낮의 서재" — 잡지 같은 홈.
  * 밝은 화면이 기본이고, 나이트 모드는 같은 색 계열을 어둡게 뒤집은 한 벌이다.
  * 배치는 건드리지 않는다 — 색·서체·간격·상태 표시만 이 파일이 맡는다.
  */
@@ -7,27 +7,28 @@
 :root {
     color-scheme: light;
 
-    --bg: #fbfcfb;
-    --surface: #ffffff;
-    --sunken: #f1f4f2;
-    --border: #e2e6e3;
-    --border-strong: #c7d0cb;
+    --bg: #f5f4f0;
+    --surface: #fbfaf8;
+    --sunken: #ebe9e3;
+    --border: #dddbd3;
+    --border-strong: #c6c3b8;
     /* 입력칸 테두리. 비어 있는 칸도 어디까지인지 보이도록 배경과 3:1 이상을 지킨다. */
-    --field-border: #868e88;
-    --text: #161a18;
-    --muted: #6a716c;
-    --accent: #17604f;
-    --accent-hover: #114c3e;
-    --accent-soft: #e6f0ec;
+    --field-border: #837f74;
+    --text: #1e2220;
+    --muted: #5f655f;
+    /* 세이지 그린 하나. 흰 글자와 5.9:1, 오프화이트 바탕과 5.4:1. */
+    --accent: #4a6b5a;
+    --accent-hover: #3d5a4b;
+    --accent-soft: #e3e9e3;
     --on-accent: #ffffff;
-    --danger: #c2352c;
-    --danger-soft: #fbecea;
+    --danger: #b4372c;
+    --danger-soft: #f6e9e6;
     /* 위험색 바탕(LIVE · 알림 배지) 위의 글자색. 나이트 모드의 코랄은 밝아서 흰 글자가 안 읽힌다. */
     --on-danger: #ffffff;
 
     --radius: 6px;
     --gap: 20px;
-    --shadow: 0 1px 2px rgb(22 26 24 / 0.05);
+    --shadow: 0 1px 2px rgb(30 34 32 / 0.05);
 
     /* SP 시그니처 모서리: 왼쪽위 · 오른쪽아래는 각지고, 오른쪽위 · 왼쪽아래만 둥글다.
      * 큰 면(배너)과 작은 면(썸네일)에 크기만 다르게 같은 비율로 쓴다. */
@@ -1097,7 +1098,30 @@ details li {
     /* 그리드 칸은 기본이 min-width: auto 라, 안쪽 가로줄이 길어지면
      * 칸이 통째로 늘어나 페이지가 옆으로 밀린다. 0 으로 눌러 둔다. */
     grid-template-columns: minmax(0, 1fr);
-    gap: 28px;
+    gap: 56px;
+}
+
+/* 머리글: 크고 가벼운 한 줄. 위에 날짜를 작게 둔다. */
+.masthead {
+    padding: 8px 0 0;
+}
+
+.masthead__kicker {
+    margin: 0 0 10px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+}
+
+.masthead__title {
+    max-width: 14em;
+    margin: 0;
+    font-size: clamp(32px, 5.2vw, 60px);
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
 }
 
 /* 고정된 큰 배너. 여기는 돌지 않는다 — 도는 건 그 위에 얹힌 바퀴뿐이다. */
@@ -1312,7 +1336,7 @@ details li {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 8px;
+    gap: 6px 22px;
 }
 
 .home__filter-group:first-child {
@@ -1333,139 +1357,29 @@ details li {
     }
 }
 
+/* 글자만 있는 탭. 켜진 것은 밑줄과 진한 글자로 알린다. */
 .chip {
-    padding: 7px 14px;
-    border: 1px solid var(--border);
-    border-radius: var(--corner-pill);
-    background: var(--surface);
+    padding: 4px 0;
+    border: 0;
+    border-bottom: 1.5px solid transparent;
+    border-radius: 0;
+    background: none;
     color: var(--muted);
     font: inherit;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
 }
 
 .chip:hover {
-    border-color: var(--border-strong);
     color: var(--text);
 }
 
 .chip--on {
-    border-color: transparent;
-    background: var(--accent);
-    color: var(--on-accent);
-}
-
-/* 아래 가로줄 — 끌어서 넘긴다. */
-.carousel {
-    min-width: 0;
-}
-
-.carousel__head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 12px;
-}
-
-.carousel__title {
-    margin: 0;
-}
-
-.carousel__arrows {
-    display: inline-flex;
-    gap: 8px;
-}
-
-.carousel__arrows button {
-    display: grid;
-    place-items: center;
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    border-radius: var(--corner-pill);
-    color: var(--muted);
-}
-
-.carousel__arrows button:hover:not(:disabled) {
+    border-bottom-color: var(--accent);
+    background: none;
     color: var(--text);
-}
-
-.carousel__track {
-    display: flex;
-    gap: 14px;
-    margin: 0;
-    padding: 0 0 6px;
-    list-style: none;
-    overflow-x: auto;
-    scrollbar-width: none;
-    cursor: grab;
-    touch-action: pan-y;
-    /* 끌 때 글자가 잡혀 끌리지 않게. */
-    user-select: none;
-}
-
-.carousel__track::-webkit-scrollbar {
-    display: none;
-}
-
-.carousel__track:active {
-    cursor: grabbing;
-}
-
-.carousel__item {
-    flex: 0 0 210px;
-}
-
-.tile {
-    display: grid;
-    gap: 8px;
-    text-decoration: none;
-}
-
-.tile__thumb {
-    display: block;
-    aspect-ratio: 16 / 9;
-    border-radius: var(--corner-sm);
-    overflow: hidden;
-    background: var(--sunken);
-}
-
-.tile__thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.tile__blank {
-    display: grid;
-    place-items: center;
-    height: 100%;
-    color: var(--muted);
-    font-size: 12px;
-}
-
-.tile__title {
-    font-size: 14px;
-    font-weight: 600;
-    line-height: 1.4;
-    word-break: keep-all;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.tile__meta {
-    font-variant-numeric: tabular-nums;
-    color: var(--muted);
-    font-size: 12px;
-}
-
-.tile:hover .tile__thumb {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
+    font-weight: 700;
 }
 
 /* 좁은 화면에서는 오른쪽 레일을 접고 배너만 남긴다. */
@@ -1494,13 +1408,15 @@ details li {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 6px 12px;
-    margin-bottom: 14px;
+    gap: 6px 14px;
+    margin-bottom: 22px;
 }
 
 .section-head h2 {
     margin: 0;
-    font-size: 20px;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
 }
 
 .section-head__hint {
@@ -1515,8 +1431,7 @@ details li {
     gap: 10px;
 }
 
-.strip__arrow,
-.ring__arrows button {
+.strip__arrow {
     display: grid;
     flex: 0 0 40px;
     place-items: center;
@@ -1527,8 +1442,7 @@ details li {
     color: var(--muted);
 }
 
-.strip__arrow:hover:not(:disabled),
-.ring__arrows button:hover:not(:disabled) {
+.strip__arrow:hover:not(:disabled) {
     color: var(--text);
 }
 
@@ -1638,246 +1552,346 @@ details li {
     background: var(--border-strong);
 }
 
-.ring__arrows {
-    display: inline-flex;
-    gap: 8px;
-    margin-left: auto;
-    align-self: center;
+/* ── 홈: Live 중인 채널 (잡지 첫 면) ──
+ * 12칸 격자에 큰 한 장과 작은 사진들을 어긋나게 얹는다. 사진 높이가 서로 달라
+ * 줄 맞춤이 어긋나 보이는 것이 의도다. */
+.feature__grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 48px 28px;
+    align-items: start;
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
 
-/* 카드 자리는 JS 가 기준 폭(1100)에서 잰 값을 실제 폭에 맞춰 줄여 준다. */
-.ring {
+.feat {
     position: relative;
-    touch-action: pan-y;
-    user-select: none;
+    grid-column: span 4;
+    min-width: 0;
 }
 
-.ring__card {
-    position: absolute;
-    top: 0;
-    left: 0;
-    box-sizing: border-box;
-    border: 1px solid var(--border);
-    border-radius: var(--corner-md);
-    background: var(--surface);
-    box-shadow: 0 6px 16px rgb(12 18 16 / 0.08);
-    cursor: grab;
-    /* 놓았을 때 살짝 튕기며 자리에 붙는다. */
-    transition:
-        transform 560ms cubic-bezier(0.34, 1.36, 0.64, 1),
-        width 560ms cubic-bezier(0.34, 1.36, 0.64, 1),
-        opacity 400ms ease;
+.feat--lead {
+    grid-column: span 8;
 }
 
-.ring--dragging .ring__card {
-    will-change: transform, width;
-    transition: none;
-    cursor: grabbing;
+/* 첫 작은 카드는 큰 한 장 옆에서 아래로 내려앉아 어긋난다. */
+.feat--lead + .feat {
+    grid-column: span 4;
+    margin-top: 64px;
 }
 
-.ring__card--front {
-    box-shadow: 0 18px 40px rgb(12 18 16 / 0.16);
+.feat--wide {
+    grid-column: span 5;
 }
 
-.ring__card--hearted {
-    border: 3px solid var(--heart);
+.feat--tall {
+    grid-column: span 4;
 }
 
-.ring__thumb {
+.feat--square {
+    grid-column: span 3;
+    margin-top: 28px;
+}
+
+.feat__media {
     position: relative;
+}
+
+.feat__thumb {
     display: block;
-    aspect-ratio: 16 / 9;
     overflow: hidden;
-    border-radius: 0 20px 0 0;
+    border-radius: var(--corner-xs);
     background: var(--sunken);
     text-decoration: none;
     -webkit-user-drag: none;
 }
 
-.ring__card--hearted .ring__thumb {
-    background: color-mix(in srgb, var(--heart) 18%, var(--surface));
+.feat--lead .feat__thumb {
+    aspect-ratio: 16 / 9;
+    border-radius: var(--corner-sm);
 }
 
-.ring__thumb img {
+.feat--tall .feat__thumb {
+    aspect-ratio: 4 / 5;
+}
+
+.feat--wide .feat__thumb {
+    aspect-ratio: 3 / 2;
+}
+
+.feat--square .feat__thumb {
+    aspect-ratio: 1 / 1;
+}
+
+.feat__thumb img {
+    display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    pointer-events: none;
+    transition: transform 600ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
-.ring__blank {
+.feat:hover .feat__thumb img {
+    transform: scale(1.025);
+}
+
+.feat__blank {
     display: grid;
     place-items: center;
+    width: 100%;
     height: 100%;
     color: var(--muted);
-    font-size: 40px;
-    font-weight: 800;
+    font-size: 44px;
+    font-weight: 300;
 }
 
-.ring__live,
-.ring__order {
+.feat__live,
+.feat__order {
     position: absolute;
-    top: 8px;
-    padding: 1px 7px;
+    top: 10px;
+    padding: 0 8px;
     border-radius: var(--corner-2xs);
-    color: #fff;
     font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.05em;
-    line-height: 18px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 20px;
 }
 
-.ring__live {
-    left: 8px;
+.feat__live {
+    left: 10px;
     background: var(--danger);
     color: var(--on-danger);
 }
 
-.ring__order {
-    left: 52px;
+.feat__order {
+    left: 58px;
     background: var(--heart);
     color: var(--on-heart, #fff);
 }
 
-.ring__info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
-    padding: 12px 12px 22px;
-    border-radius: 0 0 0 20px;
-}
-
-.ring__card--hearted .ring__info {
-    background: color-mix(in srgb, var(--heart) 9%, var(--surface));
-}
-
-.ring__name {
-    flex-shrink: 0;
-    max-width: 50%;
-    overflow: hidden;
-    font-size: 14px;
-    font-weight: 800;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.ring__title {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    color: var(--muted);
-    font-size: 13px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.ring__viewers {
-    font-variant-numeric: tabular-nums;
-    color: var(--muted);
-    font-size: 12px;
-    font-weight: 700;
-    white-space: nowrap;
-}
-
-.ring__card--lg .ring__name {
-    font-size: 16px;
-}
-
-/* 작은 카드는 제목까지 넣으면 뭉개진다. 이름과 시청자 수만. */
-.ring__card--sm .ring__title {
-    display: none;
-}
-
-.ring__card--sm .ring__name {
-    max-width: none;
-    flex: 1;
-    font-size: 12px;
-}
-
-.ring__go {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+/* 사진 오른쪽 아래의 작은 하트. 평소엔 조용하고, 누르면 색이 붙는다. */
+.feat__heart {
     position: absolute;
-    top: -18px;
-    right: 12px;
-    padding: 8px 14px;
-    border-radius: var(--corner-pill);
-    background: var(--text);
-    color: var(--bg);
-    font-size: 13px;
-    font-weight: 800;
-    text-decoration: none;
-    box-shadow: 0 6px 16px rgb(0 0 0 / 0.18);
-}
-
-/* 카드 아래 가운데, 바퀴 자리에 하트가 걸린다. */
-.ring__heart {
-    position: absolute;
-    bottom: -22px;
-    left: 50%;
+    right: 10px;
+    bottom: 10px;
     display: grid;
     place-items: center;
-    width: 44px;
-    height: 44px;
-    margin-left: -22px;
+    width: 40px;
+    height: 40px;
     padding: 0;
-    border: 1px solid var(--border);
+    border: 0;
     border-radius: 50%;
-    background: var(--surface);
+    background: rgb(251 250 248 / 0.88);
+    backdrop-filter: blur(6px);
     transition: transform 0.15s ease;
 }
 
-.ring__heart:hover:not(:disabled) {
+.feat__heart:hover:not(:disabled) {
     transform: scale(1.08);
     background: var(--surface);
 }
 
-.ring__heart path {
+.feat__heart path {
     fill: none;
-    stroke: var(--border-strong);
+    stroke: #6a6e68;
     stroke-width: 2;
     stroke-linejoin: round;
 }
 
-.ring__card--hearted .ring__heart {
-    border: 3px solid var(--heart);
-}
-
-.ring__card--hearted .ring__heart path {
+.feat--hearted .feat__heart path {
     fill: var(--heart);
     stroke: var(--heart);
 }
 
-/* 좁은 화면: 겹쳐 도는 대신 가로 한 줄로 넘긴다. */
-.ring--flat {
-    display: flex;
-    gap: 16px;
-    padding: 4px 4px 28px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    scroll-padding-left: 4px;
-    scrollbar-width: none;
+.feat--hearted .feat__thumb {
+    outline: 3px solid var(--heart);
+    outline-offset: -3px;
 }
 
-.ring--flat::-webkit-scrollbar {
-    display: none;
+.feat__body {
+    margin-top: 14px;
 }
 
-/* 스크롤 상자가 그림자를 잘라 회색 띠가 생기므로 납작한 줄에서는 그림자를 얕게 쓴다. */
-.ring--flat .ring__card--front {
-    box-shadow: 0 6px 16px rgb(12 18 16 / 0.08);
+.feat__kicker {
+    margin: 0 0 4px;
+    color: var(--muted);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
 }
 
-.ring--flat .ring__card {
-    position: relative;
-    flex: 0 0 min(78vw, 300px);
-    width: min(78vw, 300px);
-    min-width: 0;
-    scroll-snap-align: start;
-    transition: none;
-    cursor: default;
+.feat__title {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+    word-break: keep-all;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.feat--lead .feat__title {
+    font-size: clamp(24px, 3vw, 36px);
+    font-weight: 500;
+    line-height: 1.25;
+    letter-spacing: -0.03em;
+}
+
+.feat__title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.feat__title a:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 4px;
+}
+
+/* ── 홈: 새로 올라온 영상 (잡지 지면) ──
+ * 칸에 위에서부터 쌓는 벽돌 배치. 사진 비율이 돌아가며 달라 높이가 들쭉날쭉하다. */
+.gallery__list {
+    column-width: 240px;
+    column-gap: 36px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.gallery__item {
+    margin: 0 0 44px;
+    break-inside: avoid;
+}
+
+.plate {
+    display: grid;
+    gap: 6px;
+    text-decoration: none;
+}
+
+.plate__thumb {
+    display: block;
+    overflow: hidden;
+    border-radius: var(--corner-xs);
+    background: var(--sunken);
+}
+
+.plate__thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 600ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.plate:hover .plate__thumb img {
+    transform: scale(1.03);
+}
+
+.plate__blank {
+    display: grid;
+    place-items: center;
+    height: 100%;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.plate__kicker {
+    margin-top: 8px;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.plate__title {
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+    word-break: keep-all;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.plate:hover .plate__title {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 4px;
+}
+
+.plate__meta {
+    color: var(--muted);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 좁은 화면: 큰 한 장 아래로 작은 사진이 두 칸으로 어긋나 선다. */
+@media (max-width: 720px) {
+    .home {
+        gap: 44px;
+    }
+
+    .feature__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 32px 16px;
+    }
+
+    .feat,
+    .feat--lead,
+    .feat--wide,
+    .feat--tall,
+    .feat--square,
+    .feat--lead + .feat {
+        grid-column: span 1;
+        margin-top: 0;
+    }
+
+    .feat--lead {
+        grid-column: 1 / -1;
+    }
+
+    .feat:nth-child(even):not(.feat--lead) {
+        margin-top: 28px;
+    }
+
+    .feat__title {
+        font-size: 15px;
+    }
+
+    .feat--lead .feat__title {
+        font-size: 24px;
+    }
+
+    .gallery__list {
+        column-width: 150px;
+        column-gap: 16px;
+    }
+
+    .gallery__item {
+        margin-bottom: 28px;
+    }
+
+    .plate__title {
+        font-size: 15px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .feat__thumb img,
+    .plate__thumb img {
+        transition: none;
+    }
+
+    .feat:hover .feat__thumb img,
+    .plate:hover .plate__thumb img {
+        transform: none;
+    }
 }
 
 /* 유료 구독 결제 — 결제 버튼 묶음과 결제 결과 화면 */
@@ -3623,13 +3637,15 @@ a.past__link:hover {
  * 카드 위치는 그대로 바뀌고 걸리는 시간만 없어진다. 바퀴 카드는 JS 가 인라인으로
  * 전환을 넣기 때문에 !important 로 덮는다. */
 @media (prefers-reduced-motion: reduce) {
-    .ring__card,
-    .ring__heart,
     .wheel__card {
         transition: none !important;
     }
 
-    .ring__heart:hover:not(:disabled) {
+    .feat__heart {
+        transition: none;
+    }
+
+    .feat__heart:hover:not(:disabled) {
         transform: none;
     }
 
@@ -3638,7 +3654,6 @@ a.past__link:hover {
         animation: none;
     }
 
-    .carousel__track,
     .strip__track {
         scroll-behavior: auto;
     }
@@ -3647,9 +3662,13 @@ a.past__link:hover {
 /* ── 터치 화면 ──
  * 손가락으로 넘기는 화면에서는 화살표가 필요 없고, 칩은 44px 이상이어야 눌린다. */
 @media (hover: none) and (pointer: coarse) {
-    .strip__arrow,
-    .carousel__arrows {
+    .strip__arrow {
         display: none;
+    }
+
+    .feat__heart {
+        width: 44px;
+        height: 44px;
     }
 
     /* 머리 줄의 링크와 버튼도 손가락으로 누를 수 있게 44px 이상. */
@@ -3668,7 +3687,7 @@ a.past__link:hover {
     }
 
     .chip {
-        padding: 11px 16px;
+        padding: 11px 0;
     }
 
     .cta--sm,

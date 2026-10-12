@@ -13,7 +13,7 @@ import { HEART_COLORS, heartInk, pruneHearts, toggleHeart, useHearts } from '../
 import { useAsyncData } from '../useAsyncData.js'
 import { useAuth } from '../useAuth.js'
 import { useSlow } from '../useSlow.js'
-import { formatAgo, serverTimeMs } from '../time.js'
+import { formatAgo, serverTimeMs, timeAgo } from '../time.js'
 
 const SORTS = [
     { value: 'LATEST', label: '최신순' },
@@ -57,7 +57,7 @@ export default function HomePage() {
 
     return (
         <section className="home">
-            <h1 className="visually-hidden">홈</h1>
+            <Masthead liveCount={liveList.length} loading={livesLoading} hasError={Boolean(livesError)} />
 
             {waking && (
                 <p className="notice" role="status">
@@ -69,14 +69,14 @@ export default function HomePage() {
                 <HeroBanner live={tournament[0]} others={tournament.slice(1)} />
             )}
 
-            <LiveStrip lives={liveList} />
-
-            <LiveRing
+            <LiveFeature
                 lives={liveList}
                 loading={livesLoading}
                 error={livesError}
                 onRetry={reloadLives}
             />
+
+            <LiveStrip lives={liveList} />
 
             <div className="home__filters">
                 <div className="home__filter-group" role="group" aria-label="카테고리">
@@ -116,7 +116,7 @@ export default function HomePage() {
             {loading && <p className="empty">불러오는 중…</p>}
 
             {!loading && page?.content.length > 0 && (
-                <Carousel title="새로 올라온 영상" items={page.content} />
+                <Gallery title="새로 올라온 영상" items={page.content} />
             )}
 
             {!loading && !error && page?.content.length === 0 && (
@@ -132,6 +132,28 @@ function scrollTrack(track, direction) {
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: reduceMotion ? 'auto' : 'smooth' })
+}
+
+/**
+ * 홈 맨 위 머리글. 큰 한 줄로 지금 사이트의 상태를 말한다.
+ * 숫자는 서버가 준 방송 수뿐이다 — 방송이 없으면 없다고 그대로 쓴다.
+ */
+function Masthead({ liveCount, loading, hasError }) {
+    const today = new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' }).format(
+        new Date()
+    )
+
+    let headline = '오늘의 방송'
+    if (!loading && !hasError) {
+        headline = liveCount > 0 ? `지금 ${liveCount}곳이 방송 중이에요` : '지금은 조용해요'
+    }
+
+    return (
+        <header className="masthead">
+            <p className="masthead__kicker">{today}</p>
+            <h1 className="masthead__title">{headline}</h1>
+        </header>
+    )
 }
 
 /** 올라온 영상이 없을 때. 비어 있는 이유와 다음 행동을 함께 보여 준다. */
@@ -291,53 +313,20 @@ function LiveStrip({ lives }) {
 }
 
 /* ── 3) Live 중인 채널 ─────────────────────────────────────────
- * 스케치 모양: 왼쪽 아래 큰 카드 → 오른쪽으로 중간 카드 둘 → 그 뒤 위쪽에 작은 카드 셋이
- * 살짝 겹쳐 서고, 남는 카드는 큰 카드 뒤(왼쪽 위)에 숨어 있다가 앞으로 나온다.
- * 이 순서가 한 바퀴다. 오른쪽으로 끌면 가장 큰 카드가 다음 자리로 넘어가고,
- * 뒤에 있던 카드가 커지며 앞으로 온다. 하트를 누른 채널은 색이 붙고 누른 순서대로 앞에 선다.
- *
- * 자리는 폭 1100 을 기준으로 적어 두고, 실제 폭에 맞춰 같은 비율로 줄인다. */
-const RING_BASE_W = 1100
-const RING_BASE_H = 480
-const RING_SLOTS = [
-    { x: 20, y: 118, w: 470, o: 1, z: 60 },
-    { x: 448, y: 210, w: 320, o: 1, z: 50 },
-    { x: 736, y: 210, w: 320, o: 1, z: 45 },
-    { x: 812, y: 50, w: 250, o: 1, z: 30 },
-    { x: 590, y: 50, w: 250, o: 1, z: 25 },
-    { x: 370, y: 50, w: 250, o: 1, z: 20 },
-    { x: 190, y: 18, w: 230, o: 0.6, z: 12 },
-    { x: 40, y: 50, w: 230, o: 0.4, z: 8 },
-]
-// 이보다 좁으면 겹쳐 도는 모양이 알아보기 어려워 가로 한 줄로 바꾼다.
-const RING_MIN_W = 720
-// 드래그 픽셀을 칸 수로 바꾸는 비율 (기준 폭에서).
-const RING_PX_PER_SLOT = 220
+ * 잡지 첫 면처럼 가장 앞선 방송 하나를 크게 싣고, 나머지는 비율과 크기가 다른 사진으로
+ * 어긋나게 늘어놓는다. 하트를 누른 방송이 앞에 서고 색이 붙는다. 나머지는 시청자가 많은 순서다.
+ * 움직이는 건 없다 — 눌러서 들어가는 것이 전부다. */
+// 큰 한 장 옆의 첫 카드는 세로로 길게, 그다음부터는 12칸을 꼭 채우는 두 줄(5+4+3, 5+3+4)을 되풀이한다.
+const FEATURE_CYCLE = ['wide', 'tall', 'square', 'wide', 'square', 'tall']
 
-function LiveRing({ lives, loading, error, onRetry }) {
+function featureShape(index) {
+    if (index === 0) return 'lead'
+    if (index === 1) return 'tall'
+    return FEATURE_CYCLE[(index - 2) % FEATURE_CYCLE.length]
+}
+
+function LiveFeature({ lives, loading, error, onRetry }) {
     const hearts = useHearts()
-    const boxRef = useRef(null)
-    const dragRef = useRef(null)
-    const [width, setWidth] = useState(RING_BASE_W)
-    // 실제 폭을 재기 전의 카드는 그리지 않는다. 기준 폭 자리에서 실제 자리로
-    // 날아오는 전환이 첫 화면마다 보이기 때문이다.
-    const [measured, setMeasured] = useState(false)
-    const [turn, setTurn] = useState(0)
-    const [dragging, setDragging] = useState(false)
-    const hasLives = lives.length > 0
-
-    useEffect(() => {
-        const el = boxRef.current
-        if (!el) return
-
-        const observer = new ResizeObserver(([entry]) => {
-            setWidth(entry.contentRect.width)
-            setMeasured(true)
-        })
-        observer.observe(el)
-        return () => observer.disconnect()
-        // 방송이 하나도 없을 때는 상자가 그려지지 않는다. 방송이 생기면 그때 붙잡는다.
-    }, [hasLives])
 
     // 끝난 방송의 하트는 정리한다. 목록을 아직 못 받은 동안(빈 목록)에는 지우지 않는다.
     useEffect(() => {
@@ -354,71 +343,12 @@ function LiveRing({ lives, loading, error, onRetry }) {
             .filter((live) => !hearts.includes(live.id))
             .sort((a, b) => b.viewerCount - a.viewerCount),
     ]
-    const n = ordered.length
-    const scale = Math.min(1, width / RING_BASE_W)
-    const flat = width < RING_MIN_W
 
-    function handleHeart(liveId) {
-        toggleHeart(liveId)
-        // 하트 줄이 맨 앞부터 서도록 처음 자리로 돌린다.
-        setTurn(0)
-    }
-
-    function handlePointerDown(event) {
-        if (flat || event.target.closest('button')) return
-        dragRef.current = { startX: event.clientX, startTurn: turn, moved: false, pointerId: event.pointerId }
-    }
-
-    function handlePointerMove(event) {
-        const drag = dragRef.current
-        if (!drag) return
-
-        const delta = event.clientX - drag.startX
-
-        // 살짝 흔들린 것까지 드래그로 치면 클릭이 죽는다. 넘어선 뒤에야 포인터를 붙잡는다.
-        if (!drag.moved) {
-            if (Math.abs(delta) <= 4) return
-            drag.moved = true
-            setDragging(true)
-            boxRef.current?.setPointerCapture(drag.pointerId)
-        }
-
-        // 오른쪽으로 끌면(delta 양수) 가장 큰 카드가 다음 자리로 넘어간다.
-        setTurn(drag.startTurn - delta / (RING_PX_PER_SLOT * scale))
-    }
-
-    function handlePointerUp() {
-        const drag = dragRef.current
-        if (!drag) return
-
-        if (boxRef.current?.hasPointerCapture(drag.pointerId)) {
-            boxRef.current.releasePointerCapture(drag.pointerId)
-        }
-
-        if (drag.moved) {
-            setDragging(false)
-            setTurn((current) => Math.round(current))
-            // 끌고 난 직후의 클릭은 막고, 그다음 클릭부터는 받는다.
-            setTimeout(() => {
-                dragRef.current = null
-            }, 0)
-        } else {
-            dragRef.current = null
-        }
-    }
-
-    function handleClickCapture(event) {
-        if (dragRef.current?.moved) {
-            event.preventDefault()
-            event.stopPropagation()
-        }
-    }
-
-    if (n === 0 && (loading || error)) {
+    if (ordered.length === 0 && (loading || error)) {
         return (
-            <section className="ring-section" aria-labelledby="ring-title">
+            <section className="feature" aria-labelledby="feature-title">
                 <div className="section-head">
-                    <h2 id="ring-title">Live 중인 채널</h2>
+                    <h2 id="feature-title">Live 중인 채널</h2>
                 </div>
                 {error ? (
                     <p className="error">
@@ -432,11 +362,11 @@ function LiveRing({ lives, loading, error, onRetry }) {
         )
     }
 
-    if (n === 0) {
+    if (ordered.length === 0) {
         return (
-            <section className="ring-section" aria-labelledby="ring-title">
+            <section className="feature" aria-labelledby="feature-title">
                 <div className="section-head">
-                    <h2 id="ring-title">Live 중인 채널</h2>
+                    <h2 id="feature-title">Live 중인 채널</h2>
                 </div>
                 <p className="empty">
                     지금 방송 중인 채널이 없어요.
@@ -450,172 +380,86 @@ function LiveRing({ lives, loading, error, onRetry }) {
     }
 
     return (
-        <section className="ring-section" aria-labelledby="ring-title">
+        <section className="feature" aria-labelledby="feature-title">
             <div className="section-head">
-                <h2 id="ring-title">Live 중인 채널</h2>
-                <span className="section-head__hint">
-                    {flat
-                        ? '옆으로 넘겨 보세요 · 하트를 누르면 색이 붙고 앞에 모여요'
-                        : '끌면 가장 큰 카드가 다음 자리로 넘어가요 · 하트를 누르면 색이 붙고 누른 순서대로 앞에 모여요'}
-                </span>
-
-                {!flat && n > 1 && (
-                    <span className="ring__arrows">
-                        <button type="button" onClick={() => setTurn((t) => Math.round(t) + 1)} aria-label="이전 카드">
-                            <Icon name="prev" />
-                        </button>
-                        <button type="button" onClick={() => setTurn((t) => Math.round(t) - 1)} aria-label="다음 카드">
-                            <Icon name="next" />
-                        </button>
-                    </span>
-                )}
+                <h2 id="feature-title">Live 중인 채널</h2>
+                <span className="section-head__hint">하트를 누르면 색이 붙고 앞에 모여요</span>
             </div>
 
-            <div
-                ref={boxRef}
-                className={`ring${flat ? ' ring--flat' : ''}${dragging ? ' ring--dragging' : ''}`}
-                style={flat ? undefined : { height: RING_BASE_H * scale }}
-                onPointerDown={handlePointerDown}
-                onPointerMove={handlePointerMove}
-                onPointerUp={handlePointerUp}
-                onPointerCancel={handlePointerUp}
-                onClickCapture={handleClickCapture}
-            >
-                {measured && ordered.map((live, pos) => {
+            <ul className="feature__grid">
+                {ordered.map((live, index) => {
                     const heartIndex = heartedLives.indexOf(live)
                     const color = heartIndex >= 0 ? HEART_COLORS[heartIndex % HEART_COLORS.length] : null
 
-                    if (flat) {
-                        return (
-                            <RingCard
-                                key={live.id}
-                                live={live}
-                                color={color}
-                                order={heartIndex + 1}
-                                size="md"
-                                front
-                                onHeart={handleHeart}
-                            />
-                        )
-                    }
-
-                    const f = mod(pos - turn, n)
-                    const spot = ringPlace(f, n)
-                    const w = spot.w * scale
-                    const front = !dragging && Math.round(f) % n === 0
-
                     return (
-                        <RingCard
+                        <FeatureCard
                             key={live.id}
                             live={live}
                             color={color}
                             order={heartIndex + 1}
-                            size={w >= 380 ? 'lg' : w >= 260 ? 'md' : 'sm'}
-                            front={front}
-                            onBringFront={() => setTurn(pos)}
-                            onHeart={handleHeart}
-                            style={{
-                                width: w,
-                                opacity: spot.o,
-                                zIndex: 100 + spot.z,
-                                transform: `translate(${spot.x * scale}px, ${spot.y * scale}px)`,
-                            }}
+                            shape={featureShape(index)}
+                            onHeart={toggleHeart}
                         />
                     )
                 })}
-            </div>
+            </ul>
         </section>
     )
 }
 
-function RingCard({ live, color, order, size, front, onBringFront, onHeart, style }) {
+function FeatureCard({ live, color, order, shape, onHeart }) {
     const hearted = color != null
-
-    // 앞자리가 아닌 카드는 누르면 먼저 앞으로 불러온다. 한 번 더 누르면 방송으로 간다.
-    const bring = front
-        ? undefined
-        : (event) => {
-              event.preventDefault()
-              onBringFront?.()
-          }
+    const to = { view: 'live', id: live.id }
 
     return (
-        <div
-            className={`ring__card ring__card--${size}${hearted ? ' ring__card--hearted' : ''}${front ? ' ring__card--front' : ''}`}
-            style={{ ...style, ...(hearted ? { '--heart': color, '--on-heart': heartInk(color) } : {}) }}
+        <li
+            className={`feat feat--${shape}${hearted ? ' feat--hearted' : ''}`}
+            style={hearted ? { '--heart': color, '--on-heart': heartInk(color) } : undefined}
         >
-            <Link
-                to={{ view: 'live', id: live.id }}
-                className="ring__thumb"
-                draggable="false"
-                aria-label={front ? `${live.nickname} 방송 보기` : `${live.nickname} 카드를 앞으로`}
-                {...(bring ? { onClick: bring } : {})}
-            >
-                {live.thumbnailUrl ? (
-                    <img
-                        src={assetUrl(live.thumbnailUrl)}
-                        alt=""
-                        draggable="false"
-                        loading={front ? undefined : 'lazy'}
-                        decoding="async"
-                    />
-                ) : (
-                    <span className="ring__blank">{live.nickname?.slice(0, 1)}</span>
-                )}
-                <span className="ring__live">LIVE</span>
-                {hearted && <span className="ring__order">{order}</span>}
-            </Link>
+            <div className="feat__media">
+                {/* 제목 링크와 같은 곳으로 가는 중복이라 키보드·스크린리더에서는 뺀다. */}
+                <Link to={to} className="feat__thumb" aria-hidden="true" tabIndex={-1} draggable="false">
+                    {live.thumbnailUrl ? (
+                        <img
+                            src={assetUrl(live.thumbnailUrl)}
+                            alt=""
+                            draggable="false"
+                            loading={shape === 'lead' ? undefined : 'lazy'}
+                            decoding="async"
+                        />
+                    ) : (
+                        <span className="feat__blank">{live.nickname?.slice(0, 1)}</span>
+                    )}
+                </Link>
 
-            <div className="ring__info">
-                <span className="ring__name">{live.nickname}</span>
-                <span className="ring__title">{live.title}</span>
-                <span className="ring__viewers">{formatCount(live.viewerCount)}</span>
+                <span className="feat__live">LIVE</span>
+                {hearted && <span className="feat__order">{order}</span>}
+
+                <button
+                    type="button"
+                    className="feat__heart"
+                    aria-pressed={hearted}
+                    aria-label={`${live.nickname} 하트${hearted ? ' 빼기' : ''}`}
+                    onClick={() => onHeart(live.id)}
+                >
+                    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z" />
+                    </svg>
+                </button>
             </div>
 
-            {front && size !== 'md' && (
-                <Link to={{ view: 'live', id: live.id }} className="ring__go" draggable="false">
-                    <Icon name="play" size={11} /> 보러 가기
-                </Link>
-            )}
-
-            <button
-                type="button"
-                className="ring__heart"
-                aria-pressed={hearted}
-                aria-label={`${live.nickname} 하트${hearted ? ' 빼기' : ''}`}
-                onClick={() => onHeart(live.id)}
-            >
-                <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z" />
-                </svg>
-            </button>
-        </div>
+            <div className="feat__body">
+                <p className="feat__kicker">
+                    {live.nickname} · 시청자 {formatCount(live.viewerCount)}
+                </p>
+                <h3 className="feat__title">
+                    <Link to={to} draggable="false">
+                        {live.title}
+                    </Link>
+                </h3>
+            </div>
+        </li>
     )
-}
-
-/**
- * 한 바퀴 위의 위치 f (0 = 맨 앞) 를 카드 자리로 바꾼다.
- * 자리보다 카드가 많으면 남는 카드는 마지막 자리 뒤에 숨어서 차례를 기다린다.
- */
-function ringPlace(f, n) {
-    const last = Math.min(n, RING_SLOTS.length) - 1
-
-    const slotAt = (k) => {
-        if (k >= n) return RING_SLOTS[0]
-        if (k <= last) return RING_SLOTS[k]
-        return { ...RING_SLOTS[last], o: 0, z: 0 }
-    }
-
-    const i = Math.floor(f)
-    const t = f - i
-    const a = slotAt(i)
-    const b = slotAt(i + 1)
-    const lerp = (key) => a[key] + (b[key] - a[key]) * t
-
-    // 맨 뒤에서 맨 앞으로 넘어오는 카드는 반을 넘기면 가장 위로 올린다.
-    const z = i + 1 >= n ? (t < 0.5 ? a.z : 70) : t < 0.5 ? a.z + 1 : b.z + 1
-
-    return { x: lerp('x'), y: lerp('y'), w: lerp('w'), o: lerp('o'), z }
 }
 
 /** 지금 시각. 방송 시간이 흘러가 보이도록 1분마다 새로 잰다. */
@@ -628,10 +472,6 @@ function useNow() {
     }, [])
 
     return now
-}
-
-function mod(value, n) {
-    return ((value % n) + n) % n
 }
 
 /** 서버 시각(시간대 표시 없는 UTC)을 밀리초로. 읽을 수 없으면 fallback. */
@@ -855,74 +695,24 @@ function HeroBanner({ live, others }) {
     )
 }
 
-/** 가로로 끌어서 넘기는 줄. 마우스로도 끌 수 있어야 해서 포인터를 직접 잡는다. */
-function Carousel({ title, items }) {
-    const trackRef = useRef(null)
-    const dragRef = useRef(null)
+/**
+ * 올라온 영상을 잡지 지면처럼 늘어놓는다. 사진 비율을 돌려 가며 달리 주어 높이가 들쭉날쭉하고,
+ * 칸(column)에 위에서부터 쌓이므로 빈틈 없이 어긋난 모양이 된다.
+ */
+const GALLERY_RATIOS = ['3 / 2', '4 / 5', '1 / 1', '16 / 10', '3 / 4']
 
-    function handlePointerDown(event) {
-        const track = trackRef.current
-        if (!track) return
-
-        dragRef.current = { startX: event.clientX, startLeft: track.scrollLeft, moved: false }
-        track.setPointerCapture(event.pointerId)
-    }
-
-    function handlePointerMove(event) {
-        const drag = dragRef.current
-        const track = trackRef.current
-        if (!drag || !track) return
-
-        const moved = event.clientX - drag.startX
-        // 살짝 흔들린 것까지 드래그로 치면 클릭이 죽는다.
-        if (Math.abs(moved) > 4) drag.moved = true
-        track.scrollLeft = drag.startLeft - moved
-    }
-
-    function handlePointerUp(event) {
-        const track = trackRef.current
-        if (track?.hasPointerCapture(event.pointerId)) {
-            track.releasePointerCapture(event.pointerId)
-        }
-        dragRef.current = null
-    }
-
-    // 끌어서 넘긴 직후의 클릭은 열지 않는다.
-    function handleClickCapture(event) {
-        if (dragRef.current?.moved) {
-            event.preventDefault()
-            event.stopPropagation()
-        }
-    }
-
+function Gallery({ title, items }) {
     return (
-        <div className="carousel">
-            <div className="carousel__head">
-                <h3 className="carousel__title">{title}</h3>
-
-                <span className="carousel__arrows">
-                    <button type="button" onClick={() => scrollTrack(trackRef.current, -1)} aria-label="앞쪽 영상 보기">
-                        <Icon name="prev" />
-                    </button>
-                    <button type="button" onClick={() => scrollTrack(trackRef.current, 1)} aria-label="뒤쪽 영상 보기">
-                        <Icon name="next" />
-                    </button>
-                </span>
+        <section className="gallery" aria-labelledby="gallery-title">
+            <div className="section-head">
+                <h2 id="gallery-title">{title}</h2>
             </div>
 
-            <ul
-                className="carousel__track"
-                ref={trackRef}
-                onPointerDown={handlePointerDown}
-                onPointerMove={handlePointerMove}
-                onPointerUp={handlePointerUp}
-                onPointerCancel={handlePointerUp}
-                onClickCapture={handleClickCapture}
-            >
-                {items.map((stream) => (
-                    <li key={stream.id} className="carousel__item">
-                        <Link to={{ view: 'stream', id: stream.id }} className="tile" draggable="false">
-                            <span className="tile__thumb">
+            <ul className="gallery__list">
+                {items.map((stream, index) => (
+                    <li key={stream.id} className="gallery__item">
+                        <Link to={{ view: 'stream', id: stream.id }} className="plate" draggable="false">
+                            <span className="plate__thumb" style={{ aspectRatio: GALLERY_RATIOS[index % GALLERY_RATIOS.length] }}>
                                 {stream.thumbnailUrl ? (
                                     <img
                                         src={assetUrl(stream.thumbnailUrl)}
@@ -932,20 +722,23 @@ function Carousel({ title, items }) {
                                         decoding="async"
                                     />
                                 ) : (
-                                    <span className="tile__blank">썸네일 없음</span>
+                                    <span className="plate__blank">썸네일 없음</span>
                                 )}
                             </span>
 
-                            <span className="tile__title">{stream.title}</span>
+                            {stream.categoryName && <span className="plate__kicker">{stream.categoryName}</span>}
 
-                            <span className="tile__meta">
-                                {stream.nickname} · 조회 {formatCount(stream.viewCount)}
+                            <span className="plate__title">{stream.title}</span>
+
+                            <span className="plate__meta">
+                                {stream.nickname} · 조회 {(stream.viewCount ?? 0).toLocaleString('ko-KR')}회
+                                {stream.createdAt && ` · ${timeAgo(stream.createdAt)}`}
                             </span>
                         </Link>
                     </li>
                 ))}
             </ul>
-        </div>
+        </section>
     )
 }
 
