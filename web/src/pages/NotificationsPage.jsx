@@ -1,3 +1,4 @@
+import { formatDateTime } from '../time.js'
 import { useState } from 'react'
 import {
     getNotifications,
@@ -102,6 +103,3 @@ function linkTarget({ type, targetId, channelId }) {
     }
 }
 
-function formatDateTime(value) {
-    return value ? value.replace('T', ' ').slice(0, 16) : ''
-}

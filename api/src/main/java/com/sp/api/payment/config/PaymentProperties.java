@@ -33,9 +33,17 @@ public class PaymentProperties {
     @Value("${app.membership.price-krw:4900}")
     private int priceKrw;
 
-    /** 유료 구독 한 번으로 이용할 수 있는 기간(일). */
+    /** 유료 구독 한 달(1개월)의 기간(일). 여러 달 상품은 이 값에 달 수를 곱한다. */
     @Value("${app.membership.period-days:30}")
     private int periodDays;
+
+    /** 고를 수 있는 구독 기간(달). 처음 값이 기본 상품이다. */
+    @Value("${app.membership.plan-months:1,3,6,12}")
+    private List<Integer> planMonths;
+
+    /** planMonths 와 같은 순서의 할인율(%). 오래 구독할수록 한 달 값이 싸진다. */
+    @Value("${app.membership.plan-discounts:0,5,10,15}")
+    private List<Integer> planDiscounts;
 
     /**
      * 웹훅 주소에 붙이는 비밀 값. 토스 개발자센터에 웹훅 주소를 등록할 때 ?token=... 으로 함께 적는다.
@@ -59,6 +67,50 @@ public class PaymentProperties {
     /** 후원으로 보낼 수 있는 금액(원). 이 목록에 없는 금액은 서버가 주문을 만들어 주지 않는다. */
     @Value("${app.donation.amounts:1000,3000,5000,10000,30000,50000}")
     private List<Integer> donationAmounts;
+
+    /** 구독 기간 상품. 금액은 한 달 금액 × 달 수에서 할인율을 빼고 100원 단위로 내린 값이다. */
+    public record Plan(int months, int days, int amountKrw, int discountPercent) {
+    }
+
+    public List<Plan> plans() {
+
+        List<Plan> plans = new java.util.ArrayList<>();
+
+        for (int i = 0; i < planMonths.size(); i++) {
+
+            int months = planMonths.get(i);
+            int discount = i < planDiscounts.size() ? planDiscounts.get(i) : 0;
+
+            if (months < 1) {
+                continue;
+            }
+
+            long gross = (long) priceKrw * months;
+            long discounted = gross * (100 - discount) / 100;
+            // 한 달 상품(할인 0)은 설정한 금액 그대로, 나머지는 100원 단위로 내린다.
+            int amount = (int) (discount == 0 ? discounted : (discounted / 100) * 100);
+
+            plans.add(new Plan(months, months * periodDays, amount, discount));
+        }
+
+        if (plans.isEmpty()) {
+            plans.add(new Plan(1, periodDays, priceKrw, 0));
+        }
+
+        return plans;
+    }
+
+    /** 달 수에 맞는 상품. 없는 상품이면 null. months 가 null 이면 기본(첫) 상품. */
+    public Plan planOf(Integer months) {
+
+        List<Plan> plans = plans();
+
+        if (months == null) {
+            return plans.get(0);
+        }
+
+        return plans.stream().filter(plan -> plan.months() == months).findFirst().orElse(null);
+    }
 
     public boolean isEnabled() {
         return clientKey != null && !clientKey.isBlank()

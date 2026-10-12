@@ -8,6 +8,7 @@ import com.sp.api.common.response.PageResponse;
 import com.sp.api.payment.config.PaymentProperties;
 import com.sp.api.payment.dto.ConfirmPaymentRequest;
 import com.sp.api.payment.dto.MembershipOrderResponse;
+import com.sp.api.payment.dto.MembershipPlanResponse;
 import com.sp.api.payment.dto.MembershipResultResponse;
 import com.sp.api.payment.dto.PaymentConfigResponse;
 import com.sp.api.payment.dto.PaymentHistoryResponse;
@@ -71,14 +72,25 @@ public class MembershipService {
                 properties.getPriceKrw(),
                 properties.getPeriodDays(),
                 properties.getDonationAmounts(),
-                DONATION_MESSAGE_MAX_LENGTH
+                DONATION_MESSAGE_MAX_LENGTH,
+                properties.plans().stream().map(MembershipPlanResponse::from).toList()
         );
     }
 
-    /** 1단계 — 주문을 만든다. 금액은 여기서 정해지고 이후로는 바뀌지 않는다. */
-    public MembershipOrderResponse createOrder(Long channelId, String email) {
+    /**
+     * 1단계 — 주문을 만든다. 금액과 기간은 여기서 정해지고 이후로는 바뀌지 않는다.
+     *
+     * @param months 구독 기간(달). 비우면 기본 상품. 설정에 없는 값이면 거절한다.
+     */
+    public MembershipOrderResponse createOrder(Long channelId, String email, Integer months) {
 
         requireEnabled();
+
+        PaymentProperties.Plan plan = properties.planOf(months);
+
+        if (plan == null) {
+            throw new BadRequestException("고를 수 없는 구독 기간입니다.");
+        }
 
         return inTransaction(() -> {
 
@@ -94,14 +106,15 @@ public class MembershipService {
             // 토스 주문번호는 6~64자, 영문·숫자·-_= 만 쓸 수 있다. 추측할 수 없도록 무작위 값을 붙인다.
             String orderId = "sub-" + channelId + "-" + UUID.randomUUID().toString().replace("-", "");
 
-            paymentRepository.save(new Payment(orderId, user, channel, properties.getPriceKrw()));
+            paymentRepository.save(new Payment(orderId, user, channel, plan.amountKrw(), plan.days()));
 
             return new MembershipOrderResponse(
                     orderId,
-                    channel.getNickname() + " 유료 구독 " + properties.getPeriodDays() + "일",
-                    properties.getPriceKrw(),
+                    channel.getNickname() + " 유료 구독 " + planLabel(plan),
+                    plan.amountKrw(),
                     user.getEmail(),
-                    user.getNickname()
+                    user.getNickname(),
+                    plan.days()
             );
         });
     }
@@ -154,7 +167,8 @@ public class MembershipService {
         return PageResponse.from(
                 paymentRepository.findByUserIdAndStatusInOrderByIdDesc(
                                 user.getId(), List.of(PaymentStatus.DONE, PaymentStatus.CANCELED), pageable)
-                        .map(payment -> PaymentHistoryResponse.from(payment, properties.getRefundWindowDays(), now))
+                        .map(payment -> PaymentHistoryResponse.from(
+                        payment, properties.getRefundWindowDays(), properties.getPeriodDays(), now))
         );
     }
 
@@ -251,7 +265,8 @@ public class MembershipService {
                 .orElseGet(() -> subscribeRepository.save(
                         new Subscribe(payment.getUser(), payment.getChannel())));
 
-        subscribe.grantPaid(LocalDateTime.now(), properties.getPeriodDays());
+        // 주문에 정해 둔 기간만큼 늘린다. 기간이 비어 있는 옛 주문은 기본 기간이다.
+        subscribe.grantPaid(LocalDateTime.now(), payment.periodDaysOr(properties.getPeriodDays()));
 
         return resultOf(payment, subscribe);
     }
@@ -298,6 +313,11 @@ public class MembershipService {
                 PaymentKind.SUBSCRIPTION.name(),
                 null
         );
+    }
+
+    /** 결제창에 보이는 주문 이름에 붙는 기간. "30일" 이 아니라 "3개월(90일)" 처럼. */
+    private static String planLabel(PaymentProperties.Plan plan) {
+        return plan.months() == 1 ? plan.days() + "일" : plan.months() + "개월(" + plan.days() + "일)";
     }
 
     private static boolean sameKey(Payment order, ConfirmPaymentRequest request) {

@@ -699,7 +699,11 @@ function PaymentHistory() {
                         </Link>
                         <span className="meta">
                             {' '}
-                            · {payment.kind === 'DONATION' ? '후원' : '유료 구독'} · {won(payment.amount)} ·{' '}
+                            · {payment.kind === 'DONATION' ? '후원' : '유료 구독'}
+                            {payment.kind !== 'DONATION' && payment.periodDays
+                                ? ` ${payment.periodDays >= 360 ? '1년' : payment.periodDays % 30 === 0 ? `${payment.periodDays / 30}개월` : `${payment.periodDays}일`}`
+                                : ''}{' '}
+                            · {won(payment.amount)} ·{' '}
                             {payment.method} · {dateOnly(payment.approvedAt)}
                         </span>
                         {payment.status === 'CANCELED' && (

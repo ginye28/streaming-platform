@@ -1,3 +1,4 @@
+import { formatDateTime } from '../time.js'
 import { useState } from 'react'
 import { getReports, updateReportStatus } from '../api.js'
 import Pager from '../components/Pager.jsx'
@@ -142,6 +143,3 @@ export default function ReportsTab() {
     )
 }
 
-function formatDateTime(value) {
-    return value ? value.replace('T', ' ').slice(0, 16) : ''
-}

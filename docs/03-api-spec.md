@@ -653,9 +653,9 @@ STOMP over WebSocket 을 씁니다.
 
 | 메서드 | 경로 | 인증 | 설명 |
 |---|---|---|---|
-| GET | `/api/payments/config` | 공개 | 결제가 켜져 있는지, 클라이언트 키·금액·기간, 후원 금액 목록(`donationAmounts`) |
+| GET | `/api/payments/config` | 공개 | 결제가 켜져 있는지, 클라이언트 키·금액·기간, 구독 기간 상품 목록(`plans`), 후원 금액 목록(`donationAmounts`) |
 | POST | `/api/lives/{liveId}/donations/orders` | 필요 | **후원 1단계** 주문 만들기 (201). 승인은 같은 `/api/payments/confirm` |
-| POST | `/api/channels/{channelId}/membership/orders` | 필요 | **1단계** 주문 만들기 (201). 결제창에 넘길 값을 돌려준다 |
+| POST | `/api/channels/{channelId}/membership/orders` | 필요 | **1단계** 주문 만들기 (201). 본문 `{"months": 3}` 으로 구독 기간을 고른다(없으면 1개월). 설정에 없는 기간은 400. 결제창에 넘길 값을 돌려준다 |
 | POST | `/api/payments/confirm` | 필요 | **3단계** 승인하고 유료 구독 시작 |
 | GET | `/api/users/me/payments` | 필요 | 내 결제 내역 (승인된 것과 환불된 것, 최신순) |
 | POST | `/api/payments/{paymentId}/cancel` | 필요 | 내 결제 **환불** (승인 뒤 7일 안) |
@@ -669,7 +669,8 @@ STOMP over WebSocket 을 씁니다.
 ```
 ① 주문       POST /api/channels/{id}/membership/orders   서버가 금액을 정해 주문(READY)을 만든다
 ② 결제창     브라우저가 토스 결제창을 연다 (카드·간편결제 / 계좌이체). 우리 서버는 관여하지 않는다
-③ 승인       /?view=pay-result&paymentKey=..&orderId=..&amount=..  로 돌아오면
+③ 승인       /pay-result?paymentKey=..&orderId=..&amount=..  로 돌아오면
+             (옛 주소 /?view=pay-result&… 와 쿼리가 두 번 붙어 깨진 주소도 화면이 알아본다)
              POST /api/payments/confirm  → 서버가 주문과 대조 → 토스에 승인 → 구독 기간 늘림
 ```
 
@@ -678,14 +679,24 @@ STOMP over WebSocket 을 씁니다.
 `GET /api/payments/config` 는 결제가 꺼져 있으면 `{ "enabled": false, "clientKey": null, ... }` 입니다.
 
 ```json
-{ "enabled": true, "clientKey": "test_ck_...", "priceKrw": 4900, "periodDays": 30 }
+{ "enabled": true, "clientKey": "test_ck_...", "priceKrw": 4900, "periodDays": 30,
+  "plans": [
+    { "months": 1,  "days": 30,  "amountKrw": 4900,  "discountPercent": 0 },
+    { "months": 3,  "days": 90,  "amountKrw": 13900, "discountPercent": 5 },
+    { "months": 6,  "days": 180, "amountKrw": 26400, "discountPercent": 10 },
+    { "months": 12, "days": 360, "amountKrw": 49900, "discountPercent": 15 }
+  ] }
 ```
+
+구독 기간 상품은 서버 설정(`MEMBERSHIP_PLAN_MONTHS`, `MEMBERSHIP_PLAN_DISCOUNTS`)이 정합니다. 금액은
+`한 달 금액 × 달 수 × (100 − 할인율)%` 를 100원 단위로 내린 값이고, 브라우저가 보낸 금액은 믿지 않습니다.
+주문마다 `periodDays` 가 남아서, 환불하면 **그 결제로 늘어난 기간만** 되돌립니다(앞서 산 기간은 남습니다).
 
 주문 응답 — 결제창에 그대로 넘깁니다. 금액은 서버가 정한 값입니다.
 
 ```json
 { "orderId": "sub-1-3f2a...", "orderName": "하늘별 유료 구독 30일", "amount": 4900,
-  "customerEmail": "fan@test.com", "customerName": "열혈팬" }
+  "customerEmail": "fan@test.com", "customerName": "열혈팬", "periodDays": 30 }
 ```
 
 승인 요청은 결제창에서 돌아온 주소의 값 그대로입니다. 응답:

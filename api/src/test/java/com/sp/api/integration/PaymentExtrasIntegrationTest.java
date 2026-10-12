@@ -127,6 +127,43 @@ class PaymentExtrasIntegrationTest extends IntegrationTestSupport {
     // ---- 환불 ----
 
     @Test
+    @DisplayName("3개월 결제를 환불하면 그 결제로 늘어난 90일만 되돌린다 — 앞서 산 한 달은 남는다")
+    void refundingThreeMonthPlanRevertsOnlyItsOwnDays() throws Exception {
+
+        newChannel("p3");
+        String fan = signupAndLogin("ex-fanp3@test.com", "기간환불팬");
+
+        // 한 달(30일) 먼저, 3개월(90일) 그다음
+        pay(fan, channelId, "pk_p3a");
+
+        String orderId = json(mockMvc.perform(post("/api/channels/" + channelId + "/membership/orders")
+                        .header("Authorization", "Bearer " + fan)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"months\":3}"))
+                .andExpect(status().isCreated())
+                .andReturn()).path("data").path("orderId").asString();
+
+        mockMvc.perform(post("/api/payments/confirm")
+                        .header("Authorization", "Bearer " + fan)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"paymentKey\":\"pk_p3b\",\"orderId\":\"" + orderId + "\",\"amount\":13900}"))
+                .andExpect(status().isOk());
+
+        long threeMonthPaymentId = paymentRepository.findByOrderId(orderId).orElseThrow().getId();
+
+        cancel(fan, threeMonthPaymentId).andExpect(status().isOk());
+
+        Subscribe subscribe = subscribeRepository.findAll().stream()
+                .filter(item -> item.getChannel().getId().equals(channelId))
+                .findFirst().orElseThrow();
+
+        // 30 + 90 일에서 90 일을 빼면 30 일이 남는다
+        assertThat(subscribe.getPaidUntil())
+                .isAfter(LocalDateTime.now().plusDays(29))
+                .isBefore(LocalDateTime.now().plusDays(31));
+    }
+
+    @Test
     @DisplayName("환불하면 토스 취소가 불리고, 결제는 CANCELED, 그 결제로 얻은 유료 기간은 사라진다")
     void userRefundRevertsPaidTime() throws Exception {
 

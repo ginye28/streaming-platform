@@ -22,10 +22,13 @@ public record PaymentHistoryResponse(
         /** 직접 환불할 수 있는 마지막 때. 승인된 결제에만 있다. */
         LocalDateTime refundDeadline,
         /** SUBSCRIPTION(유료 구독) 또는 DONATION(후원). */
-        String kind
+        String kind,
+        /** 이 결제로 늘어난 이용 기간(일). 후원이면 null. */
+        Integer periodDays
 ) {
 
-    public static PaymentHistoryResponse from(Payment payment, int refundWindowDays, LocalDateTime now) {
+    public static PaymentHistoryResponse from(
+            Payment payment, int refundWindowDays, int defaultPeriodDays, LocalDateTime now) {
 
         boolean done = payment.getStatus() == PaymentStatus.DONE;
 
@@ -44,7 +47,8 @@ public record PaymentHistoryResponse(
                 done && !payment.isDonation() && payment.getApprovedAt() != null
                         ? payment.getApprovedAt().plusDays(refundWindowDays)
                         : null,
-                payment.getKind().name()
+                payment.getKind().name(),
+                payment.isDonation() ? null : payment.periodDaysOr(defaultPeriodDays)
         );
     }
 }

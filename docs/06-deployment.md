@@ -93,7 +93,9 @@ nginx:1.27-alpine  →  dist/ 를 :80 으로
 | `TOSS_CLIENT_KEY` | 비어 있음 | 토스페이먼츠 **API 개별 연동 키**의 클라이언트 키(`test_ck_…` / `live_ck_…`). 브라우저에 내려가도 되는 값 |
 | `TOSS_SECRET_KEY` | 비어 있음 | 토스페이먼츠 시크릿 키(`test_sk_…` / `live_sk_…`). **서버에만 둔다.** 둘 다 있어야 결제가 켜진다 |
 | `MEMBERSHIP_PRICE_KRW` | `4900` | 유료 구독 한 번의 금액(원) |
-| `MEMBERSHIP_PERIOD_DAYS` | `30` | 유료 구독 한 번으로 이용하는 기간(일) |
+| `MEMBERSHIP_PERIOD_DAYS` | `30` | 유료 구독 한 달(1개월)의 기간(일). 여러 달 상품은 이 값에 달 수를 곱한다 |
+| `MEMBERSHIP_PLAN_MONTHS` | `1,3,6,12` | 고를 수 있는 구독 기간(달). 처음 값이 기본 상품이다 |
+| `MEMBERSHIP_PLAN_DISCOUNTS` | `0,5,10,15` | 위와 같은 순서의 할인율(%). 오래 구독할수록 한 달 값이 싸진다 |
 | `MEMBERSHIP_REFUND_WINDOW_DAYS` | `7` | 사용자가 직접 환불할 수 있는 기간(일). 관리자는 기간과 상관없이 환불한다 |
 | `MEMBERSHIP_PLATFORM_FEE_PERCENT` | `0` | 채널 주인 수익 장부에서 떼는 서비스 수수료율(%). 장부일 뿐 송금은 하지 않는다 |
 | `MEMBERSHIP_EXPIRY_NOTICE_DAYS` | `3` | 유료 구독이 끝나기 며칠 전부터 알릴지 |

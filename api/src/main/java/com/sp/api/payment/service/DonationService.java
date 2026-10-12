@@ -97,7 +97,8 @@ public class DonationService {
                     live.getUser().getNickname() + " 방송 후원",
                     request.amount(),
                     user.getEmail(),
-                    user.getNickname()
+                    user.getNickname(),
+                    0
             );
         });
     }

@@ -91,6 +91,12 @@ public class Payment {
     @Column(length = 100)
     private String donationMessage;
 
+    /**
+     * 이 결제로 늘어나는 유료 기간(일). 주문을 만들 때 정해지고 이후로 바뀌지 않는다.
+     * 환불하면 정확히 이만큼을 되돌린다. 기간 상품이 생기기 전의 결제는 비어 있어서 기본 기간으로 본다.
+     */
+    private Integer periodDays;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -99,6 +105,17 @@ public class Payment {
         this.user = user;
         this.channel = channel;
         this.amount = amount;
+    }
+
+    /** 기간이 정해진 유료 구독 주문. */
+    public Payment(String orderId, User user, User channel, int amount, int periodDays) {
+        this(orderId, user, channel, amount);
+        this.periodDays = periodDays;
+    }
+
+    /** 저장된 기간이 없으면(옛 결제) defaultDays. */
+    public int periodDaysOr(int defaultDays) {
+        return periodDays != null && periodDays > 0 ? periodDays : defaultDays;
     }
 
     /** 방송 후원 주문. channel 은 방송의 주인이다. */

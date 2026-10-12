@@ -4,6 +4,7 @@ import com.sp.api.common.response.ApiResponse;
 import com.sp.api.common.response.PageResponse;
 import com.sp.api.payment.dto.CancelPaymentRequest;
 import com.sp.api.payment.dto.ConfirmPaymentRequest;
+import com.sp.api.payment.dto.CreateMembershipOrderRequest;
 import com.sp.api.payment.dto.EarningsResponse;
 import com.sp.api.payment.dto.MembershipOrderResponse;
 import com.sp.api.payment.dto.MembershipResultResponse;
@@ -42,15 +43,21 @@ public class PaymentController {
         return ResponseEntity.ok(ApiResponse.ok(membershipService.config()));
     }
 
-    /** 1단계 — 이 채널의 유료 구독 주문을 만든다. 돌려받은 값으로 결제창을 연다. */
+    /**
+     * 1단계 — 이 채널의 유료 구독 주문을 만든다. 돌려받은 값으로 결제창을 연다.
+     * 본문 {"months": 3} 으로 구독 기간을 고른다. 본문이 없으면 기본 상품(1개월)이다.
+     */
     @PostMapping("/api/channels/{channelId}/membership/orders")
     public ResponseEntity<ApiResponse<MembershipOrderResponse>> createOrder(
             @PathVariable Long channelId,
+            @RequestBody(required = false) CreateMembershipOrderRequest request,
             Authentication authentication
     ) {
 
+        Integer months = request == null ? null : request.getMonths();
+
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(
-                membershipService.createOrder(channelId, authentication.getName())
+                membershipService.createOrder(channelId, authentication.getName(), months)
         ));
     }
 

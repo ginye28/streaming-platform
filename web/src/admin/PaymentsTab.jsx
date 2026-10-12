@@ -1,3 +1,4 @@
+import { formatDate } from '../time.js'
 import { useState } from 'react'
 import { adminCancelPayment, getAdminPayments } from '../api.js'
 import Pager from '../components/Pager.jsx'
@@ -142,6 +143,3 @@ export default function PaymentsTab() {
     )
 }
 
-function formatDate(value) {
-    return value ? value.replace('T', ' ').slice(0, 16) : ''
-}

@@ -71,7 +71,7 @@ public class PaymentRefundService {
         cancel(payment, blankTo(reason, "고객 요청 환불"));
 
         return inTransaction(() -> PaymentHistoryResponse.from(
-                find(paymentId), properties.getRefundWindowDays(), LocalDateTime.now()));
+                find(paymentId), properties.getRefundWindowDays(), properties.getPeriodDays(), LocalDateTime.now()));
     }
 
     /** 관리자가 어느 결제든 환불한다. 환불 가능 기간은 적용하지 않는다. */
@@ -128,7 +128,8 @@ public class PaymentRefundService {
             // 그 결제로 늘어난 기간만큼 되돌린다.
             subscribeRepository
                     .findBySubscriberIdAndChannelId(payment.getUser().getId(), payment.getChannel().getId())
-                    .ifPresent(subscribe -> subscribe.revokePaid(LocalDateTime.now(), properties.getPeriodDays()));
+                    .ifPresent(subscribe -> subscribe.revokePaid(
+                            LocalDateTime.now(), payment.periodDaysOr(properties.getPeriodDays())));
 
             return null;
         });
