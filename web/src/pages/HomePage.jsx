@@ -4,16 +4,19 @@ import {
     getChannelLiveHistory,
     getLives,
     getMySubscriptions,
+    getSchedules,
     getStreams,
 } from '../api.js'
 import { assetUrl } from '../assets.js'
+import Avatar from '../components/Avatar.jsx'
+import LeafLoader from '../components/LeafLoader.jsx'
 import Link from '../components/Link.jsx'
 import { loginTo } from '../router.js'
-import { HEART_COLORS, heartInk, pruneHearts, toggleHeart, useHearts } from '../hearts.js'
+import { HEART_COLORS, pruneHearts, toggleHeart, useHearts } from '../hearts.js'
 import { useAsyncData } from '../useAsyncData.js'
 import { useAuth } from '../useAuth.js'
 import { useSlow } from '../useSlow.js'
-import { formatAgo, serverTimeMs, timeAgo } from '../time.js'
+import { formatAgo, formatWhen, serverTimeMs, timeAgo } from '../time.js'
 
 const SORTS = [
     { value: 'LATEST', label: '최신순' },
@@ -21,8 +24,7 @@ const SORTS = [
 ]
 
 /**
- * 대회 중계 채널. 이 채널들 중 하나라도 방송 중이면 맨 위에 대회 배너(도는 슬롯)를 띄운다.
- * 대회가 없을 때는 배너 없이 "지금 방송 중" 줄과 도는 카드가 첫 화면이 된다.
+ * 대회 중계 채널. 이 채널들 중 하나라도 방송 중이면 맨 위 큰 화면에 먼저 올린다.
  * 서버에 대회 개념이 생기기 전까지는 배포 설정(VITE_TOURNAMENT_CHANNEL_IDS)으로 정한다.
  */
 const TOURNAMENT_CHANNEL_IDS = (import.meta.env.VITE_TOURNAMENT_CHANNEL_IDS ?? '')
@@ -30,9 +32,23 @@ const TOURNAMENT_CHANNEL_IDS = (import.meta.env.VITE_TOURNAMENT_CHANNEL_IDS ?? '
     .map((value) => Number(value.trim()))
     .filter((value) => Number.isInteger(value) && value > 0)
 
+/**
+ * 필름스트립 카드의 크기. 가로·세로 비율이 번갈아 나와 높이가 들쭉날쭉하다.
+ * r 은 나뭇잎의 큰 모서리 반지름이다(대각선으로 마주 보는 두 모서리가 이 값을 같이 쓴다).
+ */
+const FRAME_SIZES = [
+    { w: 320, h: 196, r: 64 },
+    { w: 196, h: 330, r: 84 },
+    { w: 300, h: 184, r: 60 },
+    { w: 200, h: 340, r: 88 },
+    { w: 340, h: 200, r: 64 },
+    { w: 190, h: 320, r: 80 },
+]
+
 export default function HomePage() {
     const [categoryId, setCategoryId] = useState('')
     const [sortBy, setSortBy] = useState('LATEST')
+    const hearts = useHearts()
 
     const { data: categories } = useAsyncData(getCategories, [])
     const {
@@ -41,36 +57,49 @@ export default function HomePage() {
         loading: livesLoading,
         reload: reloadLives,
     } = useAsyncData(() => getLives(0), [])
-
     const {
         data: page,
         error,
         loading,
         reload,
     } = useAsyncData(() => getStreams(categoryId, sortBy, 0), [categoryId, sortBy])
+    const { data: schedulePage, loading: scheduleLoading } = useAsyncData(() => getSchedules(0), [])
 
     // 무료 서버는 한참 안 쓰면 잠든다. 첫 요청이 오래 걸리면 그 이유를 알려 준다.
     const waking = useSlow(livesLoading || loading)
 
     const liveList = lives?.content ?? []
-    const tournament = liveList.filter((live) => TOURNAMENT_CHANNEL_IDS.includes(live.channelId))
+
+    // 끝난 방송의 하트는 정리한다. 목록을 아직 못 받은 동안(빈 목록)에는 지우지 않는다.
+    useEffect(() => {
+        if (!livesLoading && !livesError) pruneHearts(liveList.map((live) => live.id))
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [lives, livesLoading, livesError])
+
+    const ordered = orderLives(liveList, hearts)
+    const heroLive = ordered[0] ?? null
+    const restLives = ordered.slice(1)
+    const videos = page?.content ?? []
+
+    // 방송은 "전체"를 보고 있을 때만 필름스트립 앞에 섞는다. 카테고리를 고르면 그 카테고리의 영상만 본다.
+    const items = [
+        ...(categoryId === ''
+            ? restLives.map((live) => ({ kind: 'live', key: `live-${live.id}`, live }))
+            : []),
+        ...videos.map((stream) => ({ kind: 'video', key: `video-${stream.id}`, stream })),
+    ]
 
     return (
-        <section className="home">
-            <Masthead liveCount={liveList.length} loading={livesLoading} hasError={Boolean(livesError)} />
-
+        <section className="c-home">
             {waking && (
                 <p className="notice" role="status">
                     서버가 쉬고 있다가 깨는 중이에요. 처음 접속하면 30초 넘게 걸릴 수 있어요. 잠시만 기다려 주세요.
                 </p>
             )}
 
-            {tournament.length > 0 && (
-                <HeroBanner live={tournament[0]} others={tournament.slice(1)} />
-            )}
-
-            <LiveFeature
-                lives={liveList}
+            <Hero
+                live={heroLive}
+                liveCount={liveList.length}
                 loading={livesLoading}
                 error={livesError}
                 onRetry={reloadLives}
@@ -78,139 +107,137 @@ export default function HomePage() {
 
             <LiveStrip lives={liveList} />
 
-            <div className="home__filters">
-                <div className="home__filter-group" role="group" aria-label="카테고리">
-                    <Chip active={categoryId === ''} onClick={() => setCategoryId('')}>
-                        전체
-                    </Chip>
+            <Film
+                categories={categories}
+                categoryId={categoryId}
+                onCategory={setCategoryId}
+                sortBy={sortBy}
+                onSort={setSortBy}
+                items={items}
+                loading={loading}
+                error={error}
+                onRetry={reload}
+                videosEmpty={!loading && !error && videos.length === 0}
+                hasLives={categoryId === '' && restLives.length > 0}
+            />
 
-                    {categories?.map((category) => (
-                        <Chip
-                            key={category.id}
-                            active={categoryId === String(category.id)}
-                            onClick={() => setCategoryId(String(category.id))}
-                        >
-                            {category.name}
-                        </Chip>
-                    ))}
-                </div>
-
-                <div className="home__filter-group home__filter-group--sort" role="group" aria-label="정렬">
-                    {SORTS.map((sort) => (
-                        <Chip
-                            key={sort.value}
-                            active={sortBy === sort.value}
-                            onClick={() => setSortBy(sort.value)}
-                        >
-                            {sort.label}
-                        </Chip>
-                    ))}
-                </div>
-            </div>
-
-            {error && (
-                <p className="error">
-                    {error} <button type="button" onClick={reload}>다시 시도</button>
-                </p>
-            )}
-            {loading && <p className="empty">불러오는 중…</p>}
-
-            {!loading && page?.content.length > 0 && (
-                <Gallery title="새로 올라온 영상" items={page.content} />
-            )}
-
-            {!loading && !error && page?.content.length === 0 && (
-                <EmptyVideos filtered={categoryId !== ''} onShowAll={() => setCategoryId('')} />
-            )}
+            <Later schedules={schedulePage?.content ?? []} loading={scheduleLoading} />
         </section>
     )
 }
 
-/** 가로 줄을 한 화면의 80% 만큼 넘긴다. 동작 줄이기를 켠 사람에게는 미끄러지지 않고 바로 넘긴다. */
-function scrollTrack(track, direction) {
-    if (!track) return
+/** 대회 중계 → 하트를 누른 순서 → 시청자 많은 순. */
+function orderLives(lives, hearts) {
+    const tournament = lives.filter((live) => TOURNAMENT_CHANNEL_IDS.includes(live.channelId))
+    const rest = lives.filter((live) => !TOURNAMENT_CHANNEL_IDS.includes(live.channelId))
+    const hearted = hearts.map((id) => rest.find((live) => live.id === id)).filter(Boolean)
+    const others = rest.filter((live) => !hearts.includes(live.id)).sort((a, b) => b.viewerCount - a.viewerCount)
 
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: reduceMotion ? 'auto' : 'smooth' })
+    return [...tournament, ...hearted, ...others]
 }
 
-/**
- * 홈 맨 위 머리글. 큰 한 줄로 지금 사이트의 상태를 말한다.
- * 숫자는 서버가 준 방송 수뿐이다 — 방송이 없으면 없다고 그대로 쓴다.
- */
-function Masthead({ liveCount, loading, hasError }) {
-    const today = new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' }).format(
-        new Date()
-    )
-
-    let headline = '오늘의 방송'
-    if (!loading && !hasError) {
-        headline = liveCount > 0 ? `지금 ${liveCount}곳이 방송 중이에요` : '지금은 조용해요'
-    }
-
-    return (
-        <header className="masthead">
-            <p className="masthead__kicker">{today}</p>
-            <h1 className="masthead__title">{headline}</h1>
-        </header>
-    )
-}
-
-/** 올라온 영상이 없을 때. 비어 있는 이유와 다음 행동을 함께 보여 준다. */
-function EmptyVideos({ filtered, onShowAll }) {
+/* ── 1) 큰 화면: 화면 전체가 하나의 재생 버튼이다. 위에 얹힌 버튼은 없다 ── */
+function Hero({ live, liveCount, loading, error, onRetry }) {
     const { me } = useAuth()
+    const now = useNow()
+    const hearts = useHearts()
+    const today = new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' }).format(new Date())
 
-    if (filtered) {
+    if (!live) {
+        // 방송이 없을 때도 같은 자리, 같은 크기. 이유와 다음 행동을 알려 준다.
+        let headline = '오늘의 방송'
+        if (!loading && !error) headline = liveCount > 0 ? `지금 ${liveCount}곳이 방송 중이에요` : '지금은 조용해요'
+
         return (
-            <p className="empty">
-                이 카테고리에는 아직 영상이 없어요.
-                <br />
-                <button type="button" className="empty__link" onClick={onShowAll}>
-                    전체 영상 보기
-                </button>
-            </p>
+            <article className="c-hero c-hero--empty" aria-labelledby="hero-title">
+                <div className="c-hero__frame">
+                    <div className="c-hero__scene" />
+                    <div className="c-hero__shade" />
+                </div>
+
+                <div className="c-hero__info">
+                    <p className="c-hero__kicker">{today}</p>
+                    <h1 className="c-hero__title" id="hero-title">{headline}</h1>
+
+                    {loading && <LeafLoader size={22} label="방송 목록을 불러오는 중…" />}
+
+                    {error && (
+                        <p className="c-hero__by">
+                            <span>방송 목록을 불러오지 못했어요. {error}</span>
+                            <button type="button" className="c-hero__action" onClick={onRetry}>
+                                다시 시도
+                            </button>
+                        </p>
+                    )}
+
+                    {!loading && !error && (
+                        <p className="c-hero__by">
+                            <Link to={{ view: 'lives' }} className="c-hero__action">
+                                예정된 방송 보기
+                            </Link>
+                            <Link to={me ? { view: 'broadcast' } : loginTo()} className="c-hero__action">
+                                {me ? '방송하기' : '로그인하고 방송하기'}
+                            </Link>
+                        </p>
+                    )}
+                </div>
+            </article>
         )
     }
 
+    const tournament = TOURNAMENT_CHANNEL_IDS.includes(live.channelId)
+    const hearted = hearts.includes(live.id)
+    const heartColor = hearted ? HEART_COLORS[hearts.indexOf(live.id) % HEART_COLORS.length] : null
+
     return (
-        <p className="empty">
-            아직 올라온 영상이 없어요.
-            <br />
-            {me ? (
-                <Link to={{ view: 'upload' }} className="empty__link">
-                    첫 영상 올리기
-                </Link>
-            ) : (
-                <Link to={loginTo()} className="empty__link">
-                    로그인하고 첫 영상 올리기
-                </Link>
-            )}
-        </p>
+        <article className="c-hero" aria-labelledby="hero-title">
+            <div className="c-hero__frame">
+                <div className="c-hero__scene" />
+                {live.thumbnailUrl && (
+                    <img className="c-hero__img" src={assetUrl(live.thumbnailUrl)} alt="" fetchPriority="high" decoding="async" />
+                )}
+                <div className="c-hero__shade" />
+            </div>
+
+            {/* 화면 어디를 눌러도 바로 시청 화면으로 간다 */}
+            <Link to={{ view: 'live', id: live.id }} className="c-hero__hit" aria-label={`${live.title} 방송 바로 보기`} draggable="false" />
+
+            <div className="c-hero__top">
+                <span className="c-badge-live">
+                    <i aria-hidden="true" />
+                    LIVE
+                </span>
+                <span className="c-chip-soft">시청 {formatCount(live.viewerCount)}</span>
+                {tournament && <span className="c-chip-soft c-chip-soft--tag">대회 중계</span>}
+            </div>
+
+            <div className="c-hero__info">
+                <p className="c-hero__kicker">{tournament ? '대회 중계 · 지금 방송 중' : '지금 방송 중'}</p>
+                <h1 className="c-hero__title" id="hero-title">{live.title}</h1>
+
+                <p className="c-hero__by">
+                    <span className="c-hero__who">
+                        <Avatar name={live.nickname} size={30} src={live.profileImage} />
+                        {live.nickname} · {formatUptime(now - toTime(live.startedAt))}째
+                    </span>
+                    <span className="c-hero__cue">▶ 화면을 누르면 바로 시청</span>
+                    <button
+                        type="button"
+                        className="c-heart c-hero__heart"
+                        aria-pressed={hearted}
+                        aria-label={`${live.nickname} 방송 하트${hearted ? ' 빼기' : ''}`}
+                        style={heartColor ? { '--heart': heartColor } : undefined}
+                        onClick={() => toggleHeart(live.id)}
+                    >
+                        <HeartIcon />
+                    </button>
+                </p>
+            </div>
+        </article>
     )
 }
 
-/** 글자 기호(‹ › ▶) 대신 하트 아이콘과 같은 굵기(2)로 그린 아이콘. */
-function Icon({ name, size = 18 }) {
-    return (
-        <svg
-            width={size}
-            height={size}
-            viewBox="0 0 24 24"
-            fill={name === 'play' ? 'currentColor' : 'none'}
-            stroke={name === 'play' ? 'none' : 'currentColor'}
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-        >
-            {name === 'prev' && <path d="M15 5l-7 7 7 7" />}
-            {name === 'next' && <path d="M9 5l7 7-7 7" />}
-            {name === 'play' && <path d="M7 4.5v15l12.5-7.5z" />}
-        </svg>
-    )
-}
-
-/* ── 2) 지금 방송 중 ───────────────────────────────────────────
+/* ── 2) 지금 방송 중 줄 ───────────────────────────────────────────
  * 방송 중인 채널이 오래 방송한 순서로 서고, 오른쪽으로 넘기면 "쉬는 중" 뒤로
  * 구독한 채널 중 방송하지 않는 채널이 흐리게 이어진다. 최근에 끝난 채널이 먼저,
  * 오래 쉰 채널일수록 오른쪽 끝이다. */
@@ -257,16 +284,14 @@ function LiveStrip({ lives }) {
 
             <div className="strip__row">
                 <button type="button" className="strip__arrow" onClick={() => scroll(-1)} aria-label="앞쪽 보기">
-                    <Icon name="prev" />
+                    <ChevronIcon dir="prev" />
                 </button>
 
                 <ul className="strip__track" ref={trackRef}>
                     {onAir.map((live) => (
                         <li key={`live-${live.id}`}>
                             <Link to={{ view: 'live', id: live.id }} className="strip__person">
-                                <span className="strip__face strip__face--live">
-                                    {live.nickname?.slice(0, 1)}
-                                </span>
+                                <span className="strip__face strip__face--live">{live.nickname?.slice(0, 1)}</span>
                                 <span className="strip__name">{live.nickname}</span>
                                 <span className="strip__meta strip__meta--live">
                                     {formatUptime(now - toTime(live.startedAt))}째
@@ -305,161 +330,412 @@ function LiveStrip({ lives }) {
                 </ul>
 
                 <button type="button" className="strip__arrow" onClick={() => scroll(1)} aria-label="뒤쪽 보기">
-                    <Icon name="next" />
+                    <ChevronIcon dir="next" />
                 </button>
             </div>
         </section>
     )
 }
 
-/* ── 3) Live 중인 채널 ─────────────────────────────────────────
- * 잡지 첫 면처럼 가장 앞선 방송 하나를 크게 싣고, 나머지는 비율과 크기가 다른 사진으로
- * 어긋나게 늘어놓는다. 하트를 누른 방송이 앞에 서고 색이 붙는다. 나머지는 시청자가 많은 순서다.
- * 움직이는 건 없다 — 눌러서 들어가는 것이 전부다. */
-// 큰 한 장 옆의 첫 카드는 세로로 길게, 그다음부터는 12칸을 꼭 채우는 두 줄(5+4+3, 5+3+4)을 되풀이한다.
-const FEATURE_CYCLE = ['wide', 'tall', 'square', 'wide', 'square', 'tall']
+/* ── 3) 필름스트립: 나뭇잎 모양 카드를 가로로 넘긴다 ── */
+function Film({
+    categories,
+    categoryId,
+    onCategory,
+    sortBy,
+    onSort,
+    items,
+    loading,
+    error,
+    onRetry,
+    videosEmpty,
+    hasLives,
+}) {
+    const trackRef = useRef(null)
+    const dragRef = useRef(null)
+    const [atEnd, setAtEnd] = useState(false)
 
-function featureShape(index) {
-    if (index === 0) return 'lead'
-    if (index === 1) return 'tall'
-    return FEATURE_CYCLE[(index - 2) % FEATURE_CYCLE.length]
-}
-
-function LiveFeature({ lives, loading, error, onRetry }) {
-    const hearts = useHearts()
-
-    // 끝난 방송의 하트는 정리한다. 목록을 아직 못 받은 동안(빈 목록)에는 지우지 않는다.
-    useEffect(() => {
-        if (!loading && !error) pruneHearts(lives.map((live) => live.id))
-    }, [lives, loading, error])
-
-    // 하트를 누른 순서대로 앞에, 나머지는 시청자가 많은 순서로 잇는다. 하트는 방송 하나(live.id)마다 붙는다.
-    const heartedLives = hearts
-        .map((liveId) => lives.find((live) => live.id === liveId))
-        .filter(Boolean)
-    const ordered = [
-        ...heartedLives,
-        ...lives
-            .filter((live) => !hearts.includes(live.id))
-            .sort((a, b) => b.viewerCount - a.viewerCount),
-    ]
-
-    if (ordered.length === 0 && (loading || error)) {
-        return (
-            <section className="feature" aria-labelledby="feature-title">
-                <div className="section-head">
-                    <h2 id="feature-title">Live 중인 채널</h2>
-                </div>
-                {error ? (
-                    <p className="error">
-                        방송 목록을 불러오지 못했어요. {error}{' '}
-                        <button type="button" onClick={onRetry}>다시 시도</button>
-                    </p>
-                ) : (
-                    <p className="empty" role="status">방송 목록을 불러오는 중…</p>
-                )}
-            </section>
-        )
+    function updateEnd() {
+        const track = trackRef.current
+        if (!track) return
+        setAtEnd(track.scrollLeft + track.clientWidth >= track.scrollWidth - 4)
     }
 
-    if (ordered.length === 0) {
-        return (
-            <section className="feature" aria-labelledby="feature-title">
-                <div className="section-head">
-                    <h2 id="feature-title">Live 중인 채널</h2>
-                </div>
-                <p className="empty">
-                    지금 방송 중인 채널이 없어요.
-                    <br />
-                    <Link to={{ view: 'lives' }} className="empty__link">
-                        예정된 방송 보기
-                    </Link>
-                </p>
-            </section>
-        )
+    // 항목이 바뀌면 처음으로 돌아가고 끝 표시를 다시 잰다.
+    useEffect(() => {
+        trackRef.current?.scrollTo({ left: 0 })
+        updateEnd()
+    }, [items.length, categoryId, sortBy])
+
+    function handlePointerDown(event) {
+        const track = trackRef.current
+        if (!track || event.pointerType === 'touch') return
+        dragRef.current = { startX: event.clientX, startLeft: track.scrollLeft, moved: false }
+    }
+
+    function handlePointerMove(event) {
+        const drag = dragRef.current
+        const track = trackRef.current
+        if (!drag || !track) return
+
+        const moved = event.clientX - drag.startX
+        // 살짝 흔들린 것까지 드래그로 치면 클릭이 죽는다.
+        if (Math.abs(moved) > 5) {
+            if (!drag.moved) track.setPointerCapture(event.pointerId)
+            drag.moved = true
+        }
+        if (drag.moved) track.scrollLeft = drag.startLeft - moved
+    }
+
+    function handlePointerUp(event) {
+        const track = trackRef.current
+        if (track?.hasPointerCapture(event.pointerId)) track.releasePointerCapture(event.pointerId)
+        // 끌어서 넘긴 직후의 클릭은 열지 않는다. 다음 틱에 비운다.
+        setTimeout(() => {
+            dragRef.current = null
+        }, 0)
+    }
+
+    function handleClickCapture(event) {
+        if (dragRef.current?.moved) {
+            event.preventDefault()
+            event.stopPropagation()
+        }
+    }
+
+    function handleKeyDown(event) {
+        if (event.key === 'ArrowRight') scrollTrack(trackRef.current, 1)
+        if (event.key === 'ArrowLeft') scrollTrack(trackRef.current, -1)
     }
 
     return (
-        <section className="feature" aria-labelledby="feature-title">
-            <div className="section-head">
-                <h2 id="feature-title">Live 중인 채널</h2>
-                <span className="section-head__hint">하트를 누르면 색이 붙고 앞에 모여요</span>
+        <section className="c-film" aria-labelledby="film-title">
+            <div className="c-film__head">
+                <h2 className="c-film__title" id="film-title">필름스트립</h2>
+
+                <div className="c-tabs" role="group" aria-label="카테고리">
+                    <Chip active={categoryId === ''} onClick={() => onCategory('')}>
+                        전체
+                    </Chip>
+                    {categories?.map((category) => (
+                        <Chip
+                            key={category.id}
+                            active={categoryId === String(category.id)}
+                            onClick={() => onCategory(String(category.id))}
+                        >
+                            {category.name}
+                        </Chip>
+                    ))}
+                </div>
+
+                <div className="c-tabs c-tabs--sort" role="group" aria-label="정렬">
+                    {SORTS.map((sort) => (
+                        <Chip key={sort.value} active={sortBy === sort.value} onClick={() => onSort(sort.value)}>
+                            {sort.label}
+                        </Chip>
+                    ))}
+                </div>
+
+                {items.length > 0 && (
+                    <div className="c-film__nav">
+                        <button type="button" className="c-round" aria-label="앞쪽으로" data-tip="앞쪽으로" onClick={() => scrollTrack(trackRef.current, -1)}>
+                            <ChevronIcon dir="prev" />
+                        </button>
+                        <button type="button" className="c-round" aria-label="뒤쪽으로" data-tip="뒤쪽으로" onClick={() => scrollTrack(trackRef.current, 1)}>
+                            <ChevronIcon dir="next" />
+                        </button>
+                    </div>
+                )}
             </div>
 
-            <ul className="feature__grid">
-                {ordered.map((live, index) => {
-                    const heartIndex = heartedLives.indexOf(live)
-                    const color = heartIndex >= 0 ? HEART_COLORS[heartIndex % HEART_COLORS.length] : null
+            {error && (
+                <p className="error">
+                    {error} <button type="button" onClick={onRetry}>다시 시도</button>
+                </p>
+            )}
 
-                    return (
-                        <FeatureCard
-                            key={live.id}
-                            live={live}
-                            color={color}
-                            order={heartIndex + 1}
-                            shape={featureShape(index)}
-                            onHeart={toggleHeart}
-                        />
-                    )
-                })}
-            </ul>
+            {loading && items.length === 0 && (
+                <p className="empty">
+                    <LeafLoader size={26} label="불러오는 중…" />
+                </p>
+            )}
+
+            {items.length > 0 && (
+                <div className="c-reel">
+                    <ul
+                        className={`c-track${atEnd ? ' c-track--end' : ''}`}
+                        ref={trackRef}
+                        tabIndex={0}
+                        aria-label="영상 목록, 좌우로 끌어서 넘기기"
+                        onScroll={updateEnd}
+                        onKeyDown={handleKeyDown}
+                        onPointerDown={handlePointerDown}
+                        onPointerMove={handlePointerMove}
+                        onPointerUp={handlePointerUp}
+                        onPointerCancel={handlePointerUp}
+                        onClickCapture={handleClickCapture}
+                    >
+                        {items.map((item, index) => (
+                            <Frame key={item.key} item={item} index={index} />
+                        ))}
+                    </ul>
+                </div>
+            )}
+
+            {videosEmpty && !hasLives && <EmptyVideos filtered={categoryId !== ''} onShowAll={() => onCategory('')} />}
+            {videosEmpty && hasLives && (
+                <p className="c-film__note">올라온 영상은 아직 없어요. 지금 방송 중인 채널을 먼저 보여 드려요.</p>
+            )}
         </section>
     )
 }
 
-function FeatureCard({ live, color, order, shape, onHeart }) {
-    const hearted = color != null
-    const to = { view: 'live', id: live.id }
+function Frame({ item, index }) {
+    const hearts = useHearts()
+    const size = FRAME_SIZES[index % FRAME_SIZES.length]
+    // 짝수는 왼쪽위·오른쪽아래가 큰 잎, 홀수는 좌우를 뒤집은 잎.
+    const flip = index % 2 === 1
+
+    if (item.kind === 'live') {
+        const { live } = item
+        const hearted = hearts.includes(live.id)
+        const color = hearted ? HEART_COLORS[hearts.indexOf(live.id) % HEART_COLORS.length] : null
+
+        return (
+            <li
+                className={`c-frame${flip ? ' c-frame--b' : ''}`}
+                style={{ '--w': `${size.w}px`, '--h': `${size.h}px`, '--R': `${size.r}px` }}
+            >
+                <Link to={{ view: 'live', id: live.id }} className="c-frame__link" draggable="false">
+                    <FrameArt src={live.thumbnailUrl} name={live.nickname} />
+                    <span className="c-frame__cap">
+                        <span className="c-frame__cat">LIVE · {formatCount(live.viewerCount)}</span>
+                        <span className="c-frame__name">
+                            <Avatar name={live.nickname} size={22} src={live.profileImage} className="c-avatar--inline" />
+                            {live.title}
+                        </span>
+                    </span>
+                </Link>
+
+                <Holo />
+                <span className="c-voice" aria-hidden="true">
+                    <b /><b /><b /><b /><b />
+                    <em>LIVE</em>
+                </span>
+                <button
+                    type="button"
+                    className="c-heart c-frame__heart"
+                    aria-pressed={hearted}
+                    aria-label={`${live.nickname} 방송 하트${hearted ? ' 빼기' : ''}`}
+                    style={color ? { '--heart': color } : undefined}
+                    onClick={() => toggleHeart(live.id)}
+                >
+                    <HeartIcon />
+                </button>
+            </li>
+        )
+    }
+
+    const { stream } = item
 
     return (
         <li
-            className={`feat feat--${shape}${hearted ? ' feat--hearted' : ''}`}
-            style={hearted ? { '--heart': color, '--on-heart': heartInk(color) } : undefined}
+            className={`c-frame${flip ? ' c-frame--b' : ''}`}
+            style={{ '--w': `${size.w}px`, '--h': `${size.h}px`, '--R': `${size.r}px` }}
         >
-            <div className="feat__media">
-                {/* 제목 링크와 같은 곳으로 가는 중복이라 키보드·스크린리더에서는 뺀다. */}
-                <Link to={to} className="feat__thumb" aria-hidden="true" tabIndex={-1} draggable="false">
-                    {live.thumbnailUrl ? (
-                        <img
-                            src={assetUrl(live.thumbnailUrl)}
-                            alt=""
-                            draggable="false"
-                            loading={shape === 'lead' ? undefined : 'lazy'}
-                            decoding="async"
-                        />
-                    ) : (
-                        <span className="feat__blank">{live.nickname?.slice(0, 1)}</span>
-                    )}
-                </Link>
+            <Link to={{ view: 'stream', id: stream.id }} className="c-frame__link" draggable="false">
+                <FrameArt src={stream.thumbnailUrl} name={stream.nickname} />
+                <span className="c-frame__cap">
+                    <span className="c-frame__cat">
+                        {stream.categoryName ?? '영상'} · 조회 {(stream.viewCount ?? 0).toLocaleString('ko-KR')}회
+                        {stream.createdAt && ` · ${timeAgo(stream.createdAt)}`}
+                    </span>
+                    <span className="c-frame__name">
+                        <Avatar name={stream.nickname} size={22} className="c-avatar--inline" />
+                        {stream.title}
+                    </span>
+                </span>
+            </Link>
 
-                <span className="feat__live">LIVE</span>
-                {hearted && <span className="feat__order">{order}</span>}
-
-                <button
-                    type="button"
-                    className="feat__heart"
-                    aria-pressed={hearted}
-                    aria-label={`${live.nickname} 하트${hearted ? ' 빼기' : ''}`}
-                    onClick={() => onHeart(live.id)}
-                >
-                    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z" />
-                    </svg>
-                </button>
-            </div>
-
-            <div className="feat__body">
-                <p className="feat__kicker">
-                    {live.nickname} · 시청자 {formatCount(live.viewerCount)}
-                </p>
-                <h3 className="feat__title">
-                    <Link to={to} draggable="false">
-                        {live.title}
-                    </Link>
-                </h3>
-            </div>
+            <Holo />
         </li>
     )
+}
+
+function FrameArt({ src, name }) {
+    return (
+        <>
+            <span className="c-frame__art">
+                {src ? (
+                    <img src={assetUrl(src)} alt="" draggable="false" loading="lazy" decoding="async" />
+                ) : (
+                    <span className="c-frame__blank">{name?.slice(0, 1)}</span>
+                )}
+            </span>
+            <span className="c-frame__shade" />
+        </>
+    )
+}
+
+/** 각진 모서리에 앉는 작은 홀로그램 재생 표시. 장식이고, 누르는 건 카드 전체다. */
+function Holo() {
+    return (
+        <span className="c-holo" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+                <path d="M6 4v16l14-8z" />
+            </svg>
+        </span>
+    )
+}
+
+/** 올라온 영상이 없을 때. 비어 있는 이유와 다음 행동을 함께 보여 준다. */
+function EmptyVideos({ filtered, onShowAll }) {
+    const { me } = useAuth()
+
+    if (filtered) {
+        return (
+            <p className="empty">
+                이 카테고리에는 아직 영상이 없어요.
+                <br />
+                <button type="button" className="empty__link" onClick={onShowAll}>
+                    전체 영상 보기
+                </button>
+            </p>
+        )
+    }
+
+    return (
+        <p className="empty">
+            아직 올라온 영상이 없어요.
+            <br />
+            {me ? (
+                <Link to={{ view: 'upload' }} className="empty__link">
+                    첫 영상 올리기
+                </Link>
+            ) : (
+                <Link to={loginTo()} className="empty__link">
+                    로그인하고 첫 영상 올리기
+                </Link>
+            )}
+        </p>
+    )
+}
+
+/* ── 4) 예정된 방송: 방송 구역과 떨어진 맨 아래. 카드가 겹쳐 서 있다 ── */
+const AUDIENCE_NOTE = {
+    SUBSCRIBERS: '구독자 전용',
+    PAID: '유료 구독자 전용',
+}
+
+function Later({ schedules, loading }) {
+    const upcoming = schedules.slice(0, 4)
+
+    return (
+        <aside className="c-later" aria-labelledby="later-title">
+            <div className="c-later__head">
+                <p className="c-later__eyebrow">NEXT</p>
+                <h2 className="c-later__title" id="later-title">곧 시작하는 방송</h2>
+                <p className="c-later__sub">
+                    <Link to={{ view: 'lives' }} className="c-later__link">
+                        예정 방송 전체 보기
+                    </Link>
+                </p>
+            </div>
+
+            {loading && upcoming.length === 0 && (
+                <p className="empty">
+                    <LeafLoader size={22} label="불러오는 중…" />
+                </p>
+            )}
+
+            {!loading && upcoming.length === 0 && (
+                <p className="c-later__empty">예정된 방송이 아직 없어요. 스트리머가 방송을 예약하면 여기에 모여요.</p>
+            )}
+
+            {upcoming.length > 0 && (
+                <div className="c-later__row">
+                    {upcoming.map((schedule) => (
+                        <Tier key={schedule.id} schedule={schedule} />
+                    ))}
+                </div>
+            )}
+        </aside>
+    )
+}
+
+function Tier({ schedule }) {
+    const ref = useRef(null)
+
+    // 마우스 위치에 따라 카드가 살짝 기운다. 움직임 줄이기에서는 CSS 가 막는다.
+    function tilt(event) {
+        const el = ref.current
+        if (!el) return
+        const r = el.getBoundingClientRect()
+        const px = (event.clientX - r.left) / r.width - 0.5
+        const py = (event.clientY - r.top) / r.height - 0.5
+        el.style.setProperty('--ry', `${(px * 9).toFixed(2)}deg`)
+        el.style.setProperty('--rx', `${(-py * 7).toFixed(2)}deg`)
+    }
+
+    function untilt() {
+        ref.current?.style.setProperty('--ry', '0deg')
+        ref.current?.style.setProperty('--rx', '0deg')
+    }
+
+    return (
+        <Link
+            to={{ view: 'schedule', id: schedule.id }}
+            className="c-tier"
+            ref={ref}
+            onPointerMove={tilt}
+            onPointerLeave={untilt}
+        >
+            <p className="c-tier__label">{formatWhen(schedule.scheduledAt)} · 예정</p>
+            <h3 className="c-tier__title">{schedule.title}</h3>
+            <p className="c-tier__meta">
+                {schedule.nickname}
+                {AUDIENCE_NOTE[schedule.audience] && ` · ${AUDIENCE_NOTE[schedule.audience]}`}
+            </p>
+            <Avatar name={schedule.nickname} size={34} className="c-tier__avatar" />
+            <span className="c-sparks" aria-hidden="true">
+                <i /><i /><i /><i /><i /><i />
+            </span>
+        </Link>
+    )
+}
+
+/* ── 작은 부품들 ── */
+
+function Chip({ active, onClick, children }) {
+    return (
+        <button type="button" className={`chip${active ? ' chip--on' : ''}`} aria-pressed={active} onClick={onClick}>
+            {children}
+        </button>
+    )
+}
+
+function HeartIcon() {
+    return (
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z" />
+        </svg>
+    )
+}
+
+function ChevronIcon({ dir }) {
+    return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d={dir === 'prev' ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'} />
+        </svg>
+    )
+}
+
+/** 가로 줄을 한 화면의 80% 만큼 넘긴다. 동작 줄이기를 켠 사람에게는 미끄러지지 않고 바로 넘긴다. */
+function scrollTrack(track, direction) {
+    if (!track) return
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: reduceMotion ? 'auto' : 'smooth' })
 }
 
 /** 지금 시각. 방송 시간이 흘러가 보이도록 1분마다 새로 잰다. */
@@ -485,277 +761,7 @@ function formatUptime(ms) {
     return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`
 }
 
-// 맨 앞(가장 아래)까지 내려온 카드 한 장의 크기. 뒤로 갈수록 이보다 작아진다.
-const CARD_W = 184
-const CARD_H = 112
-// 카드가 도는 타원. 중심은 배너 안쪽 오른편에 있고, 눕혀진 원이라
-// 가로가 세로보다 넓다 — 위에서 비스듬히 내려다본 회전목마 모양이다.
-// 타원을 키우면 오른쪽으로 삐져나가므로 중심도 같이 왼쪽으로 조금 당긴다.
-const RING_CX = 0.67
-const RING_CY = 0.45
-const RING_RX = 0.26
-const RING_RY = 0.36
-// 카드 사이의 각도. 넓을수록 카드 사이가 벌어진다.
-const SLOT_DEG = 40
-// 맨 앞 카드가 서는 각도. 90 이 타원의 맨 아래다.
-const FRONT_DEG = 90
-// 이 각도 바깥은 타원의 뒤쪽(왼쪽 절반)이라 글자 뒤로 숨는다.
-const FADE_IN_DEG = -108
-const SOLID_FROM_DEG = -88
-const SOLID_TO_DEG = 96
-const FADE_OUT_DEG = 112
-// 드래그 픽셀을 각도로 바꾸는 비율.
-const DEG_PER_PX = 0.32
-
-/**
- * 큰 배너는 고정이고, 그 위에서 작은 카드들만 눕혀진 타원을 따라 돈다.
- *
- * 타원의 중심은 배너 안쪽 오른편에 있고, 카드는 그 타원의 오른쪽 절반을
- * 지난다 — 오른쪽 위에서 작게 나타나 바깥으로 불룩하게 돌아 나갔다가,
- * 왼쪽 아래로 내려오며 점점 커진다. 가장 아래까지 내려온 카드가 맨 앞이다.
- * 왼쪽 절반은 제목이 있는 자리라 거기서는 흐려지며 숨는다.
- *
- * 자리는 각도를 카드 수로 나눈 나머지로 정하므로 끝까지 끌어도 처음
- * 카드로 돌아온다. 도는 방향은 부호 하나로 뒤집을 수 있다.
- */
-function LiveWheel({ items }) {
-    const ringRef = useRef(null)
-    const dragRef = useRef(null)
-    const [size, setSize] = useState({ width: 0, height: 420 })
-    const [angle, setAngle] = useState(0)
-    const [dragging, setDragging] = useState(false)
-
-    useEffect(() => {
-        const el = ringRef.current
-        if (!el) return
-
-        const observer = new ResizeObserver(([entry]) => {
-            setSize({ width: entry.contentRect.width, height: entry.contentRect.height })
-        })
-        observer.observe(el)
-        return () => observer.disconnect()
-    }, [])
-
-    const n = items.length
-
-    function handlePointerDown(event) {
-        dragRef.current = { startX: event.clientX, startAngle: angle, moved: false }
-        setDragging(true)
-        ringRef.current?.setPointerCapture(event.pointerId)
-    }
-
-    function handlePointerMove(event) {
-        const drag = dragRef.current
-        if (!drag) return
-
-        const delta = event.clientX - drag.startX
-        // 살짝 흔들린 것까지 드래그로 치면 클릭이 죽는다.
-        if (Math.abs(delta) > 4) drag.moved = true
-        // 오른쪽 → 왼쪽으로 끌면(delta 음수) 각도가 커져 바퀴가 돌아간다.
-        setAngle(drag.startAngle - delta * DEG_PER_PX)
-    }
-
-    function handlePointerUp(event) {
-        ringRef.current?.releasePointerCapture(event.pointerId)
-        setDragging(false)
-        // 놓으면 가장 가까운 카드가 맨 앞에 딱 서도록 스냅한다.
-        setAngle((current) => Math.round(current / SLOT_DEG) * SLOT_DEG)
-        dragRef.current = null
-    }
-
-    // 끌어서 돌린 직후의 클릭은 방송을 열지 않는다.
-    function handleClickCapture(event) {
-        if (dragRef.current?.moved) {
-            event.preventDefault()
-            event.stopPropagation()
-        }
-    }
-
-    // 타원의 중심과 반지름. 배너 크기에 맞춰 함께 늘어난다.
-    const cx = size.width * RING_CX
-    const cy = size.height * RING_CY
-    const rx = size.width * RING_RX
-    const ry = size.height * RING_RY
-
-    // 각도 0 은 타원의 오른쪽 끝, 90 은 맨 아래(=맨 앞)다.
-    const slots = Math.ceil((FADE_OUT_DEG - FADE_IN_DEG) / SLOT_DEG)
-    const base = Math.round(angle / SLOT_DEG)
-
-    // 방송 수보다 자리가 많으면 같은 방송이 두 번 보인다. 그때는 맨 앞에 가까운
-    // 쪽만 남긴다. 그래서 자리를 앞에서부터(k = 0) 바깥으로 훑는다.
-    const order = [0]
-    for (let d = 1; d <= slots; d++) order.push(d, -d)
-
-    const taken = new Set()
-    const cards = []
-
-    for (const k of order) {
-        // 슬롯 하나가 늘 정확히 맨 아래(FRONT_DEG)에 서도록 기준을 옮긴다.
-        const theta = FRONT_DEG + (angle - base * SLOT_DEG) + k * SLOT_DEG
-        if (theta < FADE_IN_DEG || theta > FADE_OUT_DEG) continue
-
-        const rad = (theta * Math.PI) / 180
-        const x = cx + rx * Math.cos(rad)
-        const y = cy + ry * Math.sin(rad)
-
-        // 아래로 내려올수록(=앞으로 나올수록) 커진다. 0 이 맨 위, 1 이 맨 아래.
-        const depth = (Math.sin(rad) + 1) / 2
-        const scale = 0.58 + 0.42 * depth
-
-        // 타원의 왼쪽 절반은 제목이 있는 자리라 거기로 넘어가며 흐려진다.
-        const opacity =
-            theta < SOLID_FROM_DEG
-                ? (theta - FADE_IN_DEG) / (SOLID_FROM_DEG - FADE_IN_DEG)
-                : theta > SOLID_TO_DEG
-                  ? (FADE_OUT_DEG - theta) / (FADE_OUT_DEG - SOLID_TO_DEG)
-                  : 1
-
-        const index = (((base + k) % n) + n) % n
-        if (taken.has(index)) continue
-        taken.add(index)
-
-        const item = items[index]
-
-        cards.push(
-            <Link
-                key={k}
-                to={{ view: 'live', id: item.id }}
-                className={`wheel__card${Math.abs(theta - FRONT_DEG) < SLOT_DEG / 2 ? ' wheel__card--front' : ''}`}
-                draggable="false"
-                style={{
-                    width: CARD_W,
-                    height: CARD_H,
-                    opacity: Math.min(1, Math.max(0, opacity)),
-                    zIndex: Math.round(100 + depth * 100),
-                    transform: `translate(${x - CARD_W / 2}px, ${y - CARD_H / 2}px) scale(${scale})`,
-                    transition: dragging ? 'none' : 'transform 340ms ease, opacity 340ms ease',
-                }}
-            >
-                {item.thumbnailUrl ? (
-                    <img src={assetUrl(item.thumbnailUrl)} alt="" draggable="false" />
-                ) : (
-                    <span className="wheel__blank">LIVE</span>
-                )}
-                <span className="wheel__title">{item.title}</span>
-            </Link>
-        )
-    }
-
-    return (
-        <div
-            className="wheel"
-            ref={ringRef}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-            onClickCapture={handleClickCapture}
-        >
-            {size.width > 0 && cards}
-        </div>
-    )
-}
-
-/** 고정된 큰 배너. 여기는 돌지 않는다. */
-function HeroBanner({ live, others }) {
-    return (
-        <div className="hero-wrap">
-            {live.thumbnailUrl && (
-                <img
-                    className="hero-bg"
-                    src={assetUrl(live.thumbnailUrl)}
-                    alt=""
-                    draggable="false"
-                    fetchPriority="high"
-                />
-            )}
-
-            <Link to={{ view: 'live', id: live.id }} className="hero-body" draggable="false">
-                <div className="hero-badges">
-                    <span className="pill pill--live">LIVE</span>
-                    <span className="pill">시청자 {formatCount(live.viewerCount)}</span>
-                </div>
-
-                <h2 className="hero-title">{live.title}</h2>
-
-                <span className="hero-channel">
-                    <span className="hero-avatar" aria-hidden="true">
-                        {live.nickname?.slice(0, 1)}
-                    </span>
-                    {live.nickname}
-                </span>
-
-                <span className="hero-cta">
-                    <Icon name="play" size={12} /> 지금 보기
-                </span>
-            </Link>
-
-            {others.length > 0 && <LiveWheel items={others} />}
-        </div>
-    )
-}
-
-/**
- * 올라온 영상을 잡지 지면처럼 늘어놓는다. 사진 비율을 돌려 가며 달리 주어 높이가 들쭉날쭉하고,
- * 칸(column)에 위에서부터 쌓이므로 빈틈 없이 어긋난 모양이 된다.
- */
-const GALLERY_RATIOS = ['3 / 2', '4 / 5', '1 / 1', '16 / 10', '3 / 4']
-
-function Gallery({ title, items }) {
-    return (
-        <section className="gallery" aria-labelledby="gallery-title">
-            <div className="section-head">
-                <h2 id="gallery-title">{title}</h2>
-            </div>
-
-            <ul className="gallery__list">
-                {items.map((stream, index) => (
-                    <li key={stream.id} className="gallery__item">
-                        <Link to={{ view: 'stream', id: stream.id }} className="plate" draggable="false">
-                            <span className="plate__thumb" style={{ aspectRatio: GALLERY_RATIOS[index % GALLERY_RATIOS.length] }}>
-                                {stream.thumbnailUrl ? (
-                                    <img
-                                        src={assetUrl(stream.thumbnailUrl)}
-                                        alt=""
-                                        draggable="false"
-                                        loading="lazy"
-                                        decoding="async"
-                                    />
-                                ) : (
-                                    <span className="plate__blank">썸네일 없음</span>
-                                )}
-                            </span>
-
-                            {stream.categoryName && <span className="plate__kicker">{stream.categoryName}</span>}
-
-                            <span className="plate__title">{stream.title}</span>
-
-                            <span className="plate__meta">
-                                {stream.nickname} · 조회 {(stream.viewCount ?? 0).toLocaleString('ko-KR')}회
-                                {stream.createdAt && ` · ${timeAgo(stream.createdAt)}`}
-                            </span>
-                        </Link>
-                    </li>
-                ))}
-            </ul>
-        </section>
-    )
-}
-
-function Chip({ active, onClick, children }) {
-    return (
-        <button
-            type="button"
-            className={`chip${active ? ' chip--on' : ''}`}
-            aria-pressed={active}
-            onClick={onClick}
-        >
-            {children}
-        </button>
-    )
-}
-
-/** 10000 → 1만. 자릿수가 커져도 배너 한 줄이 밀리지 않게 줄여 쓴다. */
+/** 10000 → 1만. 자릿수가 커져도 한 줄이 밀리지 않게 줄여 쓴다. */
 function formatCount(value) {
     const count = value ?? 0
 

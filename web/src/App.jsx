@@ -1,10 +1,13 @@
 import { lazy, Suspense } from 'react'
 import { AuthProvider } from './auth.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
+import LeafLoader from './components/LeafLoader.jsx'
 import Layout from './components/Layout.jsx'
 import HomePage from './pages/HomePage.jsx'
+import LeafCursor from './components/LeafCursor.jsx'
 import { useRoute } from './router.js'
 import './app.css'
+import './cinematic.css'
 
 /**
  * 첫 화면(홈)만 처음 번들에 넣고 나머지 화면은 열 때 받는다.
@@ -28,8 +31,8 @@ const UploadPage = lazy(() => import('./pages/UploadPage.jsx'))
 
 function Loading() {
     return (
-        <p className="empty" role="status">
-            불러오는 중…
+        <p className="empty">
+            <LeafLoader size={26} label="불러오는 중…" />
         </p>
     )
 }
@@ -85,6 +88,7 @@ function App() {
 
     return (
         <AuthProvider>
+            <LeafCursor />
             <Layout>
                 <ErrorBoundary>
                     <Suspense fallback={<Loading />}>
