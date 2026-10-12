@@ -1,5 +1,8 @@
 /*
- * 디자인 방향 B "낮의 서재" — 잡지 같은 홈.
+ * 디자인 방향 C "시네마틱" — 밤에는 깊은 숯색 바탕에 에메랄드·라벤더 빛, 낮에는 같은 빛을 옅게 푼 유리 화면.
+ * 대각선으로 마주 보는 모서리가 같은 반지름인 "나뭇잎 모양"이 얼굴·썸네일·카드·버튼에 반복된다.
+ * 층(독·유리·홈 배치)은 cinematic.css 가 맡고, 이 파일은 색·서체·간격·화면별 규칙을 맡는다.
+ * (아래 설명은 이전 방향 B "낮의 서재"의 것이다.) 잡지 같은 홈.
  * 밝은 화면이 기본이고, 나이트 모드는 같은 색 계열을 어둡게 뒤집은 한 벌이다.
  * 배치는 건드리지 않는다 — 색·서체·간격·상태 표시만 이 파일이 맡는다.
  */
@@ -7,28 +10,28 @@
 :root {
     color-scheme: light;
 
-    --bg: #f5f4f0;
-    --surface: #fbfaf8;
-    --sunken: #ebe9e3;
-    --border: #dddbd3;
-    --border-strong: #c6c3b8;
+    --bg: #f3f5f9;
+    --surface: #ffffff;
+    --sunken: #eaedf4;
+    --border: #dce0ea;
+    --border-strong: #c3c9d6;
     /* 입력칸 테두리. 비어 있는 칸도 어디까지인지 보이도록 배경과 3:1 이상을 지킨다. */
-    --field-border: #837f74;
-    --text: #1e2220;
-    --muted: #5f655f;
-    /* 세이지 그린 하나. 흰 글자와 5.9:1, 오프화이트 바탕과 5.4:1. */
-    --accent: #4a6b5a;
-    --accent-hover: #3d5a4b;
-    --accent-soft: #e3e9e3;
+    --field-border: #7a8392;
+    --text: #131820;
+    --muted: #566070;
+    /* 깊은 에메랄드. 흰 글자와 5.3:1, 바탕과 4.9:1. */
+    --accent: #0d7a5c;
+    --accent-hover: #0a634a;
+    --accent-soft: #dff3ec;
     --on-accent: #ffffff;
-    --danger: #b4372c;
-    --danger-soft: #f6e9e6;
+    --danger: #c42e49;
+    --danger-soft: #fdeaee;
     /* 위험색 바탕(LIVE · 알림 배지) 위의 글자색. 나이트 모드의 코랄은 밝아서 흰 글자가 안 읽힌다. */
     --on-danger: #ffffff;
 
     --radius: 6px;
     --gap: 20px;
-    --shadow: 0 1px 2px rgb(30 34 32 / 0.05);
+    --shadow: 0 1px 2px rgb(19 24 32 / 0.06);
 
     /* SP 시그니처 모서리: 왼쪽위 · 오른쪽아래는 각지고, 오른쪽위 · 왼쪽아래만 둥글다.
      * 큰 면(배너)과 작은 면(썸네일)에 크기만 다르게 같은 비율로 쓴다. */
@@ -44,21 +47,21 @@
 :root[data-theme='dark'] {
     color-scheme: dark;
 
-    --bg: #101413;
-    --surface: #171d1b;
-    --sunken: #0b0f0e;
-    --border: #28312d;
-    --border-strong: #3b4642;
-    --field-border: #6b7771;
-    --text: #e8ecea;
-    --muted: #929c97;
-    --accent: #56c6a6;
-    --accent-hover: #74d6bb;
-    --accent-soft: #16302a;
-    --on-accent: #0c1211;
-    --danger: #ef8479;
-    --danger-soft: #2f1e1c;
-    --on-danger: #0c1211;
+    --bg: #0b0e12;
+    --surface: #131920;
+    --sunken: #080a0d;
+    --border: #232b35;
+    --border-strong: #36414e;
+    --field-border: #6d7a87;
+    --text: #eef3f1;
+    --muted: #97a5a1;
+    --accent: #35d6a0;
+    --accent-hover: #6fe6bf;
+    --accent-soft: #0f3a2f;
+    --on-accent: #06120d;
+    --danger: #ff6e88;
+    --danger-soft: #3a1620;
+    --on-danger: #1a0a0e;
 
     --shadow: 0 1px 2px rgb(0 0 0 / 0.4);
 }
@@ -259,130 +262,10 @@ h3 {
     white-space: nowrap;
 }
 
-/* ── 몸통: 왼쪽 사이드바 + 본문 ── */
+/* ── 몸통: 본문 (왼쪽의 독은 cinematic.css) ── */
 .shell {
     display: flex;
     align-items: flex-start;
-}
-
-.side {
-    position: sticky;
-    top: 64px;
-    flex: 0 0 248px;
-    box-sizing: border-box;
-    height: calc(100vh - 65px);
-    overflow-y: auto;
-    padding: 20px 16px;
-    border-right: 1px solid var(--border);
-    background: var(--surface);
-}
-
-.side__nav {
-    display: grid;
-    gap: 4px;
-}
-
-.side__link {
-    display: flex;
-    align-items: center;
-    height: 44px;
-    padding: 0 14px;
-    border-radius: var(--corner-sm);
-    color: var(--text);
-    font-size: 15px;
-    font-weight: 600;
-    text-decoration: none;
-}
-
-.side__link:hover {
-    background: var(--sunken);
-}
-
-.side__link--on {
-    background: var(--accent-soft);
-    color: var(--accent);
-    font-weight: 800;
-}
-
-.side__section {
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid var(--border);
-}
-
-.side__title {
-    margin: 0 6px 8px;
-    color: var(--muted);
-    font-size: 13px;
-    font-weight: 800;
-}
-
-.side__channels {
-    display: grid;
-    gap: 2px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.side__channel {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px;
-    border-radius: var(--corner-pill);
-    color: var(--text);
-    font-size: 14px;
-    font-weight: 600;
-    text-decoration: none;
-}
-
-.side__channel:hover {
-    background: var(--sunken);
-}
-
-.side__face {
-    display: grid;
-    flex: 0 0 28px;
-    place-items: center;
-    width: 28px;
-    height: 28px;
-    overflow: hidden;
-    border-radius: var(--corner-xs);
-    background: var(--accent-soft);
-    color: var(--accent);
-    font-size: 12px;
-    font-weight: 800;
-}
-
-.side__face img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.side__face--live {
-    outline: 2px solid var(--danger);
-    outline-offset: 1px;
-}
-
-.side__channel-name {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.side__live {
-    padding: 0 6px;
-    border-radius: var(--corner-2xs);
-    background: var(--danger);
-    color: var(--on-danger);
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    line-height: 18px;
 }
 
 .main {
@@ -393,12 +276,8 @@ h3 {
     padding: 28px 20px 64px;
 }
 
-/* 좁은 화면: 사이드바를 접고, 머리에 메뉴 링크를 다시 보인다. */
+/* 좁은 화면: 독을 접고, 머리에 메뉴 링크를 다시 보인다. */
 @media (max-width: 900px) {
-    .side {
-        display: none;
-    }
-
     .nav__links {
         display: flex;
     }
@@ -1094,240 +973,6 @@ details li {
     margin: 6px 0;
 }
 
-/* ── 메인 화면 ─────────────────────────────────────────────
- * 스케치대로: 지금 방송 중인 채널들이 구를 이루며 도는 배너 + 아래 가로 캐러셀.
- */
-
-.home {
-    display: grid;
-    /* 그리드 칸은 기본이 min-width: auto 라, 안쪽 가로줄이 길어지면
-     * 칸이 통째로 늘어나 페이지가 옆으로 밀린다. 0 으로 눌러 둔다. */
-    grid-template-columns: minmax(0, 1fr);
-    gap: 56px;
-}
-
-/* 머리글: 크고 가벼운 한 줄. 위에 날짜를 작게 둔다. */
-.masthead {
-    padding: 8px 0 0;
-}
-
-.masthead__kicker {
-    margin: 0 0 10px;
-    color: var(--muted);
-    font-size: 13px;
-    font-weight: 500;
-    letter-spacing: 0.04em;
-}
-
-.masthead__title {
-    max-width: 14em;
-    margin: 0;
-    font-size: clamp(32px, 5.2vw, 60px);
-    font-weight: 500;
-    line-height: 1.15;
-    letter-spacing: -0.035em;
-    text-wrap: balance;
-}
-
-/* 고정된 큰 배너. 여기는 돌지 않는다 — 도는 건 그 위에 얹힌 바퀴뿐이다. */
-.hero-wrap {
-    position: relative;
-    min-height: 420px;
-    border-radius: var(--corner-lg);
-    overflow: hidden;
-    background: #0c100f;
-    isolation: isolate;
-}
-
-.hero-bg {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-/* 어떤 썸네일이 와도 글자가 읽히도록 아래쪽을 어둡게 깐다. */
-.hero-wrap::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        to top,
-        rgb(8 12 11 / 0.92) 0%,
-        rgb(8 12 11 / 0.7) 40%,
-        rgb(8 12 11 / 0.12) 100%
-    );
-}
-
-.hero-body {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    gap: 12px;
-    justify-items: start;
-    align-content: end;
-    min-height: 420px;
-    /* 바퀴가 도는 오른쪽 구역과 겹치지 않을 만큼만 쓴다. */
-    max-width: 560px;
-    padding: 28px;
-    color: #f4f7f5;
-    text-decoration: none;
-}
-
-.hero-badges {
-    display: flex;
-    gap: 8px;
-}
-
-.hero-title {
-    margin: 0;
-    font-size: 34px;
-    line-height: 1.2;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    word-break: keep-all;
-}
-
-.hero-channel {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    opacity: 0.92;
-}
-
-.hero-avatar {
-    display: grid;
-    place-items: center;
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: rgb(255 255 255 / 0.22);
-    font-size: 13px;
-    font-weight: 700;
-}
-
-.hero-cta {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 4px;
-    padding: 11px 22px;
-    border-radius: var(--corner-pill);
-    background: #f4f7f5;
-    color: #12100f;
-    font-size: 14px;
-    font-weight: 700;
-}
-
-.hero-body:hover .hero-cta {
-    background: #fff;
-}
-
-/* 배너 오른쪽 위에 얹힌 바퀴. 카드 자리는 JS 가 원 위에서 계산한다. */
-/* 바퀴는 배너 전체를 덮는다. 카드 자리는 JS 가 이 크기에 맞춰 타원 위에서 잰다.
- * 왼쪽 절반(제목이 있는 쪽)은 카드가 흐려지며 숨으므로 글자를 가리지 않는다. */
-.wheel {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    touch-action: pan-y;
-    user-select: none;
-    /* 배너 전체를 덮지만 빈 곳은 통과시킨다. 안 그러면 제목·버튼이 안 눌린다.
-     * 바퀴는 카드를 잡고 돌린다. */
-    pointer-events: none;
-}
-
-
-
-.wheel__card {
-    position: absolute;
-    top: 0;
-    left: 0;
-    pointer-events: auto;
-    cursor: grab;
-    border-radius: var(--corner-sm);
-    overflow: hidden;
-    background: #16201d;
-    box-shadow: 0 10px 30px rgb(0 0 0 / 0.45);
-    text-decoration: none;
-    will-change: transform, opacity;
-    -webkit-user-drag: none;
-}
-
-.wheel__card:active {
-    cursor: grabbing;
-}
-
-.wheel__card img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    pointer-events: none;
-}
-
-.wheel__blank {
-    display: grid;
-    place-items: center;
-    height: 100%;
-    color: rgb(244 247 245 / 0.8);
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.wheel__title {
-    position: absolute;
-    inset: auto 0 0;
-    padding: 22px 10px 8px;
-    background: linear-gradient(to top, rgb(8 12 11 / 0.92), transparent);
-    color: #f4f7f5;
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1.35;
-    word-break: keep-all;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    pointer-events: none;
-}
-
-/* 맨 앞 카드만 테두리로 표시해 둔다. */
-.wheel__card--front {
-    outline: 2px solid rgb(255 255 255 / 0.85);
-    outline-offset: -2px;
-}
-
-.pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 12px;
-    border-radius: var(--corner-pill);
-    background: rgb(255 255 255 / 0.16);
-    backdrop-filter: blur(6px);
-    color: #f4f7f5;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-}
-
-.pill--live {
-    background: var(--danger);
-    color: var(--on-danger);
-    font-weight: 800;
-}
-
-.pill--live::before {
-    content: '';
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: currentColor;
-}
-
 /* 필터 — 드롭다운 대신 눌러서 켜는 칩. */
 .home__filters {
     display: flex;
@@ -1385,27 +1030,6 @@ details li {
     background: none;
     color: var(--text);
     font-weight: 700;
-}
-
-/* 좁은 화면에서는 오른쪽 레일을 접고 배너만 남긴다. */
-@media (max-width: 860px) {
-    .hero-wrap,
-    .hero-body {
-        min-height: 320px;
-    }
-
-    .hero-body {
-        padding: 20px;
-    }
-
-    .hero-title {
-        font-size: 24px;
-    }
-
-    /* 좁은 화면에서는 바퀴가 글자를 덮는다. 접어 둔다. */
-    .wheel {
-        display: none;
-    }
 }
 
 /* ── 메인: 지금 방송 중 줄 · 도는 카드 ─────────────────────────── */
@@ -1555,348 +1179,6 @@ details li {
     width: 1px;
     height: 26px;
     background: var(--border-strong);
-}
-
-/* ── 홈: Live 중인 채널 (잡지 첫 면) ──
- * 12칸 격자에 큰 한 장과 작은 사진들을 어긋나게 얹는다. 사진 높이가 서로 달라
- * 줄 맞춤이 어긋나 보이는 것이 의도다. */
-.feature__grid {
-    display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 48px 28px;
-    align-items: start;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.feat {
-    position: relative;
-    grid-column: span 4;
-    min-width: 0;
-}
-
-.feat--lead {
-    grid-column: span 8;
-}
-
-/* 첫 작은 카드는 큰 한 장 옆에서 아래로 내려앉아 어긋난다. */
-.feat--lead + .feat {
-    grid-column: span 4;
-    margin-top: 64px;
-}
-
-.feat--wide {
-    grid-column: span 5;
-}
-
-.feat--tall {
-    grid-column: span 4;
-}
-
-.feat--square {
-    grid-column: span 3;
-    margin-top: 28px;
-}
-
-.feat__media {
-    position: relative;
-}
-
-.feat__thumb {
-    display: block;
-    overflow: hidden;
-    border-radius: var(--corner-xs);
-    background: var(--sunken);
-    text-decoration: none;
-    -webkit-user-drag: none;
-}
-
-.feat--lead .feat__thumb {
-    aspect-ratio: 16 / 9;
-    border-radius: var(--corner-sm);
-}
-
-.feat--tall .feat__thumb {
-    aspect-ratio: 4 / 5;
-}
-
-.feat--wide .feat__thumb {
-    aspect-ratio: 3 / 2;
-}
-
-.feat--square .feat__thumb {
-    aspect-ratio: 1 / 1;
-}
-
-.feat__thumb img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 600ms cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-
-.feat:hover .feat__thumb img {
-    transform: scale(1.025);
-}
-
-.feat__blank {
-    display: grid;
-    place-items: center;
-    width: 100%;
-    height: 100%;
-    color: var(--muted);
-    font-size: 44px;
-    font-weight: 300;
-}
-
-.feat__live,
-.feat__order {
-    position: absolute;
-    top: 10px;
-    padding: 0 8px;
-    border-radius: var(--corner-2xs);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    line-height: 20px;
-}
-
-.feat__live {
-    left: 10px;
-    background: var(--danger);
-    color: var(--on-danger);
-}
-
-.feat__order {
-    left: 58px;
-    background: var(--heart);
-    color: var(--on-heart, #fff);
-}
-
-/* 사진 오른쪽 아래의 작은 하트. 평소엔 조용하고, 누르면 색이 붙는다. */
-.feat__heart {
-    position: absolute;
-    right: 10px;
-    bottom: 10px;
-    display: grid;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    padding: 0;
-    border: 0;
-    border-radius: 50%;
-    background: rgb(251 250 248 / 0.88);
-    backdrop-filter: blur(6px);
-    transition: transform 0.15s ease;
-}
-
-.feat__heart:hover:not(:disabled) {
-    transform: scale(1.08);
-    background: var(--surface);
-}
-
-.feat__heart path {
-    fill: none;
-    stroke: #6a6e68;
-    stroke-width: 2;
-    stroke-linejoin: round;
-}
-
-.feat--hearted .feat__heart path {
-    fill: var(--heart);
-    stroke: var(--heart);
-}
-
-.feat--hearted .feat__thumb {
-    outline: 3px solid var(--heart);
-    outline-offset: -3px;
-}
-
-.feat__body {
-    margin-top: 14px;
-}
-
-.feat__kicker {
-    margin: 0 0 4px;
-    color: var(--muted);
-    font-size: 13px;
-    font-variant-numeric: tabular-nums;
-}
-
-.feat__title {
-    margin: 0;
-    font-size: 17px;
-    font-weight: 600;
-    line-height: 1.4;
-    letter-spacing: -0.01em;
-    word-break: keep-all;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.feat--lead .feat__title {
-    font-size: clamp(24px, 3vw, 36px);
-    font-weight: 500;
-    line-height: 1.25;
-    letter-spacing: -0.03em;
-}
-
-.feat__title a {
-    color: inherit;
-    text-decoration: none;
-}
-
-.feat__title a:hover {
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 4px;
-}
-
-/* ── 홈: 새로 올라온 영상 (잡지 지면) ──
- * 칸에 위에서부터 쌓는 벽돌 배치. 사진 비율이 돌아가며 달라 높이가 들쭉날쭉하다. */
-.gallery__list {
-    column-width: 240px;
-    column-gap: 36px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.gallery__item {
-    margin: 0 0 44px;
-    break-inside: avoid;
-}
-
-.plate {
-    display: grid;
-    gap: 6px;
-    text-decoration: none;
-}
-
-.plate__thumb {
-    display: block;
-    overflow: hidden;
-    border-radius: var(--corner-xs);
-    background: var(--sunken);
-}
-
-.plate__thumb img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 600ms cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-
-.plate:hover .plate__thumb img {
-    transform: scale(1.03);
-}
-
-.plate__blank {
-    display: grid;
-    place-items: center;
-    height: 100%;
-    color: var(--muted);
-    font-size: 12px;
-}
-
-.plate__kicker {
-    margin-top: 8px;
-    color: var(--accent);
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-}
-
-.plate__title {
-    font-size: 17px;
-    font-weight: 600;
-    line-height: 1.4;
-    letter-spacing: -0.01em;
-    word-break: keep-all;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.plate:hover .plate__title {
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 4px;
-}
-
-.plate__meta {
-    color: var(--muted);
-    font-size: 13px;
-    font-variant-numeric: tabular-nums;
-}
-
-/* 좁은 화면: 큰 한 장 아래로 작은 사진이 두 칸으로 어긋나 선다. */
-@media (max-width: 720px) {
-    .home {
-        gap: 44px;
-    }
-
-    .feature__grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 32px 16px;
-    }
-
-    .feat,
-    .feat--lead,
-    .feat--wide,
-    .feat--tall,
-    .feat--square,
-    .feat--lead + .feat {
-        grid-column: span 1;
-        margin-top: 0;
-    }
-
-    .feat--lead {
-        grid-column: 1 / -1;
-    }
-
-    .feat:nth-child(even):not(.feat--lead) {
-        margin-top: 28px;
-    }
-
-    .feat__title {
-        font-size: 15px;
-    }
-
-    .feat--lead .feat__title {
-        font-size: 24px;
-    }
-
-    .gallery__list {
-        column-width: 150px;
-        column-gap: 16px;
-    }
-
-    .gallery__item {
-        margin-bottom: 28px;
-    }
-
-    .plate__title {
-        font-size: 15px;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .feat__thumb img,
-    .plate__thumb img {
-        transition: none;
-    }
-
-    .feat:hover .feat__thumb img,
-    .plate:hover .plate__thumb img {
-        transform: none;
-    }
 }
 
 /* 유료 구독 결제 — 결제 버튼 묶음과 결제 결과 화면 */
@@ -3639,21 +2921,8 @@ a.past__link:hover {
 
 /* ── 움직임 줄이기 ──
  * OS 에서 "동작 줄이기"를 켠 사람에게는 튕기는 전환, 깜빡임, 부드러운 스크롤을 없앤다.
- * 카드 위치는 그대로 바뀌고 걸리는 시간만 없어진다. 바퀴 카드는 JS 가 인라인으로
- * 전환을 넣기 때문에 !important 로 덮는다. */
+ * 시네마틱 층(cinematic.css)의 움직임은 거기서 따로 끈다. */
 @media (prefers-reduced-motion: reduce) {
-    .wheel__card {
-        transition: none !important;
-    }
-
-    .feat__heart {
-        transition: none;
-    }
-
-    .feat__heart:hover:not(:disabled) {
-        transform: none;
-    }
-
     .broadcast__dot,
     .player-box__dots i {
         animation: none;
