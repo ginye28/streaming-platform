@@ -22,10 +22,24 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class VideoThumbnailService {
 
-    private static final Set<String> VIDEO_EXTENSIONS = Set.of("mp4", "mov", "webm", "m4v");
+    private static final Set<String> VIDEO_EXTENSIONS = Set.of("mp4", "mov", "webm", "m4v", "mkv");
 
     /** 맨 앞은 검은 화면인 경우가 많아 1초 지점을 먼저 시도한다. 그보다 짧은 영상이면 맨 앞으로 물러선다. */
     private static final List<String> SEEK_CANDIDATES = List.of("00:00:01", "00:00:00");
+
+    /**
+     * 메모리를 아끼는 방식을 먼저, 안 되면 평범한 방식으로 시도한다.
+     *
+     * 아이폰 같은 4K HEVC 영상 한 장을 뽑는 데 ffmpeg 가 기본 설정으로 500MB 넘게 쓰는 것을 확인했다
+     * (디코더가 코어 수만큼 스레드와 프레임 버퍼를 잡는다). 서버(무료 512MB)가 이 한 번으로 죽었다.
+     *  - -threads 1       스레드를 하나로. 이것만으로 약 160MB.
+     *  - -skip_frame nokey 키프레임만 디코딩. 합쳐서 약 50MB.
+     * 키프레임만 읽는 방식이 안 맞는 파일이 있을 수 있어서 평범한 방식(스레드만 1개)을 뒤에 둔다.
+     */
+    private static final List<List<String>> DECODE_MODES = List.of(
+            List.of("-threads", "1", "-skip_frame", "nokey"),
+            List.of("-threads", "1")
+    );
 
     private final String ffmpegPath;
     private final boolean enabled;
@@ -59,9 +73,11 @@ public class VideoThumbnailService {
         String thumbnailName = baseName + ".jpg";
         Path target = video.resolveSibling(thumbnailName);
 
-        for (String seek : SEEK_CANDIDATES) {
-            if (run(video, target, seek)) {
-                return thumbnailName;
+        for (List<String> mode : DECODE_MODES) {
+            for (String seek : SEEK_CANDIDATES) {
+                if (run(video, target, seek, mode)) {
+                    return thumbnailName;
+                }
             }
         }
 
@@ -71,20 +87,22 @@ public class VideoThumbnailService {
     }
 
     /** 한 장면을 뽑아 본다. 만들어진 파일이 비어 있지 않을 때만 성공으로 친다. */
-    private boolean run(Path video, Path target, String seek) {
+    private boolean run(Path video, Path target, String seek, List<String> decodeMode) {
 
+        List<String> command = new java.util.ArrayList<>();
+        command.add(ffmpegPath);
+        command.addAll(List.of("-y", "-nostdin", "-loglevel", "error"));
+        // 입력 쪽 옵션(디코더). -i 보다 앞에 있어야 디코더에 적용된다.
+        command.addAll(decodeMode);
         // -ss 를 -i 앞에 두면 훑지 않고 바로 그 지점으로 건너뛴다.
-        ProcessBuilder builder = new ProcessBuilder(
-                ffmpegPath, "-y",
-                "-ss", seek,
-                "-i", video.toString(),
-                "-frames:v", "1",
-                // 너무 큰 원본이 그대로 썸네일이 되지 않게 가로를 640 으로 맞춘다.
-                // -2 는 세로를 비율대로 두되 짝수로 맞추라는 뜻이다.
-                "-vf", "scale=640:-2",
-                "-q:v", "3",
-                target.toString()
-        );
+        command.addAll(List.of("-ss", seek, "-i", video.toString()));
+        // 소리·자막·데이터는 필요 없다. 한 장만 뽑는다.
+        command.addAll(List.of("-an", "-sn", "-dn", "-frames:v", "1"));
+        // 너무 큰 원본이 그대로 썸네일이 되지 않게 가로를 640 으로 맞춘다.
+        // -2 는 세로를 비율대로 두되 짝수로 맞추라는 뜻이다.
+        command.addAll(List.of("-vf", "scale=640:-2", "-q:v", "3", target.toString()));
+
+        ProcessBuilder builder = new ProcessBuilder(command);
 
         // ffmpeg 의 진행 로그는 버린다. 붙잡고 읽으면 그 읽기에 갇혀서
         // 아래 시간 제한이 걸리지 않는다.

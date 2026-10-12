@@ -37,3 +37,11 @@ app:
 logging:
   level:
     com.sp.api: ${LOG_LEVEL:INFO}
+
+# 운영(컨테이너)에서는 API 문서(Swagger)를 끈다. 문서를 만드는 데 메모리를 꽤 쓰고(무료 서버는 512MB),
+# 첫 호출에 수십 초가 걸린다. 필요하면 SWAGGER_ENABLED=true 로 켠다. 로컬 개발(기본 설정)에서는 켜져 있다.
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:false}
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}

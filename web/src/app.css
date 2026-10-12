@@ -3743,3 +3743,32 @@ a.past__link:hover {
     flex-wrap: wrap;
     gap: 8px;
 }
+
+/* 무료 서버가 깨어나는 동안의 안내 */
+.server-waking {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    padding: 10px 16px;
+    background: var(--accent-soft);
+    border-bottom: 1px solid var(--accent);
+    color: var(--text, inherit);
+    font-size: 14px;
+}
+
+.server-waking--ready {
+    background: var(--accent);
+    color: #fff;
+}
+
+.server-waking button {
+    margin-left: auto;
+}
+
+.server-waking button + button {
+    margin-left: 0;
+}

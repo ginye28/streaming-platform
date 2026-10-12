@@ -34,4 +34,8 @@ USER app
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+# 무료 서버(메모리 512MB)에서 자바가 차지하는 몫을 줄이는 옵션. 힙 크기(-Xmx)는 서비스 환경변수(JAVA_TOOL_OPTIONS)가 정한다.
+#  -XX:TieredStopAtLevel=1    JIT 를 C1 만 쓴다. 코드 캐시·컴파일 스레드 메모리와 기동 때 CPU 를 아낀다.
+#  -Xss512k                   스레드 하나당 스택을 줄인다.
+#  -XX:MaxDirectMemorySize    네트워크·파일 버퍼(네이티브)가 무한히 커지지 않게 막는다.
+ENTRYPOINT ["java", "-XX:TieredStopAtLevel=1", "-Xss512k", "-XX:ReservedCodeCacheSize=64m", "-XX:MaxDirectMemorySize=64m", "-jar", "/app/app.jar"]

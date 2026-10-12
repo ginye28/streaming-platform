@@ -14,7 +14,7 @@ import { usePageTitle } from '../usePageTitle.js'
 import { useSlow } from '../useSlow.js'
 
 // 서버(FileUploadService, multipart 설정)가 받는 형식과 크기. 서버에서 거절당하기 전에 알려 준다.
-const VIDEO_EXTENSIONS = ['mp4', 'mov', 'webm', 'm4v']
+const VIDEO_EXTENSIONS = ['mp4', 'mov', 'webm', 'm4v', 'mkv']
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif']
 const MAX_BYTES = 100 * 1024 * 1024
 const TITLE_MAX = 100
@@ -37,7 +37,9 @@ function checkFile(file, kind) {
     const what = kind === 'video' ? '영상' : '이미지'
 
     if (!allowed.includes(extensionOf(file.name))) {
-        return `${allowed.join(', ')} 형식의 ${what}만 올릴 수 있어요. (고른 파일: ${file.name})`
+        const hint = kind === 'video' ? ' 다른 형식이면 mp4 로 바꿔서 올려 주세요.' : ''
+
+        return `${allowed.join(', ')} 형식의 ${what}만 올릴 수 있어요.${hint} (고른 파일: ${file.name})`
     }
 
     if (file.size > MAX_BYTES) {
