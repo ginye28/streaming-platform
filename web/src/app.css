@@ -3744,6 +3744,12 @@ a.past__link:hover {
     gap: 8px;
 }
 
+.plan-picker__hint {
+    max-width: 44em;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
 /* 무료 서버가 깨어나는 동안의 안내 */
 .server-waking {
     position: sticky;
