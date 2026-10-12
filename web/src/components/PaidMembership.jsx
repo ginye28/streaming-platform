@@ -111,6 +111,11 @@ export default function PaidMembership({ channelId, tier, paidUntil, onFail }) {
                             닫기
                         </button>
                     </span>
+
+                    <span className="plan-picker__hint meta">
+                        카드·간편결제는 휴대폰으로 인증한 뒤 <strong>이 화면으로 돌아와야</strong> 결제가 끝나요.
+                        휴대폰에 토스 안내나 404 화면이 떠도 정상이고, 결과는 이 화면에서 보여 드려요.
+                    </span>
                 </span>
             )}
         </span>
