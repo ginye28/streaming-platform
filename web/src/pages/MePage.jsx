@@ -28,6 +28,7 @@ import Link from '../components/Link.jsx'
 import ScheduleManager from '../components/ScheduleManager.jsx'
 import SubscriptionControls from '../components/SubscriptionControls.jsx'
 import { dateOnly, won } from '../payments.js'
+import { safeHttpUrl } from '../safeUrl.js'
 import { useAsyncData } from '../useAsyncData.js'
 
 export default function MePage() {
@@ -112,6 +113,7 @@ function ProfileForm({ me, onSaved }) {
 }
 
 function PasswordForm() {
+    const { logout } = useAuth()
     const [currentPassword, setCurrentPassword] = useState('')
     const [newPassword, setNewPassword] = useState('')
     const [message, setMessage] = useState(null)
@@ -126,7 +128,9 @@ function PasswordForm() {
             await changePassword(currentPassword, newPassword)
             setCurrentPassword('')
             setNewPassword('')
-            setMessage('비밀번호를 변경했습니다.')
+            // 서버가 이 계정의 로그인 유지 토큰을 모두 지운다. 이 기기도 새 비밀번호로 다시 로그인한다.
+            setMessage('비밀번호를 변경했습니다. 보안을 위해 모든 기기에서 로그아웃되니 새 비밀번호로 다시 로그인해 주세요.')
+            setTimeout(() => logout(), 3000)
         } catch (e) {
             setError(e.message)
         }
@@ -720,10 +724,10 @@ function PaymentHistory() {
                         {payment.status === 'CANCELED' && (
                             <span className="meta"> · 환불됨 {dateOnly(payment.canceledAt)}</span>
                         )}
-                        {payment.receiptUrl && (
+                        {safeHttpUrl(payment.receiptUrl) && (
                             <>
                                 {' '}
-                                <a href={payment.receiptUrl} target="_blank" rel="noreferrer">
+                                <a href={safeHttpUrl(payment.receiptUrl) ?? undefined} target="_blank" rel="noreferrer noopener">
                                     영수증
                                 </a>
                             </>

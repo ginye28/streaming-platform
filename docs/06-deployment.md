@@ -108,6 +108,7 @@ nginx:1.27-alpine  →  dist/ 를 :80 으로
 | `VOD_ENABLED` | `false` (compose 는 `true`) | 스트리밍 서버가 방송을 녹화하는지. 켜면 방송이 끝날 때 다시보기 주소를 내려 준다. **녹화하지 않는 서버에서 켜면 없는 주소를 가리킨다** |
 | `VOD_BASE_URL` | 비어 있음 | 다시보기 재생 주소의 앞부분. 비우면 `HLS_BASE_URL` 옆의 `/vod` 를 쓴다 |
 | `RTMP_CALLBACK_TOKEN` | 비어 있음 | nginx 가 송출 시작·종료 콜백 주소에 `?token=` 으로 붙이는 비밀 값. **스트리밍 서버와 API 에 같은 값**을 넣는다. 비워 두면 검사하지 않으므로 콜백이 바깥에 열린 서버에서는 반드시 채운다(영문·숫자만 쓸 것). 틀리면 403 |
+| `RATE_LIMIT_ENABLED` | `true` | 로그인·가입·갱신 요청 횟수 제한과 채팅 도배 제한, 로그인 실패 잠금을 켤지(`app.security.rate-limit.enabled`). 끄는 건 테스트용이다 |
 | `SWAGGER_ENABLED` | `false` | 컨테이너(docker 프로필)에서 API 문서(`/swagger`, `/v3/api-docs`)를 켤지. 문서를 만드는 데 메모리를 꽤 써서 무료 서버(512MB)에서는 끈다 |
 | `LOG_LEVEL` | `INFO` | |
 

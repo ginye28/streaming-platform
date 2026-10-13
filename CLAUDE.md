@@ -53,4 +53,6 @@
 - Render 무료 서버: 15분 무활동이면 잠들고 깨는 데 오래 걸린다. 메모리 512MB, 자바 힙 300MB. 브라우저 방송은 동시 1개로 막아 두었다.
 - 브라우저 방송(`/ingest`)은 H.264 로 녹화되는 Chrome·Edge 만 된다. 서버는 영상을 다시 인코딩하지 않는다.
 - 토스 결제는 **"API 개별 연동 키"**(`test_ck_` / `test_sk_`)만 된다. 결제위젯 키(`gck`/`gsk`)는 거절된다. 테스트 키라 실제 청구는 없다.
+- **보안 규칙은 [docs/09-security.md](docs/09-security.md).** 사용자가 적은 주소를 `<a href>` 로 쓸 때는 서버 `@HttpUrl` + 화면 `safeHttpUrl` 을 거친다(`javascript:` 로 스크립트가 실행된다). 새 STOMP 경로를 만들면 `StompAuthChannelInterceptor.ALLOWED_DESTINATION` 에도 넣는다(안 넣으면 구독이 거절된다).
+- 요청 횟수 제한(`app.security.rate-limit`)은 테스트에서 꺼져 있다(같은 IP·계정으로 가입을 수없이 한다). 제한을 확인하는 테스트는 `@TestPropertySource` 로 켠다.
 - Windows Git Bash 는 `/tmp` 같은 경로를 바꿔 버린다 → Docker 명령 앞에 `export MSYS_NO_PATHCONV=1`.
