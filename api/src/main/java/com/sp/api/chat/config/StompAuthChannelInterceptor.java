@@ -37,6 +37,15 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
     /** /topic/lives/{id}, /topic/lives/{id}/events 처럼 채팅 내용이 흐르는 길. 시청자 수(/viewers)는 뺀다. */
     private static final Pattern CHAT_TOPIC = Pattern.compile("^/topic/lives/(\\d+)(/events)?$");
 
+    /**
+     * 구독해도 되는 경로 전체. 이 밖의 경로는 거절한다.
+     * 단순 브로커는 구독 경로에 와일드카드(`/topic/lives/*`, `/topic/**`)를 허용한다. 위의 채팅 검사는 숫자 id 의 경로만
+     * 보므로, 이 목록이 없으면 와일드카드로 구독해 구독자 전용 방송의 채팅을 통째로 받을 수 있다.
+     */
+    private static final Pattern ALLOWED_DESTINATION = Pattern.compile(
+            "^(/topic/lives/\\d+(/events|/viewers)?|/user/queue/[A-Za-z0-9._-]+)$"
+    );
+
     private final JwtProvider jwtProvider;
     private final CustomUserDetailsService customUserDetailsService;
     private final LiveAccessService liveAccessService;
@@ -90,8 +99,8 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
 
         String destination = accessor.getDestination();
 
-        if (destination == null) {
-            return;
+        if (destination == null || !ALLOWED_DESTINATION.matcher(destination).matches()) {
+            throw new MessagingException("허용되지 않은 구독 경로입니다.");
         }
 
         Matcher matcher = CHAT_TOPIC.matcher(destination);

@@ -32,6 +32,7 @@ public class ChatPolicy {
     private final ChannelBannedWordRepository bannedWordRepository;
     private final LiveAccessService accessService;
     private final SlowModeLimiter slowModeLimiter;
+    private final ChatFloodGuard floodGuard;
 
     /**
      * @param applySlowMode 후원은 슬로우 모드를 적용하지 않는다(돈을 낸 메시지를 대기 시간으로 막지 않는다)
@@ -79,6 +80,11 @@ public class ChatPolicy {
             if (wait > 0) {
                 throw new BadRequestException("슬로우 모드예요. " + wait + "초 뒤에 다시 보낼 수 있어요.");
             }
+        }
+
+        // 슬로우 모드가 꺼져 있어도 도배는 막는다. 후원은 돈을 낸 메시지라 제외한다.
+        if (applySlowMode && !floodGuard.tryAcquire(user.getId())) {
+            throw new BadRequestException("너무 빨리 보내고 있어요. 잠시 뒤에 다시 보내 주세요.");
         }
     }
 

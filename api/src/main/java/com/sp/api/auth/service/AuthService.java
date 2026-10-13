@@ -7,8 +7,10 @@ import com.sp.api.auth.dto.SignupRequest;
 import com.sp.api.auth.entity.RefreshToken;
 import com.sp.api.auth.repository.RefreshTokenRepository;
 import com.sp.api.common.exception.ConflictException;
+import com.sp.api.common.exception.TooManyRequestsException;
 import com.sp.api.common.exception.UnauthorizedException;
 import com.sp.api.common.jwt.JwtProvider;
+import com.sp.api.common.security.SlidingWindowRateLimiter;
 import com.sp.api.user.entity.User;
 import com.sp.api.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -40,6 +43,15 @@ public class AuthService {
 
     @Value("${jwt.refresh-expiration}")
     private long refreshExpiration;
+
+    @Value("${app.security.rate-limit.enabled:true}")
+    private boolean rateLimitEnabled;
+
+    /** 계정(이메일)별 로그인 실패. 15분에 10번까지 실패할 수 있다. 서버 하나로 도는 지금 구조에서만 맞다. */
+    private final SlidingWindowRateLimiter failedLogins = new SlidingWindowRateLimiter(10, 15 * 60 * 1000L);
+
+    /** 없는 계정의 로그인에서 해시 비교 시간을 맞추려고 쓰는, 아무와도 맞지 않는 해시. */
+    private volatile String dummyHash;
 
     @Transactional
     public void signup(SignupRequest request) {
@@ -70,13 +82,32 @@ public class AuthService {
     @Transactional
     public LoginResponse login(LoginRequest request) {
 
+        String attemptKey = request.getEmail() == null ? "" : request.getEmail().trim().toLowerCase(Locale.ROOT);
+
+        // 한 계정을 여러 IP 에서 돌아가며 노리는 대입 공격을 막는다. 실패만 센다.
+        if (rateLimitEnabled && failedLogins.isBlocked(attemptKey)) {
+            throw new TooManyRequestsException(
+                    "로그인에 여러 번 실패했습니다. " + failedLogins.retryAfterSeconds(attemptKey) + "초 뒤에 다시 시도해 주세요."
+            );
+        }
+
         User user = userRepository.findByEmail(request.getEmail())
                 .orElse(null);
 
+        // 없는 계정이어도 비밀번호 해시 비교를 똑같이 한 번 한다. 응답 시간으로 가입 여부를 알아내지 못하게 하려는 것이다.
+        String hashToCompare = user == null ? dummyHash() : user.getPassword();
+        boolean matches = passwordEncoder.matches(request.getPassword(), hashToCompare);
+
         // 존재하지 않는 계정과 비밀번호 불일치를 구분하지 않는다.
-        if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        if (user == null || !matches) {
+            if (rateLimitEnabled) {
+                failedLogins.record(attemptKey);
+            }
+
             throw new UnauthorizedException("이메일 또는 비밀번호가 올바르지 않습니다.");
         }
+
+        failedLogins.reset(attemptKey);
 
         return new LoginResponse(jwtProvider.createToken(user.getEmail()), issueRefreshToken(user));
     }
@@ -116,6 +147,18 @@ public class AuthService {
         ));
 
         return rawToken;
+    }
+
+    private String dummyHash() {
+
+        String hash = dummyHash;
+
+        if (hash == null) {
+            hash = passwordEncoder.encode(generateToken());
+            dummyHash = hash;
+        }
+
+        return hash;
     }
 
     private String generateToken() {

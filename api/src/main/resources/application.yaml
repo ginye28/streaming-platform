@@ -39,6 +39,11 @@ file:
     timeout-seconds: 20
 
 app:
+  security:
+    # 로그인 실패 잠금, 로그인·가입·갱신의 IP 별 횟수 제한, 채팅 도배 제한. 테스트 말고는 끄지 않는다.
+    rate-limit:
+      enabled: ${RATE_LIMIT_ENABLED:true}
+
   payments:
     toss:
       # 토스페이먼츠 "API 개별 연동 키"(test_ck_/test_sk_). 둘 다 있어야 결제가 켜지고, 하나라도 비면 결제는 꺼진다.

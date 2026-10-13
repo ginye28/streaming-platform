@@ -33,6 +33,11 @@ file:
   upload-dir: build/tmp/test-uploads
 
 app:
+  security:
+    rate-limit:
+      # 대부분의 테스트는 같은 IP·계정으로 가입·로그인을 수없이 하므로 끈다.
+      # 제한 자체는 RateLimitIntegrationTest 가 켜서 확인한다.
+      enabled: false
   membership:
     # 백그라운드 알림 작업이 테스트 DB 를 건드리지 않도록 끈다.
     expiry-scheduler:
