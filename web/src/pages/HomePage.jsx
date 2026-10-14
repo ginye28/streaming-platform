@@ -504,7 +504,7 @@ function Frame({ item, index }) {
         return (
             <li
                 className={`c-frame${flip ? ' c-frame--b' : ''}`}
-                style={{ '--w': `${size.w}px`, '--h': `${size.h}px`, '--R': `${size.r}px` }}
+                style={{ '--w': `${size.w}px`, '--h': `${size.h}px`, '--Rb': `${size.r}px` }}
             >
                 <Link to={{ view: 'live', id: live.id }} className="c-frame__link" draggable="false">
                     <FrameArt src={live.thumbnailUrl} name={live.nickname} />
@@ -541,7 +541,7 @@ function Frame({ item, index }) {
     return (
         <li
             className={`c-frame${flip ? ' c-frame--b' : ''}`}
-            style={{ '--w': `${size.w}px`, '--h': `${size.h}px`, '--R': `${size.r}px` }}
+            style={{ '--w': `${size.w}px`, '--h': `${size.h}px`, '--Rb': `${size.r}px` }}
         >
             <Link to={{ view: 'stream', id: stream.id }} className="c-frame__link" draggable="false">
                 <FrameArt src={stream.thumbnailUrl} name={stream.nickname} />
