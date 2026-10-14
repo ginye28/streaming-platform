@@ -810,9 +810,7 @@ body::before {
     padding: 0 14px 0 12px;
     border: 1px solid rgb(255 120 140 / 0.6);
     border-radius: 16px 5px 16px 5px;
-    background: rgb(255 91 120 / 0.18);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
+    background: rgb(150 30 55 / 0.62);
     color: #ffe3e8;
     font-size: 12px;
     font-weight: 800;
@@ -838,9 +836,7 @@ body::before {
 .c-chip-soft {
     padding: 5px 12px;
     border-radius: 14px 5px 14px 5px;
-    background: rgb(0 0 0 / 0.38);
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
+    background: rgb(0 0 0 / 0.52);
     color: #eef3f1;
     font-size: 13px;
     font-weight: 700;
@@ -942,9 +938,7 @@ body::before {
     padding: 0;
     border: 0;
     border-radius: var(--c-leaf);
-    background: rgb(0 0 0 / 0.4);
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
+    background: rgb(0 0 0 / 0.5);
     cursor: pointer;
     transition: transform 160ms;
 }
@@ -1221,6 +1215,36 @@ body::before {
     word-break: keep-all;
 }
 
+/* 올려 보면 펼쳐지는 방송 진행 상태(방송 시간 · 지금 시청 · 최고 시청). 터치 화면에서는 접어 둔다. */
+.c-frame__progress {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 280ms var(--c-ease);
+}
+
+.c-frame__progress-inner {
+    overflow: hidden;
+    color: #d6ffee;
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.5;
+    opacity: 0;
+    transition: opacity 220ms;
+}
+
+@media (hover: hover) {
+    .c-frame:hover .c-frame__progress,
+    .c-frame:focus-within .c-frame__progress {
+        grid-template-rows: 1fr;
+    }
+
+    .c-frame:hover .c-frame__progress-inner,
+    .c-frame:focus-within .c-frame__progress-inner {
+        opacity: 1;
+    }
+}
+
 /* 홀로그램 재생 표시: 각진 모서리(오른쪽위, 뒤집은 잎은 왼쪽위)에 둔다 */
 .c-holo {
     position: absolute;
@@ -1251,6 +1275,10 @@ body::before {
     inset: -60%;
     z-index: 0;
     background: conic-gradient(from 0deg, #7cf5d0, #b9a8ff, #ffb3e0, #9ad8ff, #7cf5d0);
+}
+
+.c-frame:hover .c-holo::after,
+.c-frame:focus-within .c-holo::after {
     animation: c-spin 6s linear infinite;
 }
 
@@ -1290,9 +1318,7 @@ body::before {
     height: 22px;
     padding: 4px 8px;
     border-radius: 10px 4px 10px 4px;
-    background: rgb(0 0 0 / 0.45);
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
+    background: rgb(0 0 0 / 0.58);
     pointer-events: none;
 }
 
@@ -1679,6 +1705,8 @@ body::before {
     .c-dock__label,
     .c-frame,
     .c-frame__art,
+    .c-frame__progress,
+    .c-frame__progress-inner,
     .c-tier,
     .c-pill,
     [data-tip]::after {
@@ -1697,4 +1725,135 @@ body::before {
     .c-frame:has(.c-frame__link:focus-visible) .c-frame__art {
         transform: none;
     }
+}
+
+/* ── 가벼운 화면(data-perf="lite") ──
+   사양이 낮은 폰·태블릿에서 프레임을 먹는 것만 걷어 낸다: 유리 질감(blur), 번지는 빛(큰 blur·그림자),
+   끝없이 도는 움직임. 글자·배치·색은 그대로다. perf.js 가 기기를 보고(또는 사용자가 골라) 정한다. */
+:root[data-perf='lite'] .nav,
+:root[data-perf='lite'] .c-menu__list,
+:root[data-perf='lite'] .c-dock,
+:root[data-perf='lite'] .c-tier {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: var(--c-glass-strong);
+}
+
+:root[data-perf='lite'] .nav__search::before,
+:root[data-perf='lite'] .nav__mark {
+    filter: none;
+    box-shadow: none;
+}
+
+:root[data-perf='lite'] .nav__search::before {
+    display: none;
+}
+
+:root[data-perf='lite'] .c-frame {
+    box-shadow: 0 6px 16px rgb(19 24 32 / 0.2);
+    transition: transform 240ms var(--c-ease);
+}
+
+:root[data-perf='lite'] .c-frame:hover,
+:root[data-perf='lite'] .c-frame:focus-within {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 22px rgb(19 24 32 / 0.26);
+}
+
+:root[data-perf='lite'] .c-frame:hover .c-frame__art {
+    transform: none;
+}
+
+:root[data-perf='lite'] .c-frame__art {
+    transition: none;
+}
+
+:root[data-perf='lite'] .c-holo {
+    filter: none;
+}
+
+:root[data-perf='lite'] .c-holo::after,
+:root[data-perf='lite'] .c-frame:hover .c-holo::after,
+:root[data-perf='lite'] .c-frame:focus-within .c-holo::after,
+:root[data-perf='lite'] .c-voice b,
+:root[data-perf='lite'] .c-badge-live i,
+:root[data-perf='lite'] .c-sparks i,
+:root[data-perf='lite'] .c-tier:hover .c-sparks i,
+:root[data-perf='lite'] .c-tier:focus-visible .c-sparks i {
+    animation: none;
+}
+
+:root[data-perf='lite'] .c-voice b {
+    transform: scaleY(0.6);
+}
+
+:root[data-perf='lite'] .c-badge-live i {
+    box-shadow: none;
+}
+
+:root[data-perf='lite'] .c-tier {
+    transform: none;
+    transform-style: flat;
+    box-shadow: 0 6px 16px rgb(19 24 32 / 0.18);
+}
+
+:root[data-perf='lite'] .c-menu__list {
+    animation: none;
+}
+
+/* 화면 효과를 줄였다는 안내 */
+.c-perf-notice {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    z-index: 2100;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    max-width: 520px;
+    margin-left: auto;
+    padding: 12px 14px;
+    border: 1px solid var(--c-edge);
+    border-radius: 18px 6px 18px 6px;
+    background: var(--c-glass-strong);
+    box-shadow: var(--c-shadow);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.c-perf-notice span {
+    flex: 1 1 220px;
+}
+
+.c-perf-notice button {
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--c-edge);
+    border-radius: 12px 4px 12px 4px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* 기기에서 프레임을 직접 보는 계기판(?fps=1) */
+.c-fps {
+    position: fixed;
+    bottom: 8px;
+    left: 8px;
+    z-index: 2200;
+    padding: 6px 9px;
+    border-radius: 8px;
+    background: rgb(0 0 0 / 0.78);
+    color: #d6ffee;
+    font: 600 11px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+    pointer-events: none;
+}
+
+.c-fps b {
+    color: #7cf5d0;
 }

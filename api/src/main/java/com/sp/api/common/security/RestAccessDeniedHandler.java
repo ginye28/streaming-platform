@@ -19,11 +19,15 @@ import java.nio.charset.StandardCharsets;
 public class RestAccessDeniedHandler implements AccessDeniedHandler {
 
     private final ObjectMapper objectMapper;
+    private final SecurityEventRecorder securityEvents;
 
     @Override
     public void handle(HttpServletRequest request,
                        HttpServletResponse response,
                        AccessDeniedException accessDeniedException) throws IOException {
+
+        securityEvents.record(SecurityEventRecorder.Type.FORBIDDEN, ClientIp.of(request),
+                request.getMethod() + " " + request.getRequestURI(), "");
 
         response.setStatus(HttpStatus.FORBIDDEN.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);

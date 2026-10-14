@@ -1,4 +1,7 @@
 import { lazy, Suspense } from 'react'
+import FpsMeter from './components/FpsMeter.jsx'
+import PerfNotice from './components/PerfNotice.jsx'
+import { fpsMeterEnabled } from './perf.js'
 import { AuthProvider } from './auth.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import LeafLoader from './components/LeafLoader.jsx'
@@ -74,6 +77,8 @@ function Routes() {
     }
 }
 
+const showFps = fpsMeterEnabled()
+
 function App() {
     const { view } = useRoute()
 
@@ -89,6 +94,8 @@ function App() {
     return (
         <AuthProvider>
             <LeafCursor />
+            <PerfNotice />
+            {showFps && <FpsMeter />}
             <Layout>
                 <ErrorBoundary>
                     <Suspense fallback={<Loading />}>

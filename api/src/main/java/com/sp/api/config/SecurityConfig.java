@@ -2,6 +2,10 @@ package com.sp.api.config;
 
 import com.sp.api.common.jwt.JwtAuthenticationFilter;
 import com.sp.api.common.jwt.JwtProvider;
+import com.sp.api.common.ratelimit.RateLimitFilter;
+import com.sp.api.common.ratelimit.RateLimitProperties;
+import com.sp.api.common.security.SecurityEventRecorder;
+import com.sp.api.common.security.SecurityHeadersFilter;
 import com.sp.api.common.security.RestAccessDeniedHandler;
 import com.sp.api.common.security.RestAuthenticationEntryPoint;
 import com.sp.api.user.security.CustomUserDetailsService;
@@ -19,6 +23,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 
@@ -30,6 +35,9 @@ public class SecurityConfig {
     private final CustomUserDetailsService customUserDetailsService;
     private final RestAuthenticationEntryPoint authenticationEntryPoint;
     private final RestAccessDeniedHandler accessDeniedHandler;
+    private final RateLimitProperties rateLimitProperties;
+    private final SecurityEventRecorder securityEvents;
+    private final ObjectMapper objectMapper;
 
     @Value("${app.cors.allowed-origins}")
     private List<String> allowedOrigins;
@@ -124,7 +132,14 @@ public class SecurityConfig {
                 .addFilterBefore(
                         new JwtAuthenticationFilter(jwtProvider, customUserDetailsService),
                         UsernamePasswordAuthenticationFilter.class
-                );
+                )
+                // 실행 순서: 보안 헤더 → 요청 속도 제한 → 토큰 확인.
+                // 속도 제한이 토큰 확인보다 앞이라, 잘못된 토큰으로 두드리는 요청도 DB 를 건드리기 전에 막힌다.
+                .addFilterBefore(
+                        new RateLimitFilter(rateLimitProperties, securityEvents, objectMapper),
+                        JwtAuthenticationFilter.class
+                )
+                .addFilterBefore(new SecurityHeadersFilter(), RateLimitFilter.class);
 
         return http.build();
     }
@@ -139,7 +154,7 @@ public class SecurityConfig {
                 List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
         );
         configuration.setAllowedHeaders(List.of("*"));
-        configuration.setExposedHeaders(List.of("Location"));
+        configuration.setExposedHeaders(List.of("Location", "Retry-After"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 

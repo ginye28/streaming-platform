@@ -4,6 +4,7 @@ import CategoriesTab from './CategoriesTab.jsx'
 import LoginForm from './LoginForm.jsx'
 import PaymentsTab from './PaymentsTab.jsx'
 import ReportsTab from './ReportsTab.jsx'
+import SecurityTab from './SecurityTab.jsx'
 import UsersTab from './UsersTab.jsx'
 import ThemeToggle from '../components/ThemeToggle.jsx'
 import './admin.css'
@@ -13,6 +14,7 @@ const TABS = [
     { key: 'categories', label: '카테고리' },
     { key: 'users', label: '사용자' },
     { key: 'payments', label: '결제' },
+    { key: 'security', label: '보안' },
 ]
 
 export default function AdminApp() {
@@ -114,6 +116,7 @@ export default function AdminApp() {
             {tab === 'categories' && <CategoriesTab />}
             {tab === 'users' && <UsersTab myId={me.id} />}
             {tab === 'payments' && <PaymentsTab />}
+            {tab === 'security' && <SecurityTab />}
         </div>
     )
 }

@@ -108,9 +108,36 @@ nginx:1.27-alpine  →  dist/ 를 :80 으로
 | `VOD_ENABLED` | `false` (compose 는 `true`) | 스트리밍 서버가 방송을 녹화하는지. 켜면 방송이 끝날 때 다시보기 주소를 내려 준다. **녹화하지 않는 서버에서 켜면 없는 주소를 가리킨다** |
 | `VOD_BASE_URL` | 비어 있음 | 다시보기 재생 주소의 앞부분. 비우면 `HLS_BASE_URL` 옆의 `/vod` 를 쓴다 |
 | `RTMP_CALLBACK_TOKEN` | 비어 있음 | nginx 가 송출 시작·종료 콜백 주소에 `?token=` 으로 붙이는 비밀 값. **스트리밍 서버와 API 에 같은 값**을 넣는다. 비워 두면 검사하지 않으므로 콜백이 바깥에 열린 서버에서는 반드시 채운다(영문·숫자만 쓸 것). 틀리면 403 |
-| `RATE_LIMIT_ENABLED` | `true` | 로그인·가입·갱신 요청 횟수 제한과 채팅 도배 제한, 로그인 실패 잠금을 켤지(`app.security.rate-limit.enabled`). 끄는 건 테스트용이다 |
-| `SWAGGER_ENABLED` | `false` | 컨테이너(docker 프로필)에서 API 문서(`/swagger`, `/v3/api-docs`)를 켤지. 문서를 만드는 데 메모리를 꽤 써서 무료 서버(512MB)에서는 끈다 |
-| `LOG_LEVEL` | `INFO` | |
+| `RATE_LIMIT_ENABLED` | `true` | 요청 속도 제한 전체(로그인 IP 한도 · 계정 잠금 · 채팅 도배 · 아래 일반 한도)를 켤지. 끄면 아무것도 막지 않는다(부하 시험·로컬 개발용) |
+| `RATE_LIMIT_WRITE_PER_MINUTE` · `RATE_LIMIT_READ_PER_MINUTE` | `120` · `600` | 변경 요청 · 조회, IP 하나당 분당 |
+| `RATE_LIMIT_UPLOAD_PER_MINUTE` · `RATE_LIMIT_CONNECT_PER_MINUTE` | `20` · `60` | 파일 업로드 · WebSocket 연결 |
+
+로그인·가입·토큰 갱신(10분에 60·20·120), 계정별 로그인 실패(15분에 10번), 채팅 도배(10초에 10)는 [09-security.md](09-security.md) 의 고정 값이다.
+
+> 학원·학교·사무실처럼 많은 사람이 한 IP 로 나가면 IP 한도에 같이 걸릴 수 있다. 막힌다는 제보가 오면 관리자 화면 **보안** 탭에서 `RATE_LIMITED` 기록을 보고 해당 한도만 올린다.
+
+### 비밀 값은 `.env` 에
+
+`docker-compose.yml` 옆의 `.env` 를 compose 가 자동으로 읽는다. [`.env.example`](../.env.example) 을 복사해 값을 채운다. `.env` 는 `.gitignore` 에 들어 있어 커밋되지 않는다.
+
+```bash
+cp .env.example .env     # JWT_SECRET 에 32바이트 넘는 아무 문자열
+docker compose --profile full up -d --build
+docker compose --profile full ps      # api · web 이 healthy 가 되면 준비 끝
+```
+
+- `api` 에는 상태 확인(healthcheck)이 있고, `web` 은 `api` 가 healthy 가 된 뒤에 뜬다. 화면만 먼저 떠서 "서버에 연결하지 못했어요" 가 보이는 일이 없다.
+- 컨테이너로 묶는 이유: ffmpeg(썸네일·브라우저 방송)·Java·MySQL 버전을 PC 마다 맞출 필요가 없고, OS(Windows·macOS·Linux)가 달라도 같은 이미지가 돈다.
+
+### 보안 헤더
+
+| 어디 | 무엇 | 파일 |
+|---|---|---|
+| 운영 웹(Vercel) | CSP · `nosniff` · Referrer-Policy · Permissions-Policy, `/assets` 장기 캐시 | `web/vercel.json` |
+| Docker 웹(nginx) | 같은 헤더(로컬 주소 http 허용) | `web/security-headers.conf` |
+| API | CSP(`default-src 'none'`) · `nosniff` · Referrer-Policy · Permissions-Policy | `SecurityHeadersFilter` |
+
+CSP 에 외부 주소가 들어 있는 곳: 결제(`*.tosspayments.com`, `*.toss.im`), 폰트(Google Fonts). **새 외부 스크립트·서비스를 붙이면 CSP 에 그 주소를 더해야** 브라우저가 막지 않는다. 막히면 개발자 도구 콘솔에 `Content Security Policy` 위반 메시지가 나온다.
 
 ### 결제(토스페이먼츠) 켜기
 

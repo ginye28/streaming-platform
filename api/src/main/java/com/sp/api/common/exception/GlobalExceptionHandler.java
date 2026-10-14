@@ -1,6 +1,13 @@
 package com.sp.api.common.exception;
 
 import com.sp.api.common.response.ApiResponse;
+import com.sp.api.common.security.SecurityEventRecorder;
+import com.sp.api.common.security.ClientIp;
+import com.sp.api.common.validation.SafeText;
+import com.sp.api.common.validation.SafeUrl;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.context.request.ServletWebRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -24,7 +31,10 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+
+    private final SecurityEventRecorder securityEvents;
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException e) {
@@ -83,6 +93,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             HttpStatusCode status,
             WebRequest request) {
 
+        recordRejectedInput(ex, request);
+
         String message = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
@@ -94,6 +106,28 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         }
 
         return ResponseEntity.status(status).body(ApiResponse.error(message));
+    }
+
+    /** 태그·스크립트·위험한 주소처럼 입력 필터(@SafeText·@SafeUrl)에 걸린 요청은 따로 기록해 둔다. */
+    private void recordRejectedInput(MethodArgumentNotValidException ex, WebRequest request) {
+
+        var rejectedFields = ex.getBindingResult().getFieldErrors().stream()
+                .filter(error -> {
+                    String code = error.getCode();
+                    return SafeText.class.getSimpleName().equals(code) || SafeUrl.class.getSimpleName().equals(code);
+                })
+                .map(error -> error.getField())
+                .distinct()
+                .toList();
+
+        if (rejectedFields.isEmpty() || !(request instanceof ServletWebRequest servletRequest)) {
+            return;
+        }
+
+        HttpServletRequest http = servletRequest.getRequest();
+
+        securityEvents.record(SecurityEventRecorder.Type.INPUT_REJECTED, ClientIp.of(http),
+                http.getMethod() + " " + http.getRequestURI(), "필터에 걸린 칸: " + String.join(", ", rejectedFields));
     }
 
     /** 부모가 처리하는 나머지 표준 예외들의 본문을 ApiResponse 로 감싼다. */

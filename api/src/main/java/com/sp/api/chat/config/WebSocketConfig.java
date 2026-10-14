@@ -7,6 +7,7 @@ import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
+import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
 import java.util.List;
@@ -36,6 +37,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         // /queue 는 보낸 사람에게만 돌려주는 메시지(채팅을 못 보낸 이유)가 지나는 길이다.
         registry.enableSimpleBroker("/topic", "/queue");
         registry.setApplicationDestinationPrefixes("/app");
+    }
+
+    /** 채팅은 500자(한글이어도 2KB 안팎)다. 기본(64KB)보다 줄여, 큰 프레임을 보내 메모리를 채우는 것을 막는다. */
+    @Override
+    public void configureWebSocketTransport(WebSocketTransportRegistration registration) {
+        registration.setMessageSizeLimit(16 * 1024);
     }
 
     @Override

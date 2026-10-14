@@ -4,7 +4,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -19,13 +18,14 @@ import java.util.Map;
  *
  * 계정별 로그인 실패 제한은 {@code AuthService} 가 따로 한다(여러 IP 에서 한 계정을 노리는 경우).
  */
-@Slf4j
 @Component
 public class AuthRateLimitFilter extends OncePerRequestFilter {
 
     private static final long WINDOW_MILLIS = 10 * 60 * 1000L;
 
     private final boolean enabled;
+
+    private final SecurityEventRecorder recorder;
 
     /** 경로별 한도. 학교 같은 공용 IP 에서 여럿이 쓸 수 있어서 넉넉하게 둔다. */
     private final Map<String, SlidingWindowRateLimiter> limiters;
@@ -34,9 +34,11 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
             @Value("${app.security.rate-limit.enabled:true}") boolean enabled,
             @Value("${app.security.rate-limit.login-per-10min:60}") int loginMax,
             @Value("${app.security.rate-limit.signup-per-10min:20}") int signupMax,
-            @Value("${app.security.rate-limit.refresh-per-10min:120}") int refreshMax
+            @Value("${app.security.rate-limit.refresh-per-10min:120}") int refreshMax,
+            SecurityEventRecorder recorder
     ) {
         this.enabled = enabled;
+        this.recorder = recorder;
         this.limiters = Map.of(
                 "/api/auth/login", new SlidingWindowRateLimiter(loginMax, WINDOW_MILLIS),
                 "/api/auth/signup", new SlidingWindowRateLimiter(signupMax, WINDOW_MILLIS),
@@ -65,7 +67,8 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
 
             long retryAfter = Math.max(1, limiter.retryAfterSeconds(key));
 
-            log.warn("요청이 너무 잦아 막았습니다: {} {}", request.getRequestURI(), key);
+            // 로그는 SecurityEventRecorder 가 같은 내용으로 남기고, 관리자 보안 탭에도 올라간다.
+            recorder.record(SecurityEventRecorder.Type.RATE_LIMITED, key, request.getRequestURI(), "인증 경로 IP 한도 초과");
 
             response.setStatus(429);
             response.setHeader("Retry-After", String.valueOf(retryAfter));

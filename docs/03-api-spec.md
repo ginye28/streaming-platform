@@ -30,7 +30,50 @@ Base URL: `http://localhost:8080`
 | 404 | 대상 없음 |
 | 409 | 중복 (이메일·닉네임) |
 | 413 | 업로드 용량 초과 |
-| 429 | 너무 자주 시도함 (로그인 실패·가입·갱신·채팅 도배·비밀번호 확인). `Retry-After` 초 뒤에 다시. 기준은 [09-security.md](09-security.md) |
+| 429 | 너무 자주 시도함 (속도 제한·로그인 실패·채팅 도배·비밀번호 확인). `Retry-After` 초 뒤에 다시. 기준은 [09-security.md](09-security.md) |
+
+### 요청 속도 제한 (429)
+
+넘치면 본문은 같은 봉투 형식이고 `Retry-After` 헤더가 붙는다.
+
+```json
+{ "success": false, "message": "요청이 너무 많아요. 12초 뒤에 다시 시도해 주세요." }
+```
+
+| 종류 | 대상 | 기본 한도 | 구현 |
+|---|---|---|---|
+| 로그인·가입·토큰 갱신 | `POST /api/auth/login`·`signup`·`refresh` | IP 별 10분에 60·20·120 | `AuthRateLimitFilter` |
+| 같은 계정 로그인 실패 | 이메일 | 15분에 10번 틀리면 잠깐 막음(IP 를 바꿔도) | `AuthService` |
+| 채팅 도배 | 한 사람이 보내는 글 | 10초에 10 (방장이 켠 슬로우 모드와 별개, 후원·채널 주인·매니저 제외) | `ChatFloodGuard` |
+| 변경 요청 | `/api/**` 의 POST·PUT·PATCH·DELETE | IP 별 분당 120 | `RateLimitFilter` |
+| 조회 | `/api/**` 의 GET | IP 별 분당 600 | `RateLimitFilter` |
+| 파일 업로드 | `POST /api/files/**` | IP 별 분당 20 | `RateLimitFilter` |
+| WebSocket 연결 | `/ws`, `/ingest` | IP 별 분당 60 | `RateLimitFilter` |
+
+- 영상 조각(`/live-hls/**`)·업로드 파일(`/uploads/**`)·nginx 콜백(`/api/internal/**`)·토스 웹훅·`/api/auth/**` 는 `RateLimitFilter` 가 세지 않는다(인증 쪽은 위 표의 전용 제한이 맡는다).
+- IP 는 Cloudflare 가 채우는 `CF-Connecting-IP`, 없으면 접속 주소다(`X-Forwarded-For` 는 클라이언트가 꾸밀 수 있어 믿지 않는다).
+- 한도는 `app.security.rate-limit.*`(환경변수 `RATE_LIMIT_*`) 로 바꾼다. `RATE_LIMIT_ENABLED=false` 로 모두 끈다.
+- 서버 메모리에서 센다. 서버를 여러 대로 늘리면 인스턴스마다 따로 센다([04-architecture.md](04-architecture.md)).
+
+### 입력 필터
+
+사람이 읽는 글과 주소는 서버에서 거른다. 걸리면 400 과 이유를 돌려준다.
+
+| 대상 | 규칙 |
+|---|---|
+| 글 칸 `@SafeText` — 채팅·댓글·영상/방송 제목·설명·소개글·닉네임·신고 사유·후원 메시지·크레딧 이름 등 | HTML 태그(`<script>`, `<img …>`, `</div>`, `<!-- -->`)와 제어 문자(NUL 등), 글 방향을 뒤집는 문자(U+202E 등)는 거절. `1 < 2`, `<3`, 이모지, 줄바꿈은 통과 |
+| 주소 칸 `@SafeUrl` — 영상·썸네일·프로필 이미지·오시마크·인트로 영상 | `/uploads/...` 또는 `http(s)://` 만. `javascript:`, `data:`, `file:`, `//host` 는 거절 |
+| 링크 칸 `@HttpUrl` — 크레딧 링크 | 외부 `http(s)://` 만 |
+| 길이 | 제목 100자, 설명·소개글 2000자, 댓글 1000자, 채팅 500자, 주소 255자 |
+
+- 저장할 때 글자를 바꿔(escape) 넣지 않고 **거절**한다. 바꿔 저장하면 화면에서 두 번 바뀌어 보인다.
+- DB 질의는 전부 파라미터 바인딩(JPA)이다. 글을 이어 붙여 SQL 을 만드는 곳이 없다.
+- 업로드는 확장자 허용 목록(영상·이미지)만 받고, 업로드 파일 응답에는 `Content-Security-Policy: default-src 'none'` 이 붙어 직접 열어도 스크립트가 못 돈다.
+
+### 응답 보안 헤더
+
+API 의 모든 응답에 `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'` 이 붙는다(Swagger 화면만 CSP 제외).
+화면(웹)의 헤더는 `web/vercel.json`(운영)·`web/security-headers.conf`(Docker nginx)에 있다. 강제 CSP 는 `frame-ancestors`·`base-uri`·`object-src` 만이고, 전체 허용 목록은 `Content-Security-Policy-Report-Only` 로 관찰만 한다([09-security.md](09-security.md)).
 
 ### 페이지 응답 형식
 
@@ -957,6 +1000,30 @@ POST /api/lives/{liveId}/donations/orders
    계정이 없으면 경고만 남기고 넘어갑니다.
 
 이후로는 `PATCH /api/admin/users/{userId}/role` 로 다른 사람을 승격시킬 수 있습니다.
+
+---
+
+## 관리자 — 비정상 접근 기록 (`/api/admin/security`)
+
+**관리자만** 접근할 수 있다.
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| GET | `/api/admin/security/events` | 종류별 누적 횟수와 최근 기록(최대 200건, 최신순) |
+
+```json
+{
+  "since": "2026-10-13T01:00:00Z",
+  "counts": { "RATE_LIMITED": 12, "LOGIN_FAILED": 3, "UNAUTHORIZED": 40, "FORBIDDEN": 1, "INPUT_REJECTED": 2 },
+  "recent": [
+    { "at": "2026-10-13T01:02:03Z", "type": "RATE_LIMITED", "ip": "203.0.113.7", "path": "/api/auth/login", "detail": "AUTH 한도 초과" }
+  ]
+}
+```
+
+- 서버 메모리에만 있다. 서버를 다시 켜면 비워진다. 같은 내용이 서버 로그(WARN)에도 남는다.
+- 같은 IP·종류는 1분에 한 줄만 기록하고 횟수(`counts`)는 계속 센다. 로그가 한 사람으로 가득 차지 않게 하려는 것이다.
+- 관리자 화면(`/admin`)의 **보안** 탭에서 본다.
 
 ---
 

@@ -3,6 +3,7 @@ package com.sp.api.chat.controller;
 import com.sp.api.chat.dto.ChatMessageRequest;
 import com.sp.api.chat.service.ChatService;
 import com.sp.api.common.exception.BusinessException;
+import com.sp.api.common.security.SecurityEventRecorder;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ import java.util.Map;
 public class ChatStompController {
 
     private final ChatService chatService;
+    private final SecurityEventRecorder securityEvents;
 
     @MessageMapping("/lives/{liveId}/chat")
     public void handleChat(
@@ -53,7 +55,19 @@ public class ChatStompController {
 
     @MessageExceptionHandler(MethodArgumentNotValidException.class)
     @SendToUser("/queue/chat-errors")
-    public Map<String, String> handleInvalid(MethodArgumentNotValidException e) {
+    public Map<String, String> handleInvalid(MethodArgumentNotValidException e, Principal principal) {
+
+        boolean filtered = e.getBindingResult().getFieldErrors().stream()
+                .anyMatch(error -> "SafeText".equals(error.getCode()));
+
+        if (filtered) {
+            securityEvents.record(SecurityEventRecorder.Type.INPUT_REJECTED,
+                    principal == null ? "ws" : "ws:" + principal.getName(),
+                    "STOMP /app/lives/*/chat", "채팅에 HTML 태그나 제어 문자가 들어 있음");
+
+            return Map.of("message", "HTML 태그나 보이지 않는 제어 문자는 채팅에 쓸 수 없어요.");
+        }
+
         return Map.of("message", "메시지를 확인해 주세요. (1~500자)");
     }
 }

@@ -1,10 +1,13 @@
 import { useEffect, useRef } from 'react'
+import { usePerf } from '../perf.js'
 
 /**
  * 마우스를 따라오는 작고 투명한 나뭇잎 둘. 기본 커서는 그대로 두고 꼬리만 더한다.
  * 터치 화면, 마우스가 없는 기기, 움직임 줄이기를 켠 사람에게는 아무것도 그리지 않는다.
  */
 export default function LeafCursor() {
+    const { level } = usePerf()
+    const lite = level === 'lite'
     const rootRef = useRef(null)
     const leadRef = useRef(null)
     const trailRef = useRef(null)
@@ -13,7 +16,7 @@ export default function LeafCursor() {
         const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches
         const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
         const root = rootRef.current
-        if (!fine || reduce || !root) return undefined
+        if (!fine || reduce || lite || !root) return undefined
 
         let tx = -100, ty = -100, lx = -100, ly = -100, rx = -100, ry = -100, angle = 0, raf = 0
 
@@ -49,7 +52,7 @@ export default function LeafCursor() {
             document.removeEventListener('pointerleave', onLeave)
             cancelAnimationFrame(raf)
         }
-    }, [])
+    }, [lite])
 
     return (
         <div className="c-cursor" ref={rootRef} aria-hidden="true">

@@ -43,6 +43,11 @@ app:
     # 로그인 실패 잠금, 로그인·가입·갱신의 IP 별 횟수 제한, 채팅 도배 제한. 테스트 말고는 끄지 않는다.
     rate-limit:
       enabled: ${RATE_LIMIT_ENABLED:true}
+      # 일반 요청(IP 하나당 분당). 넘치면 429 와 Retry-After. 영상 조각(/live-hls)·업로드 파일(/uploads)·nginx 콜백·토스 웹훅·/api/auth 는 세지 않는다.
+      write-per-minute: ${RATE_LIMIT_WRITE_PER_MINUTE:120}
+      read-per-minute: ${RATE_LIMIT_READ_PER_MINUTE:600}
+      upload-per-minute: ${RATE_LIMIT_UPLOAD_PER_MINUTE:20}
+      connect-per-minute: ${RATE_LIMIT_CONNECT_PER_MINUTE:60}
 
   payments:
     toss:
