@@ -11,9 +11,76 @@
       href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&display=swap"
     />
     <title>스트리밍 플랫폼</title>
+
+    <!--
+      자바스크립트가 오기 전의 첫 화면. 홈의 큰 화면·필름스트립과 같은 나뭇잎 모서리 뼈대가 은은하게 빛난다.
+      앱이 뜨면 React 가 #root 를 통째로 바꾸므로 따로 치울 필요가 없다. 모양과 색은 홈(cinematic.css)과 맞춰 둔다.
+      밝은 화면이 기본이고, 나이트 모드를 켜 둔 사람에게는 처음부터 어두운 뼈대가 보이도록 테마를 먼저 읽는다.
+    -->
+    <script>
+      try {
+        document.documentElement.dataset.theme = localStorage.getItem('theme') === 'dark' ? 'dark' : 'light'
+      } catch (e) {
+        document.documentElement.dataset.theme = 'light'
+      }
+    </script>
+    <style>
+      html { --sk-bg: #f3f5f9; --sk-block: #e4e8f0; --sk-glass: rgb(255 255 255 / 0.74); --sk-line: rgb(19 24 32 / 0.12); --sk-shine: rgb(255 255 255 / 0.7); background: var(--sk-bg); }
+      html[data-theme='dark'] { --sk-bg: #0b0e12; --sk-block: #19212b; --sk-glass: rgb(255 255 255 / 0.06); --sk-line: rgb(255 255 255 / 0.12); --sk-shine: rgb(255 255 255 / 0.07); }
+      body { margin: 0; background: var(--sk-bg); }
+      .sk { min-height: 100vh; }
+      :where(.sk) i { display: block; background: var(--sk-block); }
+      .sk__bar { display: flex; align-items: center; gap: 16px; height: 64px; padding: 0 24px; border-bottom: 1px solid var(--sk-line); background: var(--sk-glass); }
+      .sk__logo { width: 40px; height: 40px; border-radius: 12px 4px 12px 4px; }
+      .sk__search { flex: 1; max-width: 560px; height: 40px; border-radius: 24px 8px 24px 8px; }
+      .sk__pill { margin-left: auto; width: 96px; height: 40px; border-radius: 20px 6px 20px 6px; }
+      .sk__dock { display: none; }
+      .sk__main { max-width: 1140px; margin: 0 auto; padding: 28px 20px 64px; }
+      .sk__hero { width: 100%; aspect-ratio: 21 / 9.6; min-height: 400px; border-radius: 56px 18px 56px 18px; }
+      .sk__row { display: flex; align-items: flex-end; gap: 24px; margin-top: 52px; overflow: hidden; }
+      .sk__f { flex: none; width: 320px; height: 196px; border-radius: 64px 8px 64px 8px; }
+      .sk__f:nth-child(2n) { width: 196px; height: 330px; border-radius: 8px 84px 8px 84px; }
+      .sk__f:nth-child(3n) { width: 300px; height: 184px; }
+      .sk__sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+      /* 은은하게 빛난다: 밝기가 천천히 숨 쉬고, 빛줄기가 한 번씩 지나간다 */
+      :where(.sk) i { position: relative; overflow: hidden; animation: sk-breathe 1.8s ease-in-out infinite; }
+      :where(.sk) i::after { content: ''; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 30%, var(--sk-shine) 50%, transparent 70%); transform: translateX(-100%); animation: sk-shine 2.4s ease-in-out infinite; }
+      .sk__hero { animation-delay: 0s; }
+      .sk__f:nth-child(2) { animation-delay: -0.4s; }
+      .sk__f:nth-child(3) { animation-delay: -0.8s; }
+      .sk__f:nth-child(4) { animation-delay: -1.2s; }
+      @keyframes sk-breathe { 50% { opacity: 0.62; } }
+      @keyframes sk-shine { 60%, 100% { transform: translateX(100%); } }
+      @media (min-width: 901px) {
+        .sk__dock { display: block; position: fixed; overflow: visible; top: 16px; bottom: 16px; left: 16px; width: 64px; border: 1px solid var(--sk-line); border-radius: 28px 10px 28px 10px; background: var(--sk-glass); }
+        .sk__main { padding-left: calc(64px + 40px + 20px); }
+        .sk__bar { padding-left: calc(64px + 56px); }
+        .sk__logo { display: none; }
+      }
+      @media (max-width: 720px) {
+        .sk__main { padding-top: 20px; }
+        .sk__hero { min-height: 420px; aspect-ratio: auto; border-radius: 40px 14px 40px 14px; }
+        .sk__pill { width: 64px; }
+        .sk__f { border-radius: 42px 6px 42px 6px; }
+        .sk__f:nth-child(2n) { border-radius: 6px 56px 6px 56px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .sk i, .sk i::after { animation: none; }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="sk" role="status" aria-live="polite" aria-busy="true">
+        <span class="sk__sr">화면을 불러오는 중…</span>
+        <i class="sk__dock"></i>
+        <div class="sk__bar"><i class="sk__logo"></i><i class="sk__search"></i><i class="sk__pill"></i></div>
+        <div class="sk__main">
+          <i class="sk__hero"></i>
+          <div class="sk__row"><i class="sk__f"></i><i class="sk__f"></i><i class="sk__f"></i><i class="sk__f"></i></div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
