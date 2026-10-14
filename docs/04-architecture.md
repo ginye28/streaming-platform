@@ -104,8 +104,8 @@ Redis 를 안 쓰기 때문에, 아래는 **서버 한 대 안에서만** 맞습
 | 동시 시청자 수 | 채팅방 구독 수를 세서 메모리에 |
 | 조회수 30분 중복 판정 | 메모리 캐시 |
 | 채팅 브로커 | 스프링 내장 SimpleBroker |
-| 요청 속도 제한 버킷 · 비정상 접근 기록 | `RateLimiter`(토큰 버킷, 오래 안 쓴 키는 치움) · `SecurityEventRecorder`(최근 200건) |
-| 채팅 도배 방지 · 슬로우 모드 | `RateLimiter` · `SlowModeLimiter` |
+| 요청 속도 제한 버킷 · 비정상 접근 기록 | `SlidingWindowRateLimiter`(키가 쌓이면 지난 기록을 쓸어 냄) · `SecurityEventRecorder`(최근 200건) |
+| 채팅 도배 방지 · 슬로우 모드 | `ChatFloodGuard` · `SlowModeLimiter` |
 | 브라우저 방송 연결 · 동시 방송 수 | `IngestWebSocketHandler` 의 메모리 맵 (조각 파일은 서버 임시 디스크) |
 
 서버를 여러 대로 늘리려면 이것들을 Redis 등으로 옮겨야 합니다. (브라우저 방송은 조각 파일이 그 서버 디스크에만 있어서 따로 손봐야 합니다.)
@@ -130,9 +130,9 @@ WebRTC 는 쓰지 않는다. 시청 지연이 약 10초 생기는 대신, 일반
 바깥에서 안쪽 순서로 요청이 지나는 곳이다.
 
 1. **브라우저 헤더** — 웹: `vercel.json`/`security-headers.conf` 의 CSP(`script-src 'self'` + 토스), `nosniff`, `frame-ancestors 'none'`. API: `SecurityHeadersFilter`.
-2. **속도 제한** — `RateLimitFilter`(IP 별 토큰 버킷, 종류별 한도). 로그인은 계정별로도 센다(`AuthController`). 채팅 도배는 `ChatPolicy`.
+2. **속도 제한** — 인증 경로는 `AuthRateLimitFilter`(IP 별)와 `AuthService`(계정별 실패 잠금), 그 밖의 `/api`·WebSocket 은 `RateLimitFilter`(IP 별, 변경·조회·업로드·연결 종류별). 채팅 도배는 `ChatFloodGuard`. 모두 `SlidingWindowRateLimiter`.
 3. **인증** — JWT(액세스 토큰) + 회전하는 리프레시 토큰. WebSocket 은 STOMP CONNECT 의 토큰으로 식별하고 구독 시 시청 권한을 다시 본다.
 4. **입력 필터** — `@SafeText`(태그·제어 문자 거절) · `@SafeUrl`(`javascript:` 등 거절) · `@Size`. 화면은 글을 항상 텍스트로만 그리고(React), 링크는 http(s) 만 만든다.
 5. **기록** — 막힌 요청·로그인 실패·거절된 입력을 `SecurityEventRecorder` 가 모아 관리자 화면(보안 탭)과 WARN 로그에 남긴다.
 
-한계: IP 는 `X-Forwarded-For` 첫 값을 쓰므로(Render 뒤), 클라이언트가 헤더를 꾸며 한도를 피할 수 있다. 계정 단위 한도와 토큰·권한 검사가 그 구멍을 메운다. 정확한 IP 가 필요해지면 신뢰하는 프록시 단계 수를 정해 마지막에서 N 번째를 쓰도록 바꿔야 한다.
+한계: IP 는 Cloudflare 가 채우는 `CF-Connecting-IP` 를 쓴다(`ClientIp`). Cloudflare 를 거치지 않는 접속에서는 접속 주소를 쓰고, 클라이언트가 꾸밀 수 있는 `X-Forwarded-For` 는 믿지 않는다. 자세한 위협·한계는 [09-security.md](09-security.md).

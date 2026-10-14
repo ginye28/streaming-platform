@@ -79,9 +79,9 @@
 - 운영에 방송·영상이 하나도 없어 처음 보면 미완성처럼 보임. 직접 가입해서 영상 1~2개 올리거나, A 가 되면 짧게 방송을 켜 두기. (계정 생성은 AI 가 대신 못 함)
 
 ### F. 이번에 넣은 것 중 아직 안 본 것
-- **실제 구형 폰·태블릿의 fps**: 로직은 데스크톱에서만 확인했다. `?fps=1` 로 재서 [09-performance.md](09-performance.md) 표를 채운다.
-- **운영(Vercel)에서의 CSP**: 로컬 Docker(nginx)에서는 콘솔 오류 없이 홈이 떴지만, 운영 헤더는 `web/vercel.json` 이라 배포 뒤 홈·시청·결제 화면에서 개발자 도구 콘솔에 `Content Security Policy` 위반이 없는지 한 번 본다. 결제 화면(토스 SDK)은 테스트 키로 사람이 직접.
-- **Render 뒤의 IP**: 속도 제한은 `X-Forwarded-For` 첫 값을 쓴다. 운영 로그의 `보안 이벤트` 줄에서 `ip=` 가 사용자마다 다르게 찍히는지 확인(전부 같으면 모두가 한 한도를 나눠 쓰는 것이다).
+- **실제 구형 폰·태블릿의 fps**: 로직은 데스크톱에서만 확인했다. `?fps=1` 로 재서 [10-performance.md](10-performance.md) 표를 채운다.
+- **전체 CSP 를 강제로 올리기**: 강제 CSP 는 `frame-ancestors`·`base-uri`·`object-src` 만이고, 전체 허용 목록은 `Content-Security-Policy-Report-Only` 로 관찰만 한다. 운영에서 홈·시청·**토스 결제창**을 돌려 보고 콘솔에 `Content Security Policy` 위반이 없으면 `web/vercel.json` 의 Report-Only 값을 `Content-Security-Policy` 로 옮긴다(결제는 테스트 키로 사람이 직접).
+- **운영의 IP 구분**: 속도 제한은 `CF-Connecting-IP`(없으면 접속 주소)를 쓴다. 배포 뒤 관리자 보안 탭이나 로그의 `보안 이벤트` 줄에서 `ip=` 가 사용자마다 다르게 찍히는지 확인(전부 같으면 모두가 한 한도를 나눠 쓰는 것이다).
 - 로컬 Docker 에서 확인하며 만든 테스트 계정(`perfcheck-…@test.local`)이 로컬 MySQL 볼륨에 남아 있다. 운영과는 무관.
 
 ### E. 그 밖의 알려진 한계

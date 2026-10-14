@@ -40,6 +40,7 @@ docs/        요구사항 · ERD · API 명세 · 아키텍처 · 컨벤션 · �
 | [05-convention.md](docs/05-convention.md) | 커밋 · 코드 · 테스트 규칙 |
 | [06-deployment.md](docs/06-deployment.md) | 컨테이너로 띄우기, 환경변수 |
 | [07-troubleshooting.md](docs/07-troubleshooting.md) | 만들면서 부딪힌 것들과 원인 |
+| [09-security.md](docs/09-security.md) | 무엇을 어떻게 지키고, 무엇이 아직 한계인지 |
 | [08-handoff.md](docs/08-handoff.md) | 지금까지 한 것 · 남은 것 · 이어서 하는 법 (다른 PC·새 세션용) |
 
 > 처음 켜신다면 [집에서 확인할 것](#집에서-확인할-것) 을 순서대로 따라가시면 됩니다.
@@ -516,7 +517,7 @@ docker compose --profile full up -d --build
 | 요청 속도 제한 (IP 별 토큰 버킷 · 같은 계정 로그인 · 채팅 도배) → 429 + `Retry-After` | 완료 (단일 서버 기준, 한도는 `RATE_LIMIT_*` 로 조정) |
 | 입력 필터 — 글의 HTML 태그·제어 문자, 주소의 `javascript:` 등을 서버에서 거절 + 길이 제한 · 응답 보안 헤더(CSP 등) · 화면 CSP | 완료 (`docs/03-api-spec.md` "입력 필터") |
 | 비정상 접근 기록 (막힌 요청 · 로그인 실패 · 거절된 입력) — 관리자 화면 **보안** 탭 | 완료 (최근 200건, 서버 메모리) |
-| 낮은 사양 기기용 가벼운 화면 (자동 판정 · 내 메뉴에서 직접 선택 · `?fps=1` 계기판) | 로직 완료. **실제 구형 기기 fps 는 아직 못 잼** ([docs/09-performance.md](docs/09-performance.md)) |
+| 낮은 사양 기기용 가벼운 화면 (자동 판정 · 내 메뉴에서 직접 선택 · `?fps=1` 계기판) | 로직 완료. **실제 구형 기기 fps 는 아직 못 잼** ([docs/10-performance.md](docs/10-performance.md)) |
 | 소셜 로그인 | 엔티티만 준비 (`Provider`) |
 
 API 상세는 [docs/03-api-spec.md](docs/03-api-spec.md) 참고.
@@ -525,7 +526,7 @@ API 상세는 [docs/03-api-spec.md](docs/03-api-spec.md) 참고.
 
 ## 다음 할 일
 
-0. **실제 기기에서 fps 재기** — 구형 폰·태블릿에서 홈·시청 화면에 `?fps=1` 을 붙여 숫자를 [docs/09-performance.md](docs/09-performance.md) 표에 채우고, 자동 판정 기준(`SLOW_FRAME_MS`)을 조정합니다.
+0. **실제 기기에서 fps 재기** — 구형 폰·태블릿에서 홈·시청 화면에 `?fps=1` 을 붙여 숫자를 [docs/10-performance.md](docs/10-performance.md) 표에 채우고, 자동 판정 기준(`SLOW_FRAME_MS`)을 조정합니다.
 1. **데모 콘텐츠 채우기** — 운영 사이트에 영상 1~2개와 짧은 방송을 올려 빈 화면을 없앱니다. (데모임을 드러내고, 지어낸 시청자 수·후기는 넣지 않습니다)
 2. **폰 브라우저에서 시작한 결제 확인** — PC 결제는 확인했고, 폰 브라우저에서 시작했을 때 돌아오기는 아직 못 봤습니다.
 3. **OBS 방송의 상시 운영** — OBS 방송은 아직 내 PC 가 켜져 있어야 합니다. 무료 VM(Oracle Always Free 등)에 스트리밍 서버를 올리면 상시 운영됩니다. (브라우저 방송은 PC 없이 됩니다)

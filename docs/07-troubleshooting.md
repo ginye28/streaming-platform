@@ -271,11 +271,11 @@ PC 에서 카드·간편결제를 고르고 폰으로 인증하면, 폰에는 "�
 많은 사람이 한 공유기(NAT)로 나가는 곳에서, 한 사람이 쓰는데도 429 가 뜨거나 로그인이 막힌다.
 
 ### 원인
-속도 제한이 접속 IP 별이다. 같은 IP 를 쓰는 사람들이 한도(조회 분당 600, 로그인 분당 20 등)를 나눠 쓴다.
+속도 제한이 접속 IP 별이다. 같은 IP 를 쓰는 사람들이 한도(조회 분당 600, 변경 분당 120, 로그인 10분에 60 등)를 나눠 쓴다.
 
 ### 확인 방법
 관리자 화면 **보안** 탭의 `RATE_LIMITED` 기록에서 IP 와 주소(`path`), 종류(`AUTH 한도 초과` 등)를 본다. 서버 로그에서는 `보안 이벤트 RATE_LIMITED` 로 검색한다.
 
 ### 해결
-해당 종류의 한도만 환경변수로 올린다(`RATE_LIMIT_AUTH_PER_MINUTE`, `RATE_LIMIT_READ_PER_MINUTE` …, [06-deployment.md](06-deployment.md)). 급하면 `RATE_LIMIT_ENABLED=false`. 같은 계정으로 10번(5분) 넘게 틀리게 로그인하면 IP 와 상관없이 그 계정이 잠시 막히는 것은 의도된 동작이다.
+일반 한도는 환경변수로 올린다(`RATE_LIMIT_READ_PER_MINUTE`, `RATE_LIMIT_WRITE_PER_MINUTE` …, [06-deployment.md](06-deployment.md)). 급하면 `RATE_LIMIT_ENABLED=false`. 로그인 IP 한도와 계정 실패 잠금(15분에 10번)은 [09-security.md](09-security.md) 의 고정 값이고, 한 계정이 잠시 막히는 것은 의도된 동작이다.
 

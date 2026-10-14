@@ -1,6 +1,6 @@
 package com.sp.api.vtuber.dto;
 
-import com.sp.api.common.validation.SafeUrl;
+import com.sp.api.common.validation.HttpUrl;
 import com.sp.api.common.validation.SafeText;
 import com.sp.api.vtuber.entity.ModelCredit;
 import jakarta.validation.constraints.NotBlank;
@@ -24,6 +24,6 @@ public class ModelCreditPayload {
     private String name;
 
     @Size(max = 255, message = "주소는 255자 이하여야 합니다.")
-    @SafeUrl
+    @HttpUrl(message = "주소는 http:// 또는 https:// 로 시작해야 합니다.")
     private String link;
 }

@@ -53,8 +53,9 @@
 - Render 무료 서버: 15분 무활동이면 잠들고 깨는 데 오래 걸린다. 메모리 512MB, 자바 힙 300MB. 브라우저 방송은 동시 1개로 막아 두었다.
 - 브라우저 방송(`/ingest`)은 H.264 로 녹화되는 Chrome·Edge 만 된다. 서버는 영상을 다시 인코딩하지 않는다.
 - 토스 결제는 **"API 개별 연동 키"**(`test_ck_` / `test_sk_`)만 된다. 결제위젯 키(`gck`/`gsk`)는 거절된다. 테스트 키라 실제 청구는 없다.
-- 요청 속도 제한(`RateLimitFilter`)은 IP 별이라, 같은 주소로 가입·로그인을 수십 번 하는 통합 테스트가 걸린다 → `api/src/test/resources/application.yaml` 에서 `app.rate-limit.enabled: false`. 켜서 보는 테스트(`RateLimitIntegrationTest`)만 `@TestPropertySource` 로 켜고, 테스트마다 다른 `X-Forwarded-For` 를 쓴다. 한도는 서버 메모리라 테스트끼리 공유된다.
-- 글·주소를 받는 새 DTO 칸에는 `@SafeText`·`@SafeUrl`·`@Size` 를 붙인다(`common/validation`). 안 붙이면 태그·`javascript:` 가 그대로 저장된다.
+- **보안 규칙은 [docs/09-security.md](docs/09-security.md).** 사용자가 적은 주소를 `<a href>` 로 쓸 때는 서버 `@HttpUrl` + 화면 `safeHttpUrl` 을 거친다(`javascript:` 로 스크립트가 실행된다). 새 STOMP 경로를 만들면 `StompAuthChannelInterceptor.ALLOWED_DESTINATION` 에도 넣는다(안 넣으면 구독이 거절된다).
+- 요청 횟수 제한(`app.security.rate-limit`)은 테스트에서 꺼져 있다(같은 IP·계정으로 가입을 수없이 한다). 제한을 확인하는 테스트(`RateLimitIntegrationTest`)는 `@TestPropertySource` 로 켜고, IP 는 `remoteAddr(...)` 로 테스트마다 다르게 준다. 한도는 서버 메모리라 테스트끼리 공유된다.
+- 글을 받는 새 DTO 칸에는 `@SafeText`·`@Size` 를, 업로드 경로(`/uploads/…`)나 http(s) 주소를 받는 칸에는 `@SafeUrl` 을, 외부 링크만 받는 칸에는 `@HttpUrl` 을 붙인다(`common/validation`). 안 붙이면 태그·`javascript:` 가 그대로 저장된다.
 - 화면 CSP(`web/vercel.json`, `web/security-headers.conf`)에 없는 외부 스크립트·서비스를 붙이면 브라우저가 막는다 → 두 파일에 주소를 더한다.
-- 화면 효과(blur·무한 애니메이션)를 더할 때는 `cinematic.css` 끝의 `:root[data-perf='lite']` 블록에도 끄는 규칙을 넣는다([docs/09-performance.md](docs/09-performance.md)).
+- 화면 효과(blur·무한 애니메이션)를 더할 때는 `cinematic.css` 끝의 `:root[data-perf='lite']` 블록에도 끄는 규칙을 넣는다([docs/10-performance.md](docs/10-performance.md)).
 - Windows Git Bash 는 `/tmp` 같은 경로를 바꿔 버린다 → Docker 명령 앞에 `export MSYS_NO_PATHCONV=1`.

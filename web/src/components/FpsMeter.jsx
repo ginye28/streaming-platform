@@ -3,7 +3,7 @@ import { usePerf } from '../perf.js'
 
 /**
  * 기기에서 직접 프레임을 보려고 켜는 작은 계기판. 주소에 ?fps=1 을 붙이면 나타난다(?fps=0 으로 끈다).
- * 지난 1초의 평균 fps 와 가장 느렸던 프레임 간격을 보여 준다. 실제 기기 테스트 체크리스트: docs/09-performance.md.
+ * 지난 1초의 평균 fps 와 가장 느렸던 프레임 간격을 보여 준다. 실제 기기 테스트 체크리스트: docs/10-performance.md.
  */
 export default function FpsMeter() {
     const perf = usePerf()

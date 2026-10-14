@@ -3,10 +3,10 @@ package com.sp.api.common.validation;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Locale;
-
+/**
+ * 업로드 경로(/uploads/..) 또는 http(s) 주소. http(s) 판정은 {@link HttpUrlValidator} 와 같은 구현을 쓴다.
+ * 외부 링크만 받는 칸(크레딧 링크)은 {@link HttpUrl} 을 쓴다.
+ */
 public class SafeUrlValidator implements ConstraintValidator<SafeUrl, CharSequence> {
 
     @Override
@@ -18,34 +18,26 @@ public class SafeUrlValidator implements ConstraintValidator<SafeUrl, CharSequen
 
         String raw = value.toString();
 
-        // trim() 은 끝의 제어 문자(NUL 등)도 지워 버리므로, 다듬기 전의 원본으로 먼저 본다.
-        if (SafeTextValidator.hasForbiddenCharacter(raw)) {
-            return false;
-        }
-
-        String url = raw.strip();
-
-        if (url.isEmpty()) {
+        if (raw.isBlank()) {
             return true;
         }
 
-        if (url.contains("\\") || url.chars().anyMatch(Character::isWhitespace)) {
-            return false;
-        }
-
         // 업로드 API 가 돌려준 상대 경로. "//evil.com" 은 다른 사이트를 가리키므로 뺀다.
-        if (url.startsWith("/")) {
-            return !url.startsWith("//");
+        if (raw.startsWith("/")) {
+            return !raw.startsWith("//") && !raw.contains("\\") && noControlOrSpace(raw);
         }
 
-        try {
-            URI uri = new URI(url);
-            String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase(Locale.ROOT);
+        return HttpUrlValidator.isHttpUrl(raw);
+    }
 
-            return (scheme.equals("http") || scheme.equals("https")) && uri.getHost() != null;
+    private static boolean noControlOrSpace(String value) {
 
-        } catch (URISyntaxException e) {
-            return false;
+        for (int i = 0; i < value.length(); i++) {
+            if (Character.isISOControl(value.charAt(i)) || Character.isWhitespace(value.charAt(i))) {
+                return false;
+            }
         }
+
+        return true;
     }
 }

@@ -108,14 +108,11 @@ nginx:1.27-alpine  →  dist/ 를 :80 으로
 | `VOD_ENABLED` | `false` (compose 는 `true`) | 스트리밍 서버가 방송을 녹화하는지. 켜면 방송이 끝날 때 다시보기 주소를 내려 준다. **녹화하지 않는 서버에서 켜면 없는 주소를 가리킨다** |
 | `VOD_BASE_URL` | 비어 있음 | 다시보기 재생 주소의 앞부분. 비우면 `HLS_BASE_URL` 옆의 `/vod` 를 쓴다 |
 | `RTMP_CALLBACK_TOKEN` | 비어 있음 | nginx 가 송출 시작·종료 콜백 주소에 `?token=` 으로 붙이는 비밀 값. **스트리밍 서버와 API 에 같은 값**을 넣는다. 비워 두면 검사하지 않으므로 콜백이 바깥에 열린 서버에서는 반드시 채운다(영문·숫자만 쓸 것). 틀리면 403 |
-| `SWAGGER_ENABLED` | `false` | 컨테이너(docker 프로필)에서 API 문서(`/swagger`, `/v3/api-docs`)를 켤지. 문서를 만드는 데 메모리를 꽤 써서 무료 서버(512MB)에서는 끈다 |
-| `LOG_LEVEL` | `INFO` | |
-| `RATE_LIMIT_ENABLED` | `true` | 요청 속도 제한을 켤지. 끄면 아무것도 막지 않는다(부하 시험·로컬 개발용) |
-| `RATE_LIMIT_AUTH_PER_MINUTE` | `20` | 로그인·가입·토큰 갱신, IP 하나당 분당 |
-| `RATE_LIMIT_LOGIN_PER_EMAIL` · `RATE_LIMIT_LOGIN_PER_EMAIL_WINDOW_MINUTES` | `10` · `5` | 같은 이메일로 하는 로그인 시도 수와 그 시간(분). IP 를 바꿔도 적용 |
+| `RATE_LIMIT_ENABLED` | `true` | 요청 속도 제한 전체(로그인 IP 한도 · 계정 잠금 · 채팅 도배 · 아래 일반 한도)를 켤지. 끄면 아무것도 막지 않는다(부하 시험·로컬 개발용) |
 | `RATE_LIMIT_WRITE_PER_MINUTE` · `RATE_LIMIT_READ_PER_MINUTE` | `120` · `600` | 변경 요청 · 조회, IP 하나당 분당 |
 | `RATE_LIMIT_UPLOAD_PER_MINUTE` · `RATE_LIMIT_CONNECT_PER_MINUTE` | `20` · `60` | 파일 업로드 · WebSocket 연결 |
-| `RATE_LIMIT_CHAT_PER_TEN_SECONDS` | `8` | 채팅 한 사람이 10초에 보낼 수 있는 글 |
+
+로그인·가입·토큰 갱신(10분에 60·20·120), 계정별 로그인 실패(15분에 10번), 채팅 도배(10초에 10)는 [09-security.md](09-security.md) 의 고정 값이다.
 
 > 학원·학교·사무실처럼 많은 사람이 한 IP 로 나가면 IP 한도에 같이 걸릴 수 있다. 막힌다는 제보가 오면 관리자 화면 **보안** 탭에서 `RATE_LIMITED` 기록을 보고 해당 한도만 올린다.
 

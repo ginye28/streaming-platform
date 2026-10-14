@@ -1,13 +1,13 @@
 package com.sp.api.common.ratelimit;
 
 import com.sp.api.common.response.ApiResponse;
+import com.sp.api.common.security.ClientIp;
 import com.sp.api.common.security.SecurityEventRecorder;
-import com.sp.api.common.web.ClientIp;
+import com.sp.api.common.security.SlidingWindowRateLimiter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -15,26 +15,42 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
+import java.util.EnumMap;
+import java.util.Map;
 
 /**
- * 접속 IP 별로 요청 속도를 제한한다. 넘치면 429 와 Retry-After 로 돌려보낸다.
+ * 접속 IP 별로 일반 요청의 속도를 제한한다. 넘치면 429 와 Retry-After 로 돌려보낸다.
  *
- * 요청 종류마다 따로 센다(로그인은 엄격하게, 조회는 넉넉하게). 종류는 아래 {@link #classify} 가 정한다.
- * SecurityConfig 가 직접 만들어 보안 필터 체인에 넣는다 — 빈으로 등록하면 서블릿 필터로도 한 번 더 걸린다.
+ * 요청 종류마다 따로 센다(변경은 엄격하게, 조회는 넉넉하게). 종류는 아래 {@link #classify} 가 정한다.
+ * 로그인·가입·토큰 갱신은 여기서 세지 않는다 — {@code AuthRateLimitFilter} 가 더 엄격한 한도로 따로 센다.
+ * SecurityConfig 가 직접 만들어 보안 필터 체인에 넣는다. 빈으로 등록하면 서블릿 필터로도 한 번 더 걸린다.
  */
-@RequiredArgsConstructor
 public class RateLimitFilter extends OncePerRequestFilter {
 
-    private static final Duration MINUTE = Duration.ofMinutes(1);
+    private static final long MINUTE_MILLIS = 60_000L;
 
-    private final RateLimiter limiter;
     private final RateLimitProperties properties;
     private final SecurityEventRecorder recorder;
     private final ObjectMapper objectMapper;
 
+    private final Map<Kind, SlidingWindowRateLimiter> limiters = new EnumMap<>(Kind.class);
+
+    /** 같은 사람·종류는 1분에 한 번만 기록해 로그와 목록이 그 한 사람으로 가득 차지 않게 한다. */
+    private final SlidingWindowRateLimiter reportLimiter = new SlidingWindowRateLimiter(1, MINUTE_MILLIS);
+
     enum Kind {
-        AUTH, WRITE, READ, UPLOAD, CONNECT
+        WRITE, READ, UPLOAD, CONNECT
+    }
+
+    public RateLimitFilter(RateLimitProperties properties, SecurityEventRecorder recorder, ObjectMapper objectMapper) {
+        this.properties = properties;
+        this.recorder = recorder;
+        this.objectMapper = objectMapper;
+
+        limiters.put(Kind.WRITE, new SlidingWindowRateLimiter(properties.getWritePerMinute(), MINUTE_MILLIS));
+        limiters.put(Kind.READ, new SlidingWindowRateLimiter(properties.getReadPerMinute(), MINUTE_MILLIS));
+        limiters.put(Kind.UPLOAD, new SlidingWindowRateLimiter(properties.getUploadPerMinute(), MINUTE_MILLIS));
+        limiters.put(Kind.CONNECT, new SlidingWindowRateLimiter(properties.getConnectPerMinute(), MINUTE_MILLIS));
     }
 
     @Override
@@ -50,23 +66,19 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
 
         String ip = ClientIp.of(request);
+        SlidingWindowRateLimiter limiter = limiters.get(kind);
 
-        RateLimiter.Decision decision = limiter.tryConsume(
-                kind + ":" + ip, capacityOf(kind), MINUTE);
-
-        if (decision.allowed()) {
-            response.setHeader("X-RateLimit-Remaining", String.valueOf(decision.remaining()));
+        if (limiter.tryAcquire(ip)) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 한 사람이 계속 두드려도 로그와 목록이 그 사람으로 가득 차지 않도록, 같은 사람·종류는 1분에 한 번만 남긴다.
-        boolean store = limiter.tryConsume("report:" + kind + ":" + ip, 1, MINUTE).allowed();
+        boolean store = reportLimiter.tryAcquire(kind + ":" + ip);
 
         recorder.record(SecurityEventRecorder.Type.RATE_LIMITED, ip, request.getRequestURI(),
                 kind + " 한도 초과", store);
 
-        reject(response, decision.retryAfterSeconds());
+        reject(response, Math.max(1, limiter.retryAfterSeconds(ip)));
     }
 
     /** @return 제한 대상이 아니면 null */
@@ -88,31 +100,18 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return Kind.CONNECT;
         }
 
-        if (!path.startsWith("/api/")) {
+        // 인증 경로는 AuthRateLimitFilter 와 AuthService 가 따로 제한한다.
+        if (!path.startsWith("/api/") || path.startsWith("/api/auth/")) {
             return null;
         }
 
         boolean read = "GET".equals(method) || "HEAD".equals(method);
-
-        if (path.startsWith("/api/auth/") && !read) {
-            return Kind.AUTH;
-        }
 
         if (path.startsWith("/api/files/") && !read) {
             return Kind.UPLOAD;
         }
 
         return read ? Kind.READ : Kind.WRITE;
-    }
-
-    private int capacityOf(Kind kind) {
-        return switch (kind) {
-            case AUTH -> properties.getAuthPerMinute();
-            case WRITE -> properties.getWritePerMinute();
-            case READ -> properties.getReadPerMinute();
-            case UPLOAD -> properties.getUploadPerMinute();
-            case CONNECT -> properties.getConnectPerMinute();
-        };
     }
 
     private void reject(HttpServletResponse response, long retryAfterSeconds) throws IOException {

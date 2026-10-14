@@ -1,6 +1,5 @@
 package com.sp.api.common.security;
 
-import com.sp.api.common.web.ClientIp;
 import tools.jackson.databind.ObjectMapper;
 import com.sp.api.common.response.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;

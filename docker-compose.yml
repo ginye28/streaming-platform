@@ -92,7 +92,7 @@ services:
       VOD_ENABLED: ${VOD_ENABLED:-true}
       # nginx 콜백 검사용 비밀 값. streaming 서비스와 같은 값이어야 한다. 비우면 검사하지 않는다.
       RTMP_CALLBACK_TOKEN: ${RTMP_CALLBACK_TOKEN:-}
-      # 요청 속도 제한. 끄려면 false. 세부 한도는 api 의 application.yaml(app.rate-limit) 참고.
+      # 요청 속도 제한. 끄려면 false. 세부 한도는 api 의 application.yaml(app.security.rate-limit) 참고.
       RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
     depends_on:
       mysql:

@@ -2,7 +2,7 @@ package com.sp.api.common.exception;
 
 import com.sp.api.common.response.ApiResponse;
 import com.sp.api.common.security.SecurityEventRecorder;
-import com.sp.api.common.web.ClientIp;
+import com.sp.api.common.security.ClientIp;
 import com.sp.api.common.validation.SafeText;
 import com.sp.api.common.validation.SafeUrl;
 import jakarta.servlet.http.HttpServletRequest;

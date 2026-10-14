@@ -3,6 +3,7 @@ import { dateOnly, won } from '../payments.js'
 import Link from '../components/Link.jsx'
 import { loginTo } from '../router.js'
 import { useAsyncData } from '../useAsyncData.js'
+import { safeHttpUrl } from '../safeUrl.js'
 import { useAuth } from '../useAuth.js'
 
 /**
@@ -101,10 +102,10 @@ export default function PayResultPage({ params = new URLSearchParams(window.loca
             )}
             <p className="meta">
                 {won(result.amount)} · {result.method}
-                {result.receiptUrl && (
+                {safeHttpUrl(result.receiptUrl) && (
                     <>
                         {' · '}
-                        <a href={result.receiptUrl} target="_blank" rel="noreferrer">
+                        <a href={safeHttpUrl(result.receiptUrl) ?? undefined} target="_blank" rel="noreferrer noopener">
                             영수증
                         </a>
                     </>

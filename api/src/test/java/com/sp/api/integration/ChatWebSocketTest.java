@@ -299,6 +299,42 @@ class ChatWebSocketTest {
         assertThat(poll(errors)).contains("구독자");
     }
 
+    @Test
+    @DisplayName("와일드카드 경로로 구독해 모든 방송의 채팅을 받으려 하면 거절된다")
+    void wildcardSubscriptionIsRejected() throws Exception {
+
+        for (String destination : new String[]{"/topic/lives/*", "/topic/lives/*/events", "/topic/**", "/topic/anything"}) {
+
+            BlockingQueue<String> errors = new LinkedBlockingQueue<>();
+
+            WebSocketStompClient client = new WebSocketStompClient(new StandardWebSocketClient());
+            client.setMessageConverter(new SimpleMessageConverter());
+
+            StompSession session = client.connectAsync(
+                            "ws://localhost:" + port + "/ws",
+                            new WebSocketHttpHeaders(),
+                            new StompHeaders(),
+                            new StompSessionHandlerAdapter() {
+
+                                @Override
+                                @NonNull
+                                public Type getPayloadType(@NonNull StompHeaders headers) {
+                                    return byte[].class;
+                                }
+
+                                @Override
+                                public void handleFrame(@NonNull StompHeaders headers, Object payload) {
+                                    errors.add(headers.getFirst("message") == null ? "error" : headers.getFirst("message"));
+                                }
+                            })
+                    .get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+
+            subscribe(session, destination, new LinkedBlockingQueue<>());
+
+            assertThat(poll(errors)).as(destination).contains("허용되지 않은 구독 경로");
+        }
+    }
+
     // --- 도우미 ---
 
     private StompSession connect(String token) throws Exception {
