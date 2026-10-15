@@ -1,5 +1,6 @@
 package com.sp.api.live.ingest;
 
+import com.sp.api.live.relay.LiveRelay;
 import com.sp.api.common.jwt.JwtProvider;
 import com.sp.api.live.entity.LiveStream;
 import com.sp.api.live.service.LiveStreamService;
@@ -45,6 +46,7 @@ public class IngestWebSocketHandler extends AbstractWebSocketHandler {
     private final UserRepository userRepository;
     private final LiveStreamService liveStreamService;
     private final HlsPackagerFactory packagerFactory;
+    private final LiveRelay relay;
     private final ObjectMapper objectMapper;
 
     private final Map<String, Broadcast> broadcasts = new ConcurrentHashMap<>();
@@ -111,7 +113,9 @@ public class IngestWebSocketHandler extends AbstractWebSocketHandler {
 
         try {
             live = liveStreamService.startBrowserBroadcast(user.getStreamKey());
-            packager = packagerFactory.open(live.getStreamName());
+            // HLS 와 함께 0.1초 단위 조각을 중계 허브로 보낸다(저지연 시청). 허브는 시청자가 없어도 열어 둔다.
+            packager = packagerFactory.open(live.getStreamName(),
+                    properties.isLowLatencyEnabled() ? relay.open(live.getId()) : null);
         } catch (Exception e) {
             activeUsers.remove(user.getId());
             log.warn("브라우저 방송을 열지 못했습니다: {}", e.getMessage());
@@ -119,7 +123,7 @@ public class IngestWebSocketHandler extends AbstractWebSocketHandler {
             return;
         }
 
-        broadcasts.put(session.getId(), new Broadcast(user.getId(), live.getStreamName(), packager));
+        broadcasts.put(session.getId(), new Broadcast(user.getId(), live.getId(), live.getStreamName(), packager));
 
         session.sendMessage(new TextMessage(
                 "{\"type\":\"started\",\"liveId\":" + live.getId() + "}"));
@@ -162,6 +166,7 @@ public class IngestWebSocketHandler extends AbstractWebSocketHandler {
         }
 
         broadcast.packager.close();
+        relay.close(broadcast.liveId);
         activeUsers.remove(broadcast.userId);
 
         try {
@@ -195,14 +200,16 @@ public class IngestWebSocketHandler extends AbstractWebSocketHandler {
     private static final class Broadcast {
 
         private final Long userId;
+        private final Long liveId;
         private final String streamName;
         private final HlsPackager packager;
 
         private long windowStart = System.currentTimeMillis();
         private long windowBytes;
 
-        Broadcast(Long userId, String streamName, HlsPackager packager) {
+        Broadcast(Long userId, Long liveId, String streamName, HlsPackager packager) {
             this.userId = userId;
+            this.liveId = liveId;
             this.streamName = streamName;
             this.packager = packager;
         }

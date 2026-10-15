@@ -96,7 +96,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return null;
         }
 
-        if (path.startsWith("/ws") || path.startsWith("/ingest")) {
+        if (path.startsWith("/ws") || path.startsWith("/ingest") || path.startsWith("/watch")) {
             return Kind.CONNECT;
         }
 

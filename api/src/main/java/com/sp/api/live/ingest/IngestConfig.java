@@ -1,5 +1,6 @@
 package com.sp.api.live.ingest;
 
+import com.sp.api.live.relay.LiveWatchWebSocketHandler;
 import com.sp.api.live.service.LiveStreamService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ import java.util.List;
 public class IngestConfig implements WebSocketConfigurer {
 
     private final IngestWebSocketHandler handler;
+    private final LiveWatchWebSocketHandler watchHandler;
     private final LiveStreamService liveStreamService;
 
     @Value("${app.cors.allowed-origins}")
@@ -29,6 +31,10 @@ public class IngestConfig implements WebSocketConfigurer {
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(handler, "/ingest")
+                .setAllowedOriginPatterns(allowedOrigins.toArray(String[]::new));
+
+        // 저지연 시청: 방송 조각을 HLS 를 거치지 않고 바로 받는다.
+        registry.addHandler(watchHandler, "/watch")
                 .setAllowedOriginPatterns(allowedOrigins.toArray(String[]::new));
     }
 

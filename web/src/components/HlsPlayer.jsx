@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Hls from 'hls.js'
+import { getAccessToken } from '../api.js'
+import { lowLatencySupported, startLowLatency } from '../lowLatency.js'
 import { fpsMeterEnabled } from '../perf.js'
 
 /**
@@ -25,6 +27,13 @@ const LIVE_CONFIG = {
 const FAR_BEHIND_SECONDS = 12
 
 /**
+ * 저지연 재생이 이 브라우저에서 안 되는 것으로 확인되면(코덱·버퍼 오류) 이 페이지에서는 다시 시도하지 않는다.
+ * 연결이 잠깐 안 된 경우(방송 준비 중, 네트워크)는 영구 실패로 치지 않는다.
+ */
+let lowLatencyBroken = false
+const PERMANENT_FAILURES = ['codec', 'source-buffer', 'buffer-error', 'append']
+
+/**
  * m3u8 재생. 브라우저가 HLS 를 기본 지원하면(Safari 등) hls.js 없이 재생한다.
  *
  * onTimeUpdate(초) 를 주면 재생 위치가 바뀔 때마다 알려 준다. 다시보기 채팅이 영상과 맞춰 흐르는 데 쓴다.
@@ -32,11 +41,13 @@ const FAR_BEHIND_SECONDS = 12
  * label 은 영상의 접근 이름, children 은 영상 위 왼쪽 위에 얹을 표시(LIVE 배지 등)다.
  * children 이 함수면 { waiting } 을 받아, 송출이 오기 전과 후에 다른 표시를 낼 수 있다.
  */
-export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, label, children, live = false }) {
+export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, label, children, live = false, lowLatencyUrl = null }) {
     const videoRef = useRef(null)
     const hlsRef = useRef(null)
     const [behind, setBehind] = useState(false)
     const [stats, setStats] = useState(null)
+    const [mode, setMode] = useState('hls')
+    const [llStats, setLlStats] = useState(null)
     const [error, setError] = useState(null)
     const [waiting, setWaiting] = useState(true)
 
@@ -64,6 +75,8 @@ export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, lab
 
         setError(null)
         setWaiting(true)
+        setMode('hls')
+        setLlStats(null)
 
         const play = () => {
             video.play().catch(() => {
@@ -71,98 +84,138 @@ export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, lab
             })
         }
 
-        if (Hls.isSupported()) {
-            const hls = new Hls(live ? LIVE_CONFIG : {})
-            hlsRef.current = hls
-            let retryTimer = null
-            let stalls = 0
+        /** HLS 로 재생한다. 저지연이 안 되는 브라우저와, 저지연이 실패했을 때의 이어받기. */
+        function startHls() {
+            if (Hls.isSupported()) {
+                const hls = new Hls(live ? LIVE_CONFIG : {})
+                hlsRef.current = hls
+                let retryTimer = null
+                let stalls = 0
 
-            // 라이브가 얼마나 뒤처졌는지 2초마다 본다. ?fps=1 이면 재생 상태도 계기판으로 보여 준다.
-            const onWaiting = () => (stalls += 1)
-            video.addEventListener('waiting', onWaiting)
+                // 라이브가 얼마나 뒤처졌는지 2초마다 본다. ?fps=1 이면 재생 상태도 계기판으로 보여 준다.
+                const onWaiting = () => (stalls += 1)
+                video.addEventListener('waiting', onWaiting)
 
-            const statsTimer = setInterval(() => {
-                if (live) setBehind((hls.latency ?? 0) > FAR_BEHIND_SECONDS)
+                const statsTimer = setInterval(() => {
+                    if (live) setBehind((hls.latency ?? 0) > FAR_BEHIND_SECONDS)
 
-                if (fpsMeterEnabled()) {
-                    const quality = video.getVideoPlaybackQuality?.()
-                    const ahead = video.buffered.length ? video.buffered.end(video.buffered.length - 1) - video.currentTime : 0
+                    if (fpsMeterEnabled()) {
+                        const quality = video.getVideoPlaybackQuality?.()
+                        const ahead = video.buffered.length ? video.buffered.end(video.buffered.length - 1) - video.currentTime : 0
 
-                    setStats({
-                        latency: live && hls.latency != null ? hls.latency.toFixed(1) : null,
-                        ahead: ahead.toFixed(1),
-                        mbps: hls.bandwidthEstimate ? (hls.bandwidthEstimate / 1e6).toFixed(1) : '?',
-                        level: hls.levels?.[hls.currentLevel]?.bitrate ? Math.round(hls.levels[hls.currentLevel].bitrate / 1000) : '?',
-                        dropped: quality?.droppedVideoFrames ?? 0,
-                        stalls,
-                    })
-                }
-            }, 2000)
+                        setStats({
+                            latency: live && hls.latency != null ? hls.latency.toFixed(1) : null,
+                            ahead: ahead.toFixed(1),
+                            mbps: hls.bandwidthEstimate ? (hls.bandwidthEstimate / 1e6).toFixed(1) : '?',
+                            level: hls.levels?.[hls.currentLevel]?.bitrate ? Math.round(hls.levels[hls.currentLevel].bitrate / 1000) : '?',
+                            dropped: quality?.droppedVideoFrames ?? 0,
+                            stalls,
+                        })
+                    }
+                }, 2000)
 
-            // 끊겼다가 이어져 다시 재생되면 기다리는 표시를 걷는다.
-            const onPlaying = () => setWaiting(false)
-            video.addEventListener('playing', onPlaying)
+                // 끊겼다가 이어져 다시 재생되면 기다리는 표시를 걷는다.
+                const onPlaying = () => setWaiting(false)
+                video.addEventListener('playing', onPlaying)
 
-            hls.loadSource(src)
-            hls.attachMedia(video)
+                hls.loadSource(src)
+                hls.attachMedia(video)
 
-            hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                setError(null)
-                setWaiting(false)
-                play()
-            })
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    setError(null)
+                    setWaiting(false)
+                    play()
+                })
 
-            hls.on(Hls.Events.ERROR, (_event, data) => {
-                if (!data.fatal) return
+                hls.on(Hls.Events.ERROR, (_event, data) => {
+                    if (!data.fatal) return
 
-                if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-                    // 송출이 아직 오지 않았을 뿐 고장이 아니다. 오류가 아니라 기다리는 상태로 보여 준다.
-                    setWaiting(true)
+                    if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                        // 송출이 아직 오지 않았을 뿐 고장이 아니다. 오류가 아니라 기다리는 상태로 보여 준다.
+                        setWaiting(true)
 
-                    // 방송이 막 시작돼 재생목록이 아직 만들어지기 전이면 처음 읽기가 실패한다. 잠시 뒤 다시 읽는다.
-                    // 재생목록을 못 읽은 경우는 처음부터 다시 불러오고, 재생 도중 끊긴 경우는 이어서 받는다.
-                    const manifest =
-                        data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR ||
-                        data.details === Hls.ErrorDetails.MANIFEST_LOAD_TIMEOUT
+                        // 방송이 막 시작돼 재생목록이 아직 만들어지기 전이면 처음 읽기가 실패한다. 잠시 뒤 다시 읽는다.
+                        // 재생목록을 못 읽은 경우는 처음부터 다시 불러오고, 재생 도중 끊긴 경우는 이어서 받는다.
+                        const manifest =
+                            data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR ||
+                            data.details === Hls.ErrorDetails.MANIFEST_LOAD_TIMEOUT
 
+                        clearTimeout(retryTimer)
+                        retryTimer = setTimeout(() => (manifest ? hls.loadSource(src) : hls.startLoad()), 3000)
+                    } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                        hls.recoverMediaError()
+                    } else {
+                        setError('재생 중 오류가 발생했습니다.')
+                        hls.destroy()
+                    }
+                })
+
+                return () => {
                     clearTimeout(retryTimer)
-                    retryTimer = setTimeout(() => (manifest ? hls.loadSource(src) : hls.startLoad()), 3000)
-                } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-                    hls.recoverMediaError()
-                } else {
-                    setError('재생 중 오류가 발생했습니다.')
+                    clearInterval(statsTimer)
+                    video.removeEventListener('playing', onPlaying)
+                    video.removeEventListener('waiting', onWaiting)
+                    hlsRef.current = null
                     hls.destroy()
                 }
+            }
+
+            if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                const ready = () => {
+                    setWaiting(false)
+                    play()
+                }
+
+                video.src = src
+                video.addEventListener('loadedmetadata', ready)
+
+                return () => {
+                    video.removeEventListener('loadedmetadata', ready)
+                    video.removeAttribute('src')
+                    video.load()
+                }
+            }
+
+            setError('이 브라우저는 HLS 재생을 지원하지 않습니다.')
+            return undefined
+        }
+
+        // 브라우저 방송은 WebSocket + MSE 로 0.1초 단위 조각을 바로 받아 1~2초 지연으로 재생한다.
+        // 안 되면(미지원 브라우저·연결 실패) 위의 HLS 로 이어서 본다.
+        if (live && lowLatencyUrl && lowLatencySupported() && !lowLatencyBroken) {
+            let hlsCleanup
+
+            const lowLatency = startLowLatency(video, {
+                url: lowLatencyUrl,
+                token: getAccessToken(),
+                onReady: () => {
+                    setWaiting(false)
+                    setError(null)
+                    setMode('ll')
+                },
+                onStats: (next) => {
+                    if (fpsMeterEnabled()) setLlStats(next)
+                },
+                onEnded: () => setWaiting(true),
+                onFail: (reason) => {
+                    if (PERMANENT_FAILURES.includes(reason)) lowLatencyBroken = true
+
+                    video.removeAttribute('src')
+                    video.load()
+                    setMode('hls')
+                    setLlStats(null)
+                    hlsCleanup = startHls()
+                },
             })
 
             return () => {
-                clearTimeout(retryTimer)
-                clearInterval(statsTimer)
-                video.removeEventListener('playing', onPlaying)
-                video.removeEventListener('waiting', onWaiting)
-                hlsRef.current = null
-                hls.destroy()
+                lowLatency.stop()
+                hlsCleanup?.()
             }
         }
 
-        if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            const ready = () => {
-                setWaiting(false)
-                play()
-            }
-
-            video.src = src
-            video.addEventListener('loadedmetadata', ready)
-
-            return () => {
-                video.removeEventListener('loadedmetadata', ready)
-                video.removeAttribute('src')
-                video.load()
-            }
-        }
-
-        setError('이 브라우저는 HLS 재생을 지원하지 않습니다.')
-    }, [src, live])
+        return startHls()
+    }, [src, live, lowLatencyUrl])
 
     /** 방송 끝(지금)으로 건너뛴다. 멈춰 있다가 돌아온 시청자가 한참 지난 장면을 보지 않게 한다. */
     function jumpToLive() {
@@ -196,13 +249,21 @@ export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, lab
                     </div>
                 )}
 
-                {live && behind && !waiting && (
+                {mode === 'hls' && live && behind && !waiting && (
                     <button type="button" className="player-box__jump" onClick={jumpToLive}>
                         지금 방송으로
                     </button>
                 )}
 
-                {stats && (
+                {mode === 'll' && llStats && (
+                    <div className="c-fps player-box__stats" aria-hidden="true">
+                        <b>저지연 · 지연 {llStats.lag.toFixed(1)}s</b> · 속도 {llStats.rate}x
+                        <br />
+                        받은 조각 {llStats.received} · 대기 {llStats.queued}
+                    </div>
+                )}
+
+                {mode === 'hls' && stats && (
                     <div className="c-fps player-box__stats" aria-hidden="true">
                         {stats.latency != null && <><b>지연 {stats.latency}s</b> · </>}
                         버퍼 {stats.ahead}s · 대역폭 {stats.mbps}Mbps · 화질 {stats.level}kbps

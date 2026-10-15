@@ -70,6 +70,7 @@ export default function LivePage({ id }) {
             <div className="live__main">
                 <HlsPlayer
                     live
+                    lowLatencyUrl={lowLatencyUrlOf(live)}
                     src={live.hlsUrl}
                     poster={live.thumbnailUrl}
                     label={`${live.title} 라이브 방송`}
@@ -198,4 +199,20 @@ function VodView({ live }) {
             {live.vodUrl && <ReplayChat key={live.id} liveId={live.id} currentTime={currentTime} />}
         </section>
     )
+}
+
+/**
+ * 브라우저 방송(재생 이름이 b- 로 시작)이면 저지연 시청 주소를 만든다. 서버(/watch)가 HLS 와 같은 주소(origin)에 있다.
+ * 볼 수 없는 시청자(hlsUrl 이 null)와 OBS 방송에는 없다.
+ */
+function lowLatencyUrlOf(live) {
+    if (!live.hlsUrl || !live.hlsUrl.includes('/live-hls/b-')) return null
+
+    try {
+        const origin = new URL(live.hlsUrl).origin.replace(/^http/, 'ws')
+
+        return `${origin}/watch?liveId=${live.id}`
+    } catch {
+        return null
+    }
 }

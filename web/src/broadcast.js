@@ -85,7 +85,7 @@ export async function openCapture({ source, withMic }) {
  * 잡은 화면/카메라(stream)를 서버로 보내 방송을 시작한다.
  *
  * 1. /ingest 에 연결해 로그인 토큰을 보낸다.
- * 2. 서버가 방송을 열면 MediaRecorder 로 1초마다 조각을 보낸다.
+ * 2. 서버가 방송을 열면 MediaRecorder 로 0.25초마다 조각을 보낸다.
  * 3. 끊기면(어느 쪽이든) 방송이 끝난다.
  *
  * @returns {{ stop: () => void }}
@@ -174,7 +174,8 @@ export async function startBroadcast(stream, { onStarted, onClosed, onError, onS
             onStats({ seconds, sentBytes, kbps: Math.round((sentBytes * 8) / seconds / 1000) })
         }, 1000)
 
-        recorder.start(1000)
+        // 0.25초마다 보낸다. 1초로 모으면 시청 지연이 그만큼 늘어난다.
+        recorder.start(250)
         onStarted(message.liveId)
     }
 

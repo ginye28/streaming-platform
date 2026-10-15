@@ -6,6 +6,7 @@ import com.sp.api.common.ratelimit.RateLimitFilter;
 import com.sp.api.common.ratelimit.RateLimitProperties;
 import com.sp.api.common.security.SecurityEventRecorder;
 import com.sp.api.common.security.SecurityHeadersFilter;
+import com.sp.api.common.security.WebSocketNoCompressionFilter;
 import com.sp.api.common.security.RestAccessDeniedHandler;
 import com.sp.api.common.security.RestAuthenticationEntryPoint;
 import com.sp.api.user.security.CustomUserDetailsService;
@@ -85,6 +86,9 @@ public class SecurityConfig {
                         // 브라우저 방송 업로드 연결. 인증은 연결 뒤 첫 메시지(로그인 토큰)에서 처리한다.
                         .requestMatchers("/ingest/**").permitAll()
 
+                        // 저지연 시청 연결. 시청 권한은 연결 뒤 첫 메시지(토큰)로 확인한다.
+                        .requestMatchers("/watch/**").permitAll()
+
                         // 브라우저에서 방송한 영상(HLS 재생목록·조각). 시청자 누구나 받는다.
                         .requestMatchers(HttpMethod.GET, "/live-hls/**").permitAll()
 
@@ -139,7 +143,8 @@ public class SecurityConfig {
                         new RateLimitFilter(rateLimitProperties, securityEvents, objectMapper),
                         JwtAuthenticationFilter.class
                 )
-                .addFilterBefore(new SecurityHeadersFilter(), RateLimitFilter.class);
+                .addFilterBefore(new SecurityHeadersFilter(), RateLimitFilter.class)
+                .addFilterBefore(new WebSocketNoCompressionFilter(), SecurityHeadersFilter.class);
 
         return http.build();
     }

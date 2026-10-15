@@ -530,6 +530,28 @@ VOD 는 `videoUrl` 로 재생하고, 라이브는 `hlsUrl` 로 재생합니다.
 
 ---
 
+## 저지연 시청 (WebSocket `/watch`)
+
+브라우저로 방송한 라이브(재생 이름이 `b-` 로 시작)를 HLS 조각을 거치지 않고 1~2초 지연으로 본다. 화면(`web/src/lowLatency.js`)이 쓰며, 안 되면 `hlsUrl` 로 HLS 를 본다.
+
+```
+wss://<api>/watch?liveId=<방송 id>
+→ {"type":"join","token":"<로그인 토큰, 없어도 됨>"}          (첫 메시지)
+← {"type":"init","codecs":"avc1.640028,mp4a.40.2"}            (글자)
+← <이진> 머리(ftyp+moov)                                       (MSE addSourceBuffer 용)
+← <이진> 마지막 키프레임부터의 지난 조각들, 이어서 실시간 조각(0.1초 단위 moof+mdat)
+← {"type":"ended"}                                            방송이 끝났다
+← {"type":"unavailable" | "forbidden" | "full"}               안 된다 → HLS 로 본다
+```
+
+- 이진 메시지는 이어 붙이면 그대로 하나의 fMP4 스트림이다. 시청자는 MediaSource 의 SourceBuffer 에 순서대로 넣는다.
+- 멤버십 전용 방송은 토큰으로 시청 권한을 확인한다(`forbidden`). 구독자 수 집계(`/topic/lives/{id}/viewers`)에는 들어가지 않는다.
+- `full`: 저지연 동시 시청자 상한(`INGEST_LOW_LATENCY_MAX_VIEWERS`, 기본 30)을 넘었다. 느려서 큐(약 10초)가 찬 시청자는 서버가 끊는다.
+- 연결 요청은 `/ws`·`/ingest` 와 같은 "연결" 한도(IP 별 분당 300)에 센다. 압축 확장은 협상하지 않는다.
+- 브라우저 방송 업로드(`/ingest`)의 조각은 0.25초 단위다.
+
+---
+
 ## 채팅 (WebSocket)
 
 STOMP over WebSocket 을 씁니다.

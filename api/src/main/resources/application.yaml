@@ -121,6 +121,10 @@ app:
     hls-dir: ${INGEST_HLS_DIR:${java.io.tmpdir}/sp-ingest-hls}
     max-sessions: ${INGEST_MAX_SESSIONS:1}
     max-kbps: ${INGEST_MAX_KBPS:6000}
+    # 브라우저 방송을 HLS 와 함께 0.1초 단위 조각으로도 중계해 시청 지연을 1~2초로 줄인다. 서버 CPU 를 더 쓴다.
+    low-latency-enabled: ${INGEST_LOW_LATENCY:true}
+    # 저지연으로 동시에 받는 시청자 수. 넘는 시청자는 HLS 로 본다. 무료 서버(512MB)에서는 50명에서 메모리가 한계였다.
+    low-latency-max-viewers: ${INGEST_LOW_LATENCY_MAX_VIEWERS:30}
 
 logging:
   level:
