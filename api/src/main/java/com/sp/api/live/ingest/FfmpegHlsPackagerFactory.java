@@ -1,5 +1,9 @@
 package com.sp.api.live.ingest;
 
+import com.sp.api.live.relay.FragmentListener;
+import com.sp.api.live.relay.Fmp4Splitter;
+import java.io.InputStream;
+import java.util.ArrayList;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +36,16 @@ public class FfmpegHlsPackagerFactory implements HlsPackagerFactory {
     /** 방송이 끝난 뒤에도 시청자가 마지막 조각을 받아 갈 수 있게 파일을 잠깐 둔다(초). */
     private static final long CLEANUP_DELAY_SECONDS = 60;
 
+    /**
+     * 수업(말하는 소리) 기준의 소리 설정. 모노 24kHz·48kbps 면 말은 또렷하고 AAC 인코딩 비용이 스테레오 48kHz 의 약 1/4 이다.
+     * 무료 서버(0.1 CPU)에서 시청자 몫의 CPU 를 남기려는 것이다. 음악 방송이 필요해지면 환경변수로 올릴 수 있게 한다.
+     */
+    private static final String AUDIO_RATE = "24000";
+    private static final String AUDIO_BITRATE = "48k";
+
+    /** 저지연 조각 하나의 길이(마이크로초). 짧을수록 지연이 줄고 전송 횟수(CPU)가 는다. */
+    private static final int FRAGMENT_MICROS = 100_000;
+
     private final IngestProperties properties;
 
     private final ScheduledExecutorService cleaner = Executors.newSingleThreadScheduledExecutor(r -> {
@@ -55,41 +69,129 @@ public class FfmpegHlsPackagerFactory implements HlsPackagerFactory {
 
     @Override
     public HlsPackager open(String streamName) throws IOException {
+        return open(streamName, null);
+    }
+
+    @Override
+    public HlsPackager open(String streamName, FragmentListener listener) throws IOException {
 
         Files.createDirectories(properties.getHlsDir());
 
         Path playlist = properties.getHlsDir().resolve(streamName + ".m3u8");
         Path segments = properties.getHlsDir().resolve(streamName + "-%d.ts");
 
-        List<String> command = List.of(
-                properties.getFfmpegPath(),
-                "-hide_banner", "-loglevel", "warning",
-                "-fflags", "+genpts",
-                "-i", "pipe:0",
-                "-c:v", "copy",
-                "-c:a", "aac", "-b:a", "128k",
-                "-f", "hls",
-                "-hls_time", "3",
-                "-hls_list_size", "6",
-                "-hls_flags", "delete_segments+independent_segments",
-                "-hls_segment_filename", segments.toString(),
-                playlist.toString()
-        );
+        List<String> command = listener == null
+                ? hlsOnlyCommand(playlist, segments)
+                : hlsAndFragmentsCommand(playlist, segments);
 
-        Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
+        // 표준 오류는 따로 읽는다(표준 출력은 fMP4 데이터다).
+        Process process = new ProcessBuilder(command).start();
 
         Thread logger = new Thread(() -> drain(process, streamName), "ingest-ffmpeg-log");
         logger.setDaemon(true);
         logger.start();
+
+        // 표준 출력은 시청자가 없어도 계속 비워야 한다. 안 비우면 파이프가 차서 ffmpeg 전체(HLS 포함)가 멈춘다.
+        Thread pump = new Thread(() -> pumpFragments(process, streamName, listener), "ingest-ffmpeg-fmp4");
+        pump.setDaemon(true);
+        pump.start();
 
         log.info("브라우저 방송 포장 시작: {}", streamName);
 
         return new FfmpegPackager(process, streamName);
     }
 
+    /** HLS 만 만든다(저지연 중계를 끈 서버). 영상은 복사, 소리는 AAC 로 바꾼다. */
+    private List<String> hlsOnlyCommand(Path playlist, Path segments) {
+        return new ArrayList<>(List.of(
+                properties.getFfmpegPath(),
+                "-hide_banner", "-loglevel", "warning",
+                "-fflags", "+genpts+nobuffer",
+                "-flags", "low_delay",
+                "-probesize", "500000",
+                "-analyzeduration", "500000",
+                "-i", "pipe:0",
+                "-c:v", "copy",
+                "-c:a", "aac", "-ac", "1", "-ar", AUDIO_RATE, "-b:a", AUDIO_BITRATE,
+                "-f", "hls",
+                "-hls_time", "3",
+                "-hls_list_size", "6",
+                "-hls_flags", "delete_segments+independent_segments",
+                "-hls_segment_filename", segments.toString(),
+                playlist.toString()
+        ));
+    }
+
+    /**
+     * HLS 와 0.1초 단위 fMP4(표준 출력)를 한 번에 만든다.
+     *
+     * 소리(AAC)는 tee 로 한 번만 인코딩해 두 출력에 나눈다. 소리 인코딩이 이 작업의 CPU 대부분이라
+     * (무료 서버는 0.1 CPU), 출력마다 따로 인코딩하면 시청자를 받기 전에 한도가 찬다.
+     */
+    private List<String> hlsAndFragmentsCommand(Path playlist, Path segments) {
+
+        String hls = "[f=hls:hls_time=3:hls_list_size=6:hls_flags=delete_segments+independent_segments"
+                + ":hls_segment_filename=" + segments + "]" + playlist;
+
+        String fragments = "[f=mp4:movflags=+empty_moov+default_base_moof+frag_keyframe"
+                + ":frag_duration=" + FRAGMENT_MICROS + ":flush_packets=1]pipe:1";
+
+        return new ArrayList<>(List.of(
+                properties.getFfmpegPath(),
+                "-hide_banner", "-loglevel", "warning",
+                // 들어오는 즉시 처리한다. 기본값은 입력을 몇 초씩 분석하며 모아서 첫 화면이 늦다.
+                "-fflags", "+genpts+nobuffer",
+                "-flags", "low_delay",
+                "-probesize", "500000",
+                "-analyzeduration", "500000",
+                "-i", "pipe:0",
+                "-map", "0:v:0", "-map", "0:a:0?",
+                "-c:v", "copy",
+                "-c:a", "aac", "-ac", "1", "-ar", AUDIO_RATE, "-b:a", AUDIO_BITRATE,
+                "-f", "tee",
+                hls + "|" + fragments
+        ));
+    }
+
+    /** ffmpeg 표준 출력(fMP4)을 읽어 머리와 조각으로 나눠 listener 에 넘긴다. listener 가 없으면 그냥 비운다. */
+    private void pumpFragments(Process process, String streamName, FragmentListener listener) {
+
+        Fmp4Splitter splitter = listener == null ? null : new Fmp4Splitter(listener);
+        byte[] buffer = new byte[64 * 1024];
+
+        try (InputStream in = process.getInputStream()) {
+
+            int read;
+
+            while ((read = in.read(buffer)) != -1) {
+
+                if (splitter == null) {
+                    continue;
+                }
+
+                try {
+                    splitter.feed(buffer, 0, read);
+                } catch (RuntimeException e) {
+                    // 시청자 쪽 문제가 ffmpeg 출력을 비우는 일을 멈추게 하면 안 된다(파이프가 차면 HLS 까지 멈춘다).
+                    log.warn("저지연 조각 처리 중 오류. 이 방송은 HLS 로만 나갑니다: {} ({})", streamName, e.toString());
+                    splitter = null;
+                    continue;
+                }
+
+                if (splitter.isFailed()) {
+                    log.warn("저지연 조각을 읽지 못해 이 방송은 HLS 로만 나갑니다: {}", streamName);
+                    splitter = null;
+                }
+            }
+
+        } catch (IOException ignored) {
+            // 프로세스가 끝나면서 닫힌 것
+        }
+    }
+
     private void drain(Process process, String streamName) {
         try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 log.warn("ffmpeg[{}]: {}", streamName, line);

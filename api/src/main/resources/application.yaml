@@ -44,10 +44,10 @@ app:
     rate-limit:
       enabled: ${RATE_LIMIT_ENABLED:true}
       # 일반 요청(IP 하나당 분당). 넘치면 429 와 Retry-After. 영상 조각(/live-hls)·업로드 파일(/uploads)·nginx 콜백·토스 웹훅·/api/auth 는 세지 않는다.
-      write-per-minute: ${RATE_LIMIT_WRITE_PER_MINUTE:120}
-      read-per-minute: ${RATE_LIMIT_READ_PER_MINUTE:600}
+      write-per-minute: ${RATE_LIMIT_WRITE_PER_MINUTE:300}
+      read-per-minute: ${RATE_LIMIT_READ_PER_MINUTE:1500}
       upload-per-minute: ${RATE_LIMIT_UPLOAD_PER_MINUTE:20}
-      connect-per-minute: ${RATE_LIMIT_CONNECT_PER_MINUTE:60}
+      connect-per-minute: ${RATE_LIMIT_CONNECT_PER_MINUTE:300}
 
   payments:
     toss:
@@ -121,6 +121,10 @@ app:
     hls-dir: ${INGEST_HLS_DIR:${java.io.tmpdir}/sp-ingest-hls}
     max-sessions: ${INGEST_MAX_SESSIONS:1}
     max-kbps: ${INGEST_MAX_KBPS:6000}
+    # 브라우저 방송을 HLS 와 함께 0.1초 단위 조각으로도 중계해 시청 지연을 1~2초로 줄인다. 서버 CPU 를 더 쓴다.
+    low-latency-enabled: ${INGEST_LOW_LATENCY:true}
+    # 저지연으로 동시에 받는 시청자 수. 넘는 시청자는 HLS 로 본다. 무료 서버(512MB)에서는 50명에서 메모리가 한계였다.
+    low-latency-max-viewers: ${INGEST_LOW_LATENCY_MAX_VIEWERS:30}
 
 logging:
   level:

@@ -45,10 +45,10 @@ Base URL: `http://localhost:8080`
 | 로그인·가입·토큰 갱신 | `POST /api/auth/login`·`signup`·`refresh` | IP 별 10분에 60·20·120 | `AuthRateLimitFilter` |
 | 같은 계정 로그인 실패 | 이메일 | 15분에 10번 틀리면 잠깐 막음(IP 를 바꿔도) | `AuthService` |
 | 채팅 도배 | 한 사람이 보내는 글 | 10초에 10 (방장이 켠 슬로우 모드와 별개, 후원·채널 주인·매니저 제외) | `ChatFloodGuard` |
-| 변경 요청 | `/api/**` 의 POST·PUT·PATCH·DELETE | IP 별 분당 120 | `RateLimitFilter` |
-| 조회 | `/api/**` 의 GET | IP 별 분당 600 | `RateLimitFilter` |
+| 변경 요청 | `/api/**` 의 POST·PUT·PATCH·DELETE | IP 별 분당 300 | `RateLimitFilter` |
+| 조회 | `/api/**` 의 GET | IP 별 분당 1500 | `RateLimitFilter` |
 | 파일 업로드 | `POST /api/files/**` | IP 별 분당 20 | `RateLimitFilter` |
-| WebSocket 연결 | `/ws`, `/ingest` | IP 별 분당 60 | `RateLimitFilter` |
+| WebSocket 연결 | `/ws`, `/ingest` | IP 별 분당 300 | `RateLimitFilter` |
 
 - 영상 조각(`/live-hls/**`)·업로드 파일(`/uploads/**`)·nginx 콜백(`/api/internal/**`)·토스 웹훅·`/api/auth/**` 는 `RateLimitFilter` 가 세지 않는다(인증 쪽은 위 표의 전용 제한이 맡는다).
 - IP 는 Cloudflare 가 채우는 `CF-Connecting-IP`, 없으면 접속 주소다(`X-Forwarded-For` 는 클라이언트가 꾸밀 수 있어 믿지 않는다).
@@ -527,6 +527,28 @@ VOD 는 `videoUrl` 로 재생하고, 라이브는 `hlsUrl` 로 재생합니다.
 - 송출이 시작되면 **방송 시각이 가장 가까운 예약**(시작 90분 전 ~ 6시간 후 범위) 하나가 그 방송에 이어집니다. 예약에 적은 제목·설명·
   공개 대상·채팅 대상이 방송에 쓰이고, 예약은 `STARTED` + `liveId` 가 됩니다. 대기실이 이걸 보고 방송 화면으로 넘어갑니다.
 - 시각이 6시간 넘게 지나도 방송하지 않은 예약은 `EXPIRED` 로 내려갑니다.
+
+---
+
+## 저지연 시청 (WebSocket `/watch`)
+
+브라우저로 방송한 라이브(재생 이름이 `b-` 로 시작)를 HLS 조각을 거치지 않고 1~2초 지연으로 본다. 화면(`web/src/lowLatency.js`)이 쓰며, 안 되면 `hlsUrl` 로 HLS 를 본다.
+
+```
+wss://<api>/watch?liveId=<방송 id>
+→ {"type":"join","token":"<로그인 토큰, 없어도 됨>"}          (첫 메시지)
+← {"type":"init","codecs":"avc1.640028,mp4a.40.2"}            (글자)
+← <이진> 머리(ftyp+moov)                                       (MSE addSourceBuffer 용)
+← <이진> 마지막 키프레임부터의 지난 조각들, 이어서 실시간 조각(0.1초 단위 moof+mdat)
+← {"type":"ended"}                                            방송이 끝났다
+← {"type":"unavailable" | "forbidden" | "full"}               안 된다 → HLS 로 본다
+```
+
+- 이진 메시지는 이어 붙이면 그대로 하나의 fMP4 스트림이다. 시청자는 MediaSource 의 SourceBuffer 에 순서대로 넣는다.
+- 멤버십 전용 방송은 토큰으로 시청 권한을 확인한다(`forbidden`). 구독자 수 집계(`/topic/lives/{id}/viewers`)에는 들어가지 않는다.
+- `full`: 저지연 동시 시청자 상한(`INGEST_LOW_LATENCY_MAX_VIEWERS`, 기본 30)을 넘었다. 느려서 큐(약 10초)가 찬 시청자는 서버가 끊는다.
+- 연결 요청은 `/ws`·`/ingest` 와 같은 "연결" 한도(IP 별 분당 300)에 센다. 압축 확장은 협상하지 않는다.
+- 브라우저 방송 업로드(`/ingest`)의 조각은 0.25초 단위다.
 
 ---
 

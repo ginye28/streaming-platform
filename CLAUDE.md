@@ -58,4 +58,6 @@
 - 글을 받는 새 DTO 칸에는 `@SafeText`·`@Size` 를, 업로드 경로(`/uploads/…`)나 http(s) 주소를 받는 칸에는 `@SafeUrl` 을, 외부 링크만 받는 칸에는 `@HttpUrl` 을 붙인다(`common/validation`). 안 붙이면 태그·`javascript:` 가 그대로 저장된다.
 - 화면 CSP(`web/vercel.json`, `web/security-headers.conf`)에 없는 외부 스크립트·서비스를 붙이면 브라우저가 막는다 → 두 파일에 주소를 더한다.
 - 화면 효과(blur·무한 애니메이션)를 더할 때는 `cinematic.css` 끝의 `:root[data-perf='lite']` 블록에도 끄는 규칙을 넣는다([docs/10-performance.md](docs/10-performance.md)).
+- 영상 WebSocket(`/ingest`·`/watch`)은 압축(permessage-deflate)을 협상하지 않는다(`WebSocketNoCompressionFilter`). 되돌리면 0.1 CPU 서버가 시청자 13명에서 막힌다. 새 영상 경로를 만들면 같은 필터 경로에 넣는다.
+- 저지연 중계에서 시청자별 전송은 일반 스레드(가상 스레드 아님)이고, 느린 시청자는 큐 상한(약 10초)에서 끊는다. 구독자 목록은 순회 중 수정되므로 `CopyOnWriteArrayList` 다([docs/10-performance.md](docs/10-performance.md)).
 - Windows Git Bash 는 `/tmp` 같은 경로를 바꿔 버린다 → Docker 명령 앞에 `export MSYS_NO_PATHCONV=1`.

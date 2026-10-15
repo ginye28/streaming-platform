@@ -78,6 +78,12 @@
 ### D. 사이트가 비어 있음
 - 운영에 방송·영상이 하나도 없어 처음 보면 미완성처럼 보임. 직접 가입해서 영상 1~2개 올리거나, A 가 되면 짧게 방송을 켜 두기. (계정 생성은 AI 가 대신 못 함)
 
+### G. 저지연 시청 (수업 13명 제보 이후)
+- 브라우저 방송은 HLS 와 함께 0.1초 fMP4 를 만들어 `LiveRelay` → WebSocket(`/watch`) → 시청자 MSE 로 흘린다. 지연 약 1.6~1.8초(로컬, 0.1 CPU·시청자 12명 동시). 상세·측정: [10-performance.md](10-performance.md).
+- **운영 Render 에서 실제로 재야 한다.** 방송을 켜고 시청 화면에 `?fps=1` 을 붙여 "저지연 · 지연 N초" 와 끊김을 본다. 문제가 있으면 `INGEST_LOW_LATENCY=false` 로 끄면 HLS 만 나간다(재배포 필요).
+- 부하 시험이 잡은 결함(순회 중 수정, 가상 스레드 기아, WebSocket 압축)은 고쳤고 회귀 테스트가 있다. 압축 제거(`WebSocketNoCompressionFilter`)를 되돌리면 같은 서버가 13명에서 막힌다.
+- OBS 방송에는 아직 저지연이 없다.
+
 ### F. 이번에 넣은 것 중 아직 안 본 것
 - **실제 구형 폰·태블릿의 fps**: 로직은 데스크톱에서만 확인했다. `?fps=1` 로 재서 [10-performance.md](10-performance.md) 표를 채운다.
 - **전체 CSP 를 강제로 올리기**: 강제 CSP 는 `frame-ancestors`·`base-uri`·`object-src` 만이고, 전체 허용 목록은 `Content-Security-Policy-Report-Only` 로 관찰만 한다. 운영에서 홈·시청·**토스 결제창**을 돌려 보고 콘솔에 `Content Security Policy` 위반이 없으면 `web/vercel.json` 의 Report-Only 값을 `Content-Security-Policy` 로 옮긴다(결제는 테스트 키로 사람이 직접).

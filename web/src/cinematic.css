@@ -1857,3 +1857,30 @@ body::before {
 .c-fps b {
     color: #7cf5d0;
 }
+
+/* 라이브가 많이 뒤처졌을 때 지금으로 건너뛰는 버튼, 그리고 ?fps=1 일 때의 재생 상태 계기판 */
+.player-box__jump {
+    position: absolute;
+    right: 12px;
+    bottom: 56px;
+    z-index: 3;
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid rgb(255 255 255 / 0.4);
+    border-radius: 14px 5px 14px 5px;
+    background: rgb(0 0 0 / 0.7);
+    color: #fff;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.player-box__stats {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    bottom: auto;
+    left: auto;
+    z-index: 3;
+}

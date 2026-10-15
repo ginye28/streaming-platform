@@ -517,6 +517,7 @@ docker compose --profile full up -d --build
 | 요청 속도 제한 (IP 별 토큰 버킷 · 같은 계정 로그인 · 채팅 도배) → 429 + `Retry-After` | 완료 (단일 서버 기준, 한도는 `RATE_LIMIT_*` 로 조정) |
 | 입력 필터 — 글의 HTML 태그·제어 문자, 주소의 `javascript:` 등을 서버에서 거절 + 길이 제한 · 응답 보안 헤더(CSP 등) · 화면 CSP | 완료 (`docs/03-api-spec.md` "입력 필터") |
 | 비정상 접근 기록 (막힌 요청 · 로그인 실패 · 거절된 입력) — 관리자 화면 **보안** 탭 | 완료 (최근 200건, 서버 메모리) |
+| **저지연 시청 (브라우저 방송)** — WebSocket + MSE 로 0.1초 단위 조각을 바로 받아 지연 약 1.6~1.8초, 안 되면 자동으로 HLS | 완료 (로컬 Docker 의 0.1 CPU 한도에서 13·30·50명, 실제 브라우저 끊김 0 확인. **운영 Render 에서는 아직 못 잼** — [docs/10-performance.md](docs/10-performance.md)) |
 | 낮은 사양 기기용 가벼운 화면 (자동 판정 · 내 메뉴에서 직접 선택 · `?fps=1` 계기판) | 로직 완료. **실제 구형 기기 fps 는 아직 못 잼** ([docs/10-performance.md](docs/10-performance.md)) |
 | 소셜 로그인 | 엔티티만 준비 (`Provider`) |
 
