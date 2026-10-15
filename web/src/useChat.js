@@ -1,4 +1,4 @@
-import { Client } from '@stomp/stompjs'
+import { Client, ReconnectionTimeMode } from '@stomp/stompjs'
 import { useEffect, useRef, useState } from 'react'
 import { API_BASE_URL, getAccessToken } from './api.js'
 
@@ -50,7 +50,11 @@ export function useChat(liveId, initial = {}) {
             brokerURL: BROKER_URL,
             // 비로그인도 연결은 되고, 읽기만 가능하다.
             connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
-            reconnectDelay: 3000,
+            // 끊기면 2초 뒤부터 두 배씩(최대 30초) 늘려 가며 다시 잇는다. 서버가 잠깐 버벅일 때 모두가
+            // 3초마다 한꺼번에 두드려 상황을 더 나쁘게 만드는 것을 막는다.
+            reconnectDelay: 2000,
+            reconnectTimeMode: ReconnectionTimeMode.EXPONENTIAL,
+            maxReconnectDelay: 30_000,
 
             onConnect: () => {
                 setConnected(true)

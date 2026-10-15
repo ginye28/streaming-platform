@@ -81,7 +81,7 @@ async function connect() {
     loading = true
 
     try {
-        const { Client } = await import('@stomp/stompjs')
+        const { Client, ReconnectionTimeMode } = await import('@stomp/stompjs')
 
         // 불러오는 사이에 구독자가 모두 사라졌거나 탭이 가려졌으면 만들지 않는다.
         if (document.hidden || listeners.size === 0) return
@@ -89,6 +89,8 @@ async function connect() {
         client = new Client({
             brokerURL: BROKER_URL,
             reconnectDelay: 5000,
+            reconnectTimeMode: ReconnectionTimeMode.EXPONENTIAL,
+            maxReconnectDelay: 60_000,
             onConnect: () => {
                 topicSubs.clear()
                 listeners.forEach((_, liveId) => subscribeTopic(liveId))

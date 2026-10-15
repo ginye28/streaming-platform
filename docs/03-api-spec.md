@@ -45,10 +45,10 @@ Base URL: `http://localhost:8080`
 | 로그인·가입·토큰 갱신 | `POST /api/auth/login`·`signup`·`refresh` | IP 별 10분에 60·20·120 | `AuthRateLimitFilter` |
 | 같은 계정 로그인 실패 | 이메일 | 15분에 10번 틀리면 잠깐 막음(IP 를 바꿔도) | `AuthService` |
 | 채팅 도배 | 한 사람이 보내는 글 | 10초에 10 (방장이 켠 슬로우 모드와 별개, 후원·채널 주인·매니저 제외) | `ChatFloodGuard` |
-| 변경 요청 | `/api/**` 의 POST·PUT·PATCH·DELETE | IP 별 분당 120 | `RateLimitFilter` |
-| 조회 | `/api/**` 의 GET | IP 별 분당 600 | `RateLimitFilter` |
+| 변경 요청 | `/api/**` 의 POST·PUT·PATCH·DELETE | IP 별 분당 300 | `RateLimitFilter` |
+| 조회 | `/api/**` 의 GET | IP 별 분당 1500 | `RateLimitFilter` |
 | 파일 업로드 | `POST /api/files/**` | IP 별 분당 20 | `RateLimitFilter` |
-| WebSocket 연결 | `/ws`, `/ingest` | IP 별 분당 60 | `RateLimitFilter` |
+| WebSocket 연결 | `/ws`, `/ingest` | IP 별 분당 300 | `RateLimitFilter` |
 
 - 영상 조각(`/live-hls/**`)·업로드 파일(`/uploads/**`)·nginx 콜백(`/api/internal/**`)·토스 웹훅·`/api/auth/**` 는 `RateLimitFilter` 가 세지 않는다(인증 쪽은 위 표의 전용 제한이 맡는다).
 - IP 는 Cloudflare 가 채우는 `CF-Connecting-IP`, 없으면 접속 주소다(`X-Forwarded-For` 는 클라이언트가 꾸밀 수 있어 믿지 않는다).

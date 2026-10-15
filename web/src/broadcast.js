@@ -12,7 +12,9 @@ const MIME_CANDIDATES = [
     'video/x-matroska;codecs=avc1',
 ]
 
-const VIDEO_BITS_PER_SECOND = 2_500_000
+// 시청자 한 명이 이만큼을 받는다. 13명이 보면 최대 약 20Mbps 가 학교 와이파이와 무료 서버(0.1 CPU)를 지나간다.
+// 2.5Mbps 로 보내던 때는 같은 인원에서 32Mbps 까지 올라가 끊김이 컸다. 슬라이드·코드 화면은 1.5Mbps 로도 글자가 읽힌다.
+const VIDEO_BITS_PER_SECOND = 1_500_000
 const AUDIO_BITS_PER_SECOND = 128_000
 
 /** 서버로 못 나간 데이터가 이만큼 쌓이면 네트워크가 못 따라가는 것이므로 멈춘다. */
@@ -36,7 +38,7 @@ export async function openCapture({ source, withMic }) {
 
     if (source === 'screen') {
         const screen = await navigator.mediaDevices.getDisplayMedia({
-            video: { frameRate: 30, width: { max: 1920 }, height: { max: 1080 } },
+            video: { frameRate: 30, width: { max: 1280 }, height: { max: 720 } },
             audio: true,
         })
 

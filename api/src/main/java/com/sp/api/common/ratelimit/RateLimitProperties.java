@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 /**
  * 일반 요청 속도 제한 설정. 값은 모두 "접속 IP 하나당 분당" 이다.
  * 기본값은 사람이 평범하게 쓸 때는 걸리지 않고, 스크립트로 두드리면 걸리는 정도로 잡았다.
+ * 학교·학원처럼 한 반이 같은 IP 로 나가는 경우(수십 명)를 기준으로 넉넉하게 둔다.
  *
  * 로그인·가입·토큰 갱신(IP 별)과 계정별 로그인 실패 잠금, 채팅 도배는 {@code AuthRateLimitFilter}·
  * {@code AuthService}·{@code ChatFloodGuard} 가 따로 한다(docs/09-security.md). 같은 스위치
@@ -33,10 +34,10 @@ public class RateLimitProperties {
 
     public RateLimitProperties(
             @Value("${app.security.rate-limit.enabled:true}") boolean enabled,
-            @Value("${app.security.rate-limit.write-per-minute:120}") int writePerMinute,
-            @Value("${app.security.rate-limit.read-per-minute:600}") int readPerMinute,
+            @Value("${app.security.rate-limit.write-per-minute:300}") int writePerMinute,
+            @Value("${app.security.rate-limit.read-per-minute:1500}") int readPerMinute,
             @Value("${app.security.rate-limit.upload-per-minute:20}") int uploadPerMinute,
-            @Value("${app.security.rate-limit.connect-per-minute:60}") int connectPerMinute
+            @Value("${app.security.rate-limit.connect-per-minute:300}") int connectPerMinute
     ) {
         this.enabled = enabled;
         this.writePerMinute = writePerMinute;

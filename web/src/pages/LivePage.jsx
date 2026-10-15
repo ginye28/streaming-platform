@@ -69,6 +69,7 @@ export default function LivePage({ id }) {
         <section className="live">
             <div className="live__main">
                 <HlsPlayer
+                    live
                     src={live.hlsUrl}
                     poster={live.thumbnailUrl}
                     label={`${live.title} 라이브 방송`}

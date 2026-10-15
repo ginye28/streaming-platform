@@ -1,5 +1,28 @@
 import { useEffect, useRef, useState } from 'react'
 import Hls from 'hls.js'
+import { fpsMeterEnabled } from '../perf.js'
+
+/**
+ * 라이브 재생 설정. hls.js 기본값은 "조각 3개(≈10초) 뒤"를 따라가서 지연이 크다.
+ * 브라우저 방송은 조각이 약 3.4초(Chrome 키프레임 간격)라, 2개 뒤로 줄이면 총 지연이 12~14초에서 7~8초 안팎이 된다.
+ * 더 줄이면(1개) 네트워크가 조금만 흔들려도 멈춘다.
+ */
+const LIVE_CONFIG = {
+    liveSyncDurationCount: 2,
+    // 이 이상 뒤처지면(조각 5개) 재생 위치를 방송 끝으로 옮긴다. 멈췄다가 이어졌을 때 계속 뒤처지지 않게 한다.
+    liveMaxLatencyDurationCount: 5,
+    // 조금 뒤처졌을 때는 1.15배속으로 따라잡는다. 눈에 띄지 않는 속도다.
+    maxLiveSyncPlaybackRate: 1.15,
+    // 지난 영상은 30초만 들고 있어 오래 켜 둔 기기의 메모리를 아낀다.
+    backBufferLength: 30,
+    // 학교 와이파이처럼 흔들리는 망에서 한두 번 실패했다고 바로 포기하지 않는다.
+    manifestLoadingMaxRetry: 6,
+    levelLoadingMaxRetry: 6,
+    fragLoadingMaxRetry: 6,
+}
+
+/** 이 이상 뒤처지면(초) "지금 방송으로" 버튼을 보여 준다. */
+const FAR_BEHIND_SECONDS = 12
 
 /**
  * m3u8 재생. 브라우저가 HLS 를 기본 지원하면(Safari 등) hls.js 없이 재생한다.
@@ -9,8 +32,11 @@ import Hls from 'hls.js'
  * label 은 영상의 접근 이름, children 은 영상 위 왼쪽 위에 얹을 표시(LIVE 배지 등)다.
  * children 이 함수면 { waiting } 을 받아, 송출이 오기 전과 후에 다른 표시를 낼 수 있다.
  */
-export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, label, children }) {
+export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, label, children, live = false }) {
     const videoRef = useRef(null)
+    const hlsRef = useRef(null)
+    const [behind, setBehind] = useState(false)
+    const [stats, setStats] = useState(null)
     const [error, setError] = useState(null)
     const [waiting, setWaiting] = useState(true)
 
@@ -46,8 +72,32 @@ export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, lab
         }
 
         if (Hls.isSupported()) {
-            const hls = new Hls()
+            const hls = new Hls(live ? LIVE_CONFIG : {})
+            hlsRef.current = hls
             let retryTimer = null
+            let stalls = 0
+
+            // 라이브가 얼마나 뒤처졌는지 2초마다 본다. ?fps=1 이면 재생 상태도 계기판으로 보여 준다.
+            const onWaiting = () => (stalls += 1)
+            video.addEventListener('waiting', onWaiting)
+
+            const statsTimer = setInterval(() => {
+                if (live) setBehind((hls.latency ?? 0) > FAR_BEHIND_SECONDS)
+
+                if (fpsMeterEnabled()) {
+                    const quality = video.getVideoPlaybackQuality?.()
+                    const ahead = video.buffered.length ? video.buffered.end(video.buffered.length - 1) - video.currentTime : 0
+
+                    setStats({
+                        latency: live && hls.latency != null ? hls.latency.toFixed(1) : null,
+                        ahead: ahead.toFixed(1),
+                        mbps: hls.bandwidthEstimate ? (hls.bandwidthEstimate / 1e6).toFixed(1) : '?',
+                        level: hls.levels?.[hls.currentLevel]?.bitrate ? Math.round(hls.levels[hls.currentLevel].bitrate / 1000) : '?',
+                        dropped: quality?.droppedVideoFrames ?? 0,
+                        stalls,
+                    })
+                }
+            }, 2000)
 
             // 끊겼다가 이어져 다시 재생되면 기다리는 표시를 걷는다.
             const onPlaying = () => setWaiting(false)
@@ -87,7 +137,10 @@ export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, lab
 
             return () => {
                 clearTimeout(retryTimer)
+                clearInterval(statsTimer)
                 video.removeEventListener('playing', onPlaying)
+                video.removeEventListener('waiting', onWaiting)
+                hlsRef.current = null
                 hls.destroy()
             }
         }
@@ -109,7 +162,19 @@ export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, lab
         }
 
         setError('이 브라우저는 HLS 재생을 지원하지 않습니다.')
-    }, [src])
+    }, [src, live])
+
+    /** 방송 끝(지금)으로 건너뛴다. 멈춰 있다가 돌아온 시청자가 한참 지난 장면을 보지 않게 한다. */
+    function jumpToLive() {
+        const hls = hlsRef.current
+        const video = videoRef.current
+
+        if (hls?.liveSyncPosition != null && video) {
+            video.currentTime = hls.liveSyncPosition
+            video.play().catch(() => {})
+            setBehind(false)
+        }
+    }
 
     return (
         <>
@@ -128,6 +193,21 @@ export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, lab
                 {children && (
                     <div className="player-box__badges">
                         {typeof children === 'function' ? children({ waiting: waiting && !error }) : children}
+                    </div>
+                )}
+
+                {live && behind && !waiting && (
+                    <button type="button" className="player-box__jump" onClick={jumpToLive}>
+                        지금 방송으로
+                    </button>
+                )}
+
+                {stats && (
+                    <div className="c-fps player-box__stats" aria-hidden="true">
+                        {stats.latency != null && <><b>지연 {stats.latency}s</b> · </>}
+                        버퍼 {stats.ahead}s · 대역폭 {stats.mbps}Mbps · 화질 {stats.level}kbps
+                        <br />
+                        끊김 {stats.stalls}회 · 버린 프레임 {stats.dropped}
                     </div>
                 )}
 
