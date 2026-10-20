@@ -1,0 +1,233 @@
+/*
+ * 디자인 체계: 평평하고 정확한 대기업 서비스의 톤 (기준: YouTube).
+ *
+ * - 바탕은 흰색, 글자는 먹색, 면은 차가운 중성 회색 몇 단계로만 나눈다.
+ * - 파랑은 행동(버튼)·선택(현재 메뉴, 칩)·링크에만 쓴다. 장식에 쓰지 않는다.
+ * - 빨강은 "방송 중"과 알림 숫자, 오류라는 신호에만 쓴다.
+ * - 그림자는 떠 있는 것(메뉴, 팝오버)에만. 카드와 썸네일에는 없다.
+ * - 밝은 화면이 기본이고, 나이트 모드는 사용자가 켤 때만 나온다(OS 설정을 따르지 않는다).
+ *
+ * 이 파일은 색·서체·반지름·움직임의 토큰과 요소의 기본 서식만 맡는다.
+ * 머리 줄과 공통 부품은 shell.css, 홈은 home.css, 화면별 규칙은 app.css.
+ */
+
+/* Pretendard Variable: 한글이 윈도·맥에서 같은 모양으로 나오게 서체를 직접 싣는다.
+ * 쓰는 글자 조각만 내려받는 방식(dynamic-subset)이라 첫 화면에 필요한 만큼만 받는다. */
+@import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
+
+:root {
+    color-scheme: light;
+
+    --bg: #ffffff;
+    --surface: #ffffff;
+    /* 칩, 기본 버튼, 썸네일 빈 칸처럼 한 단계 눌린 면 */
+    --sunken: #f2f4f6;
+    /* 마우스를 올렸을 때의 면 */
+    --hover: #e8ebef;
+    --border: #e5e8eb;
+    --border-strong: #d1d6db;
+    /* 입력칸 테두리. 비어 있는 칸도 어디까지인지 보이도록 흰 바탕과 3:1 이상이다. */
+    --field-border: #8b95a1;
+
+    --text: #191f28;
+    /* 보조 글자. 흰 바탕 7.1:1, 칩 바탕 6.5:1 */
+    --muted: #4e5968;
+    /* 더 약한 글자(조회수, 시각, placeholder). 흰 바탕 5.4:1, 칩 바탕 4.9:1 */
+    --subtle: #5f6b7a;
+
+    /* 포인트 파랑. 흰 글자와 5.4:1, 흰 바탕 위 글자로도 5.4:1 */
+    --accent: #1b64da;
+    --accent-hover: #1957c2;
+    --accent-soft: #e8f3ff;
+    /* 파랑 면 위에 마우스를 올렸을 때 */
+    --accent-soft-hover: #d6e8ff;
+    /* 파랑 바탕(accent-soft) 위의 글자색 6.7:1 */
+    --accent-ink: #174fb3;
+    --on-accent: #ffffff;
+
+    /* 방송 중(LIVE) 표시. 흰 글자 5.4:1 */
+    --live: #cf1c3b;
+    --on-live: #ffffff;
+    /* 오류·알림 숫자 */
+    --danger: #cf1c3b;
+    --danger-soft: #fdeaee;
+    --on-danger: #ffffff;
+
+    /* 사람마다 고정된 옅은 색조(아바타). 글자는 모두 바탕과 5.7:1 이상 */
+    --tint-0-bg: #e8f3ff; --tint-0-fg: #1b4fa8;
+    --tint-1-bg: #fde8ee; --tint-1-fg: #a3203f;
+    --tint-2-bg: #e6f6ec; --tint-2-fg: #1a6b3c;
+    --tint-3-bg: #fff1db; --tint-3-fg: #8a5200;
+    --tint-4-bg: #efe9ff; --tint-4-fg: #5a37b8;
+    --tint-5-bg: #e2f6f8; --tint-5-fg: #0f6573;
+    --tint-6-bg: #fbe9f6; --tint-6-fg: #9b2a7d;
+    --tint-7-bg: #eef0f3; --tint-7-fg: #444d5a;
+
+    --font: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo',
+        'Malgun Gothic', 'Noto Sans KR', sans-serif;
+
+    /* 글자 크기: 고정 척도(1.125~1.2 간격). 제품 화면에서는 화면 폭으로 늘어나지 않는다. */
+    --text-xs: 12px;
+    --text-sm: 13px;
+    --text-md: 14px;
+    --text-base: 15px;
+    --text-lg: 17px;
+    --text-xl: 20px;
+    --text-2xl: 24px;
+
+    --radius: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --gap: 20px;
+
+    --header-h: 56px;
+    --page-pad: 24px;
+
+    --shadow: 0 1px 2px rgb(25 31 40 / 0.06);
+    --shadow-pop: 0 8px 24px rgb(25 31 40 / 0.14), 0 1px 3px rgb(25 31 40 / 0.08);
+
+    /* 움직임: 들어오고 나가는 것은 강한 ease-out, 150~250ms. */
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+
+    /* 이전 시각 체계(나뭇잎 모서리)의 이름. app.css 의 화면별 규칙이 아직 이 이름을 쓰므로 같은 이름으로 새 반지름을 준다. */
+    --corner-2xs: 4px;
+    --corner-xs: 8px;
+    --corner-pill: 999px;
+    --corner-sm: 12px;
+    --corner-md: 16px;
+    --corner-lg: 20px;
+}
+
+:root[data-theme='dark'] {
+    color-scheme: dark;
+
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --sunken: #272727;
+    --hover: #323232;
+    --border: #303030;
+    --border-strong: #454545;
+    --field-border: #7b8490;
+
+    --text: #f1f1f1;
+    --muted: #a8b0bb;
+    --subtle: #8d96a3;
+
+    /* 어두운 바탕에서는 파랑이 밝아지고, 그 위의 글자는 어둡다(6.7:1). */
+    --accent: #5b9bff;
+    --accent-hover: #7db0ff;
+    --accent-soft: #16233a;
+    --accent-soft-hover: #1e3254;
+    --accent-ink: #8ab8ff;
+    --on-accent: #071226;
+
+    --live: #d92d46;
+    /* 어두운 바탕 위의 LIVE 글자(배경이 아닌 글자색). 4.5:1 이상 */
+    --live-text: #ff6b81;
+    --on-live: #ffffff;
+    --danger: #ff6b81;
+    --danger-soft: #3a1620;
+    --on-danger: #1a0a0e;
+
+    --tint-0-bg: #16233a; --tint-0-fg: #8ab8ff;
+    --tint-1-bg: #3a1620; --tint-1-fg: #ff9aab;
+    --tint-2-bg: #12301f; --tint-2-fg: #7fd9a0;
+    --tint-3-bg: #3a2a10; --tint-3-fg: #f1c27a;
+    --tint-4-bg: #26194a; --tint-4-fg: #b9a2ff;
+    --tint-5-bg: #0f2f35; --tint-5-fg: #7fd6e2;
+    --tint-6-bg: #3a1632; --tint-6-fg: #f0a0d6;
+    --tint-7-bg: #2a2f36; --tint-7-fg: #b5bdc8;
+
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    /* 머리 줄에 가려지지 않게, 주소의 #id 로 이동할 때 머리 높이만큼 비운다. */
+    scroll-padding-top: calc(var(--header-h) + 16px);
+    /* 브라우저 기본 표면도 팔레트를 따른다: 스크롤바. */
+    scrollbar-color: var(--border-strong) transparent;
+}
+
+body {
+    margin: 0;
+    /* 한글은 어절 중간에서 끊지 않는다. 너무 긴 한 덩어리(주소 등)만 끊어서 넘치지 않게 한다. */
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: var(--text-base);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    accent-color: var(--accent);
+}
+
+a {
+    color: inherit;
+}
+
+/* 글자 선택, 입력 커서도 팔레트를 따른다. */
+::selection {
+    background: var(--accent);
+    color: var(--on-accent);
+}
+
+input,
+textarea {
+    caret-color: var(--accent);
+}
+
+h1,
+h2 {
+    margin: 0 0 16px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+}
+
+h3 {
+    margin: 24px 0 8px;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* 숫자는 자릿수가 달라도 줄이 흔들리지 않게 고정폭 숫자를 쓴다. */
+.num {
+    font-variant-numeric: tabular-nums;
+}
+
+/* 움직임 줄이기를 켠 사람에게는 모든 전환·애니메이션을 사실상 끈다. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* 모바일: 입력칸이 16px 보다 작으면 iOS 가 화면을 확대한다. */
+@media (max-width: 720px) {
+    input,
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
+}

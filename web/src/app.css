@@ -1,295 +1,6 @@
 /*
- * 디자인 방향 C "시네마틱" — 밤에는 깊은 숯색 바탕에 에메랄드·라벤더 빛, 낮에는 같은 빛을 옅게 푼 유리 화면.
- * 대각선으로 마주 보는 모서리가 같은 반지름인 "나뭇잎 모양"이 얼굴·썸네일·카드·버튼에 반복된다.
- * 층(독·유리·홈 배치)은 cinematic.css 가 맡고, 이 파일은 색·서체·간격·화면별 규칙을 맡는다.
- * (아래 설명은 이전 방향 B "낮의 서재"의 것이다.) 잡지 같은 홈.
- * 밝은 화면이 기본이고, 나이트 모드는 같은 색 계열을 어둡게 뒤집은 한 벌이다.
- * 배치는 건드리지 않는다 — 색·서체·간격·상태 표시만 이 파일이 맡는다.
+ * 화면별 규칙. 색·서체·반지름의 토큰과 기본 서식은 base.css, 머리 줄과 공통 부품은 shell.css, 홈은 home.css.
  */
-
-:root {
-    color-scheme: light;
-
-    --bg: #f3f5f9;
-    --surface: #ffffff;
-    --sunken: #eaedf4;
-    --border: #dce0ea;
-    --border-strong: #c3c9d6;
-    /* 입력칸 테두리. 비어 있는 칸도 어디까지인지 보이도록 배경과 3:1 이상을 지킨다. */
-    --field-border: #7a8392;
-    --text: #131820;
-    --muted: #566070;
-    /* 깊은 에메랄드. 흰 글자와 5.3:1, 바탕과 4.9:1. */
-    --accent: #0d7a5c;
-    --accent-hover: #0a634a;
-    --accent-soft: #dff3ec;
-    --on-accent: #ffffff;
-    --danger: #c42e49;
-    --danger-soft: #fdeaee;
-    /* 위험색 바탕(LIVE · 알림 배지) 위의 글자색. 나이트 모드의 코랄은 밝아서 흰 글자가 안 읽힌다. */
-    --on-danger: #ffffff;
-
-    --radius: 6px;
-    --gap: 20px;
-    --shadow: 0 1px 2px rgb(19 24 32 / 0.06);
-
-    /* SP 시그니처 모서리: 왼쪽위 · 오른쪽아래는 각지고, 오른쪽위 · 왼쪽아래만 둥글다.
-     * 큰 면(배너)과 작은 면(썸네일)에 크기만 다르게 같은 비율로 쓴다. */
-    --corner-lg: 0 44px 0 44px;
-    --corner-md: 0 22px 0 22px;
-    /* 버튼 · 입력칸 · 뱃지처럼 작은 네모도 같은 모양을 따른다. */
-    --corner-xs: 0 10px 0 10px;
-    --corner-pill: 0 14px 0 14px;
-    --corner-sm: 0 18px 0 18px;
-    --corner-2xs: 0 6px 0 6px;
-}
-
-:root[data-theme='dark'] {
-    color-scheme: dark;
-
-    --bg: #0b0e12;
-    --surface: #131920;
-    --sunken: #080a0d;
-    --border: #232b35;
-    --border-strong: #36414e;
-    --field-border: #6d7a87;
-    --text: #eef3f1;
-    --muted: #97a5a1;
-    --accent: #35d6a0;
-    --accent-hover: #6fe6bf;
-    --accent-soft: #0f3a2f;
-    --on-accent: #06120d;
-    --danger: #ff6e88;
-    --danger-soft: #3a1620;
-    --on-danger: #1a0a0e;
-
-    --shadow: 0 1px 2px rgb(0 0 0 / 0.4);
-}
-
-* {
-    box-sizing: border-box;
-}
-
-body {
-    margin: 0;
-    /* 한글은 어절 중간에서 끊지 않는다. 너무 긴 한 덩어리(주소 등)만 끊어서 넘치지 않게 한다. */
-    word-break: keep-all;
-    overflow-wrap: break-word;
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Gothic A1', system-ui, -apple-system, 'Segoe UI', 'Malgun Gothic', sans-serif;
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-}
-
-a {
-    color: inherit;
-}
-
-/* 브라우저 기본 표면도 팔레트를 따른다: 글자 선택, 입력 커서, 체크박스·라디오. */
-::selection {
-    background: var(--accent);
-    color: var(--on-accent);
-}
-
-input,
-textarea {
-    caret-color: var(--accent);
-}
-
-body {
-    accent-color: var(--accent);
-}
-
-h1,
-h2 {
-    margin: 0 0 16px;
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-}
-
-h3 {
-    margin: 24px 0 8px;
-    font-size: 16px;
-    font-weight: 700;
-}
-
-:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-}
-
-/* ── 머리 ── */
-.nav {
-    position: sticky;
-    top: 0;
-    z-index: 500;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 16px;
-    min-height: 64px;
-    padding: 10px 24px;
-    box-sizing: border-box;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-}
-
-.nav__brand {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    width: 216px;
-    color: var(--text);
-    text-decoration: none;
-}
-
-/* SP 모서리를 그대로 쓴 로고 자리. */
-.nav__mark {
-    display: grid;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    border-radius: var(--corner-pill);
-    background: var(--accent);
-    color: var(--on-accent);
-    font-size: 15px;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-}
-
-.nav__name {
-    font-size: 17px;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-}
-
-.nav__links,
-.nav__account {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-}
-
-/* 넓은 화면에서는 사이드바가 메뉴를 맡는다. */
-.nav__links {
-    display: none;
-}
-
-.nav__links a,
-.nav__account a {
-    color: var(--muted);
-    font-size: 15px;
-    text-decoration: none;
-}
-
-.nav__links a:hover,
-.nav__account a:hover {
-    color: var(--text);
-}
-
-.nav__search {
-    display: flex;
-    flex: 1;
-    gap: 6px;
-    min-width: 200px;
-    max-width: 620px;
-}
-
-.nav__search-box {
-    display: flex;
-    flex: 1;
-}
-
-.nav__search input {
-    flex: 1;
-    min-width: 0;
-    border-radius: var(--corner-sm);
-    background: var(--sunken);
-}
-
-.nav__account {
-    margin-left: auto;
-}
-
-.nav__bell {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.nav__badge {
-    min-width: 18px;
-    padding: 1px 6px;
-    border-radius: var(--corner-xs);
-    background: var(--danger);
-    color: var(--on-danger);
-    font-size: 11px;
-    font-weight: 800;
-    line-height: 16px;
-    text-align: center;
-}
-
-.skip-link {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    z-index: 1000;
-    padding: 10px 16px;
-    border-radius: var(--corner-xs);
-    background: var(--accent);
-    color: var(--on-accent);
-    font-weight: 700;
-    text-decoration: none;
-    transform: translateY(-200%);
-}
-
-.skip-link:focus-visible {
-    transform: none;
-}
-
-.main:focus {
-    outline: none;
-}
-
-.visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-}
-
-/* ── 몸통: 본문 (왼쪽의 독은 cinematic.css) ── */
-.shell {
-    display: flex;
-    align-items: flex-start;
-}
-
-.main {
-    flex: 1;
-    min-width: 0;
-    max-width: 1140px;
-    margin: 0 auto;
-    padding: 28px 20px 64px;
-}
-
-/* 좁은 화면: 독을 접고, 머리에 메뉴 링크를 다시 보인다. */
-@media (max-width: 900px) {
-    .nav__links {
-        display: flex;
-    }
-
-    .nav__brand {
-        width: auto;
-    }
-
-    .nav__name {
-        display: none;
-    }
-}
 
 .narrow {
     max-width: 560px;
@@ -328,17 +39,21 @@ h3 {
     font-size: 15px;
 }
 
+/* ── 컨트롤: 입력칸과 버튼 ──
+ * 버튼은 기본이 "조용한" 회색 면이다. 색은 무언가를 확정하는 버튼(submit)과 .btn--primary 에만 쓴다.
+ * 눌렀을 때 바로 반응하도록 :active 에서 살짝 작아진다(릴리스가 아니라 누르는 순간). */
 input,
 select,
 textarea,
 button {
-    padding: 9px 11px;
+    min-height: 40px;
+    padding: 9px 12px;
     border: 1px solid var(--border);
     border-radius: var(--corner-xs);
     background: var(--surface);
     color: var(--text);
     font: inherit;
-    font-size: 15px;
+    font-size: var(--text-base);
 }
 
 /* 입력칸은 버튼·칩보다 진한 테두리를 쓴다. 비어 있어도 칸의 경계가 보여야 한다. */
@@ -350,20 +65,16 @@ textarea {
 
 input::placeholder,
 textarea::placeholder {
-    color: var(--muted);
-}
-
-input:hover,
-select:hover,
-textarea:hover {
-    border-color: var(--muted);
+    color: var(--subtle);
 }
 
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
     border-color: var(--accent);
+    outline: 2px solid var(--accent-soft);
     outline-offset: 0;
+    box-shadow: 0 0 0 1px var(--accent);
 }
 
 textarea {
@@ -371,13 +82,18 @@ textarea {
 }
 
 button {
+    padding: 0 16px;
+    border-color: transparent;
     background: var(--sunken);
+    font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
+    touch-action: manipulation;
+    transition: background-color 150ms var(--ease-out), transform 120ms var(--ease-out);
 }
 
-button:hover:not(:disabled) {
-    border-color: var(--border-strong);
+button:active:not(:disabled) {
+    transform: scale(0.97);
 }
 
 button:disabled {
@@ -385,32 +101,30 @@ button:disabled {
     cursor: not-allowed;
 }
 
+@media (hover: hover) and (pointer: fine) {
+    input:hover:not(:focus-visible),
+    select:hover:not(:focus-visible),
+    textarea:hover:not(:focus-visible) {
+        border-color: var(--muted);
+    }
+
+    button:hover:not(:disabled) {
+        background: var(--hover);
+    }
+}
+
 /* 무언가를 확정하는 버튼만 색을 쓴다. 나머지는 조용히 둔다. */
 button[type='submit'],
 .chat__form button {
-    border-color: var(--accent);
     background: var(--accent);
     color: var(--on-accent);
-    font-weight: 600;
 }
 
-button[type='submit']:hover:not(:disabled),
-.chat__form button:hover:not(:disabled) {
-    border-color: var(--accent-hover);
-    background: var(--accent-hover);
-}
-
-/* 검색은 매번 누르는 버튼이라 색을 빼 둔다. */
-.nav__search button {
-    border-color: var(--border);
-    background: var(--sunken);
-    color: var(--text);
-    font-weight: 400;
-}
-
-.nav__search button:hover:not(:disabled) {
-    border-color: var(--border-strong);
-    background: var(--sunken);
+@media (hover: hover) and (pointer: fine) {
+    button[type='submit']:hover:not(:disabled),
+    .chat__form button:hover:not(:disabled) {
+        background: var(--accent-hover);
+    }
 }
 
 /* 세로 폼에서 버튼이 입력칸만큼 늘어나지 않게 한다. */
@@ -418,12 +132,6 @@ button[type='submit']:hover:not(:disabled),
     align-self: flex-start;
     padding-left: 20px;
     padding-right: 20px;
-}
-
-.nav__theme {
-    padding: 6px 10px;
-    color: var(--muted);
-    font-size: 14px;
 }
 
 /* ── 글 ── */
@@ -452,11 +160,10 @@ button[type='submit']:hover:not(:disabled),
 .notice {
     margin: 0;
     padding: 12px 14px;
-    border: 1px solid var(--border-strong);
     border-radius: var(--corner-xs);
-    background: var(--sunken);
-    color: var(--muted);
-    font-size: 14px;
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    font-size: var(--text-md);
     font-weight: 600;
 }
 
@@ -971,214 +678,6 @@ details ul {
 
 details li {
     margin: 6px 0;
-}
-
-/* 필터 — 드롭다운 대신 눌러서 켜는 칩. */
-.home__filters {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 12px 20px;
-}
-
-/* 카테고리 묶음과 정렬 묶음. 줄이 바뀌어도 서로 다른 묶음으로 읽혀야 한다. */
-.home__filter-group {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px 22px;
-}
-
-.home__filter-group:first-child {
-    flex: 1 1 0;
-    min-width: 0;
-}
-
-/* 좁은 화면: 정렬은 자기 줄을 갖고, 가는 선으로 카테고리와 나눈다. */
-@media (max-width: 640px) {
-    .home__filter-group:first-child {
-        flex-basis: 100%;
-    }
-
-    .home__filter-group--sort {
-        flex-basis: 100%;
-        padding-top: 12px;
-        border-top: 1px solid var(--border);
-    }
-}
-
-/* 글자만 있는 탭. 켜진 것은 밑줄과 진한 글자로 알린다. */
-.chip {
-    padding: 4px 0;
-    border: 0;
-    border-bottom: 1.5px solid transparent;
-    border-radius: 0;
-    background: none;
-    color: var(--muted);
-    font: inherit;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-}
-
-.chip:hover {
-    color: var(--text);
-}
-
-.chip--on {
-    border-bottom-color: var(--accent);
-    background: none;
-    color: var(--text);
-    font-weight: 700;
-}
-
-/* ── 메인: 지금 방송 중 줄 · 도는 카드 ─────────────────────────── */
-.section-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 6px 14px;
-    margin-bottom: 22px;
-}
-
-.section-head h2 {
-    margin: 0;
-    font-size: 24px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-}
-
-.section-head__hint {
-    color: var(--muted);
-    font-size: 13px;
-    font-weight: 600;
-}
-
-.strip__row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.strip__arrow {
-    display: grid;
-    flex: 0 0 40px;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    padding: 0;
-    border-radius: var(--corner-pill);
-    color: var(--muted);
-}
-
-.strip__arrow:hover:not(:disabled) {
-    color: var(--text);
-}
-
-.strip__track {
-    display: flex;
-    flex: 1;
-    gap: 10px;
-    min-width: 0;
-    margin: 0;
-    padding: 4px 2px;
-    overflow-x: auto;
-    list-style: none;
-    scroll-snap-type: x proximity;
-    scrollbar-width: none;
-}
-
-.strip__track::-webkit-scrollbar {
-    display: none;
-}
-
-.strip__track > li {
-    scroll-snap-align: start;
-}
-
-.strip__person {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    width: 78px;
-    color: var(--text);
-    text-decoration: none;
-}
-
-/* 쉬는 채널은 흐리게 — 오른쪽으로 갈수록 오래 쉰 채널이다. */
-.strip__person--resting {
-    opacity: 0.55;
-}
-
-.strip__person--resting .strip__face {
-    filter: grayscale(1);
-}
-
-.strip__face {
-    display: grid;
-    place-items: center;
-    width: 58px;
-    height: 58px;
-    overflow: hidden;
-    border: 3px solid var(--surface);
-    border-radius: 50%;
-    background: var(--accent-soft);
-    box-shadow: 0 0 0 2px var(--border);
-    color: var(--accent);
-    font-size: 20px;
-    font-weight: 800;
-}
-
-.strip__face img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.strip__face--live {
-    box-shadow: 0 0 0 2.5px var(--danger);
-}
-
-.strip__name {
-    max-width: 78px;
-    overflow: hidden;
-    font-size: 12px;
-    font-weight: 700;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.strip__meta {
-    margin-top: -4px;
-    font-variant-numeric: tabular-nums;
-    color: var(--muted);
-    font-size: 11px;
-    font-weight: 700;
-}
-
-.strip__meta--live {
-    color: var(--danger);
-}
-
-.strip__divider {
-    display: flex;
-    flex: 0 0 64px;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    height: 64px;
-    color: var(--muted);
-    font-size: 11px;
-    font-weight: 800;
-    white-space: nowrap;
-}
-
-.strip__divider span {
-    width: 1px;
-    height: 26px;
-    background: var(--border-strong);
 }
 
 /* 유료 구독 결제 — 결제 버튼 묶음과 결제 결과 화면 */
@@ -1879,12 +1378,6 @@ a.donate__open:hover {
     font-size: 14px;
 }
 
-@media (max-width: 899px) {
-    .app:has(.auth) .nav__search {
-        display: none;
-    }
-}
-
 /* ── 채널 페이지: 얼굴 · 방송 중 카드 · 지난 방송 ── */
 .channel__head {
     display: flex;
@@ -2528,11 +2021,6 @@ a.past__link:hover {
 }
 
 @media (max-width: 899px) {
-    /* 보는 동안은 검색이 필요 없다. 머리 줄을 한 줄로 줄여 영상에 자리를 준다. */
-    .app:has(.live) .nav__search {
-        display: none;
-    }
-
     .main:has(> .live) {
         max-width: none;
         padding: 0;
@@ -2542,8 +2030,8 @@ a.past__link:hover {
         display: flex;
         flex-direction: column;
         gap: 0;
-        height: calc(100vh - 65px);
-        height: calc(100dvh - 65px);
+        height: calc(100vh - var(--header-h) - 1px);
+        height: calc(100dvh - var(--header-h) - 1px);
     }
 
     .live__main {
@@ -2652,10 +2140,6 @@ a.past__link:hover {
 /* ── 영상 시청(VOD): 좁은 화면 ──
  * 라이브와 같은 결로: 머리 줄은 한 줄로, 영상은 가장자리까지, 제목은 작게. */
 @media (max-width: 899px) {
-    .app:has(.stream) .nav__search {
-        display: none;
-    }
-
     .main:has(> .stream) {
         max-width: none;
         padding: 0 0 64px;
@@ -2693,7 +2177,7 @@ a.past__link:hover {
     }
 
     .live .player {
-        max-height: calc(100dvh - 65px - 56px);
+        max-height: calc(100dvh - var(--header-h) - 1px - 56px);
     }
 
     .live .chat {
@@ -2896,13 +2380,7 @@ a.past__link:hover {
     margin: 0;
 }
 
-/* 좁은 화면: 머리 줄은 한 줄로(검색은 숨김), 썸네일 미리보기는 위, 버튼은 아래로. */
-@media (max-width: 899px) {
-    .app:has(.upload) .nav__search,
-    .app:has(.broadcast) .nav__search {
-        display: none;
-    }
-}
+/* 좁은 화면: 썸네일 미리보기는 위, 버튼은 아래로. */
 
 @media (max-width: 480px) {
     .upload .thumbnail-preview {
@@ -2920,50 +2398,17 @@ a.past__link:hover {
 }
 
 /* ── 움직임 줄이기 ──
- * OS 에서 "동작 줄이기"를 켠 사람에게는 튕기는 전환, 깜빡임, 부드러운 스크롤을 없앤다.
- * 시네마틱 층(cinematic.css)의 움직임은 거기서 따로 끈다. */
+ * OS 에서 "동작 줄이기"를 켠 사람에게는 깜빡임을 없앤다. 전환·부드러운 스크롤은 base.css 가 한꺼번에 끈다. */
 @media (prefers-reduced-motion: reduce) {
     .broadcast__dot,
     .player-box__dots i {
         animation: none;
-    }
-
-    .strip__track {
-        scroll-behavior: auto;
     }
 }
 
 /* ── 터치 화면 ──
  * 손가락으로 넘기는 화면에서는 화살표가 필요 없고, 칩은 44px 이상이어야 눌린다. */
 @media (hover: none) and (pointer: coarse) {
-    .strip__arrow {
-        display: none;
-    }
-
-    .feat__heart {
-        width: 44px;
-        height: 44px;
-    }
-
-    /* 머리 줄의 링크와 버튼도 손가락으로 누를 수 있게 44px 이상. */
-    .nav__links a,
-    .nav__account a,
-    .nav__theme,
-    .nav__account button {
-        display: inline-flex;
-        align-items: center;
-        min-height: 44px;
-    }
-
-    .nav__links a,
-    .nav__account a {
-        padding: 0 6px;
-    }
-
-    .chip {
-        padding: 11px 0;
-    }
-
     .cta--sm,
     .description-box__toggle,
     .comment__more {
@@ -2990,7 +2435,7 @@ a.past__link:hover {
     align-items: center;
     gap: 6px;
     padding: 8px 12px;
-    border: 1px solid var(--line, #cfd8d4);
+    border: 1px solid var(--border-strong);
     border-radius: var(--corner-xs);
     cursor: pointer;
     font-size: 14px;

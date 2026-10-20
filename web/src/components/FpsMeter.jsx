@@ -40,7 +40,7 @@ export default function FpsMeter() {
     const memory = navigator.deviceMemory ? `${navigator.deviceMemory}GB` : '?GB'
 
     return (
-        <div className="c-fps" aria-hidden="true">
+        <div className="fps-meter" aria-hidden="true">
             <b>{stats.fps} fps</b> · 최악 {stats.worst}ms
             <br />
             {perf.level} ({perf.mode}) · {cores}코어 · {memory} · dpr {window.devicePixelRatio}
