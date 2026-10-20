@@ -23,6 +23,7 @@
 - **콘텐츠가 주인공이다.** 빈 상태도 다음 행동을 안내한다.
 - **속도와 매끄러운 움직임이 완성도의 일부다.**
 - **돈과 신뢰 관련 화면은 정직하다.** 결제·후원·환불은 결과와 영수증을 분명히 보여 준다.
+- 시각 체계는 YouTube 구조에 흰 바탕·파랑 포인트(#1b64da)·평평한 면·상단바만(사이드바 없음)이다. CSS 는 `base.css`(토큰) · `shell.css`(상단바·공통 부품) · `home.css`(홈·카드) · `app.css`(나머지 화면)로 나뉜다. 아직 새 체계로 옮기지 않은 화면은 `app.css` 의 옛 규칙이 남아 있다.
 - 스택은 React + Vite + 평문 CSS 로 정해져 있다. Next.js 로 옮기지 않고 Tailwind 를 들이지 않는다.
 - 운영 사이트는 콘텐츠가 비어 있다. 방송·영상·시청자 수·후기를 지어내지 않고, 데모 콘텐츠는 데모임을 드러낸다.
 - 밝은 화면이 기본이고 나이트 모드는 사용자가 켤 때만 쓴다(OS 설정을 따르지 않는다).
@@ -57,7 +58,7 @@
 - 요청 횟수 제한(`app.security.rate-limit`)은 테스트에서 꺼져 있다(같은 IP·계정으로 가입을 수없이 한다). 제한을 확인하는 테스트(`RateLimitIntegrationTest`)는 `@TestPropertySource` 로 켜고, IP 는 `remoteAddr(...)` 로 테스트마다 다르게 준다. 한도는 서버 메모리라 테스트끼리 공유된다.
 - 글을 받는 새 DTO 칸에는 `@SafeText`·`@Size` 를, 업로드 경로(`/uploads/…`)나 http(s) 주소를 받는 칸에는 `@SafeUrl` 을, 외부 링크만 받는 칸에는 `@HttpUrl` 을 붙인다(`common/validation`). 안 붙이면 태그·`javascript:` 가 그대로 저장된다.
 - 화면 CSP(`web/vercel.json`, `web/security-headers.conf`)에 없는 외부 스크립트·서비스를 붙이면 브라우저가 막는다 → 두 파일에 주소를 더한다.
-- 화면 효과(blur·무한 애니메이션)를 더할 때는 `cinematic.css` 끝의 `:root[data-perf='lite']` 블록에도 끄는 규칙을 넣는다([docs/10-performance.md](docs/10-performance.md)).
+- 화면 효과(blur·무한 애니메이션)를 더할 때는 그 효과가 있는 CSS 파일(`home.css` 끝, `shell.css`)의 `:root[data-perf='lite']` 규칙에도 끄는 규칙을 넣는다([docs/10-performance.md](docs/10-performance.md)).
 - 영상 WebSocket(`/ingest`·`/watch`)은 압축(permessage-deflate)을 협상하지 않는다(`WebSocketNoCompressionFilter`). 되돌리면 0.1 CPU 서버가 시청자 13명에서 막힌다. 새 영상 경로를 만들면 같은 필터 경로에 넣는다.
 - 저지연 중계에서 시청자별 전송은 일반 스레드(가상 스레드 아님)이고, 느린 시청자는 큐 상한(약 10초)에서 끊는다. 구독자 목록은 순회 중 수정되므로 `CopyOnWriteArrayList` 다([docs/10-performance.md](docs/10-performance.md)).
 - Windows Git Bash 는 `/tmp` 같은 경로를 바꿔 버린다 → Docker 명령 앞에 `export MSYS_NO_PATHCONV=1`.

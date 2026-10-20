@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { login, signup } from '../api.js'
+import { BrandMark } from '../components/Layout.jsx'
 import { useAuth } from '../useAuth.js'
 import { navigate, parseNext, useRoute } from '../router.js'
 import { usePageTitle } from '../usePageTitle.js'
@@ -81,9 +82,7 @@ export default function AuthPage() {
     return (
         <section className="auth">
             <div className="auth__card">
-                <span className="nav__mark" aria-hidden="true">
-                    SP
-                </span>
+                <BrandMark />
 
                 <h1>{signingUp ? '회원가입' : '로그인'}</h1>
 

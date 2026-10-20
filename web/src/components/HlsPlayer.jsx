@@ -256,7 +256,7 @@ export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, lab
                 )}
 
                 {mode === 'll' && llStats && (
-                    <div className="c-fps player-box__stats" aria-hidden="true">
+                    <div className="fps-meter player-box__stats" aria-hidden="true">
                         <b>저지연 · 지연 {llStats.lag.toFixed(1)}s</b> · 속도 {llStats.rate}x
                         <br />
                         받은 조각 {llStats.received} · 대기 {llStats.queued}
@@ -264,7 +264,7 @@ export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, lab
                 )}
 
                 {mode === 'hls' && stats && (
-                    <div className="c-fps player-box__stats" aria-hidden="true">
+                    <div className="fps-meter player-box__stats" aria-hidden="true">
                         {stats.latency != null && <><b>지연 {stats.latency}s</b> · </>}
                         버퍼 {stats.ahead}s · 대역폭 {stats.mbps}Mbps · 화질 {stats.level}kbps
                         <br />

@@ -19,7 +19,7 @@ export default function PerfNotice() {
     if (!autoDowngraded) return null
 
     return (
-        <div className="c-perf-notice" role="status">
+        <div className="perf-notice" role="status">
             <span>기기가 느려서 화면 효과를 줄였어요. ({reason})</span>
             <button type="button" onClick={() => setPerfMode('full')}>
                 되돌리기

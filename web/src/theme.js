@@ -23,6 +23,8 @@ function readStored() {
 function apply(theme) {
     current = theme
     document.documentElement.dataset.theme = theme
+    // 모바일 브라우저 주소창 색도 화면 모드를 따른다.
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#0f0f0f' : '#ffffff')
 }
 
 /** 화면이 한 번 그려지기 전에 불러서 밝은 화면이 깜빡이는 걸 막는다. */

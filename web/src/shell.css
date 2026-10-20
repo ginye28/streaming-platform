@@ -1,0 +1,705 @@
+/*
+ * 머리 줄(상단바)과 화면 어디서나 쓰는 공통 부품: 버튼, 아이콘 버튼, 메뉴, 아바타, 불러오는 표시.
+ * 호버는 마우스가 있는 기기에서만 건다(손가락으로 누른 뒤 호버가 남아 있는 문제를 막는다).
+ */
+
+.app {
+    min-height: 100dvh;
+}
+
+.skip-link {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 1000;
+    padding: 10px 16px;
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 700;
+    text-decoration: none;
+    transform: translateY(-200%);
+}
+
+.skip-link:focus-visible {
+    transform: none;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* ── 본문 ── */
+.main {
+    min-width: 0;
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: 28px var(--page-pad) 64px;
+}
+
+.main--wide {
+    max-width: 1680px;
+}
+
+/* 홈은 칩 줄이 머리 줄 바로 밑에 붙는다. */
+.main:has(> .home) {
+    padding-top: 0;
+}
+
+.main:focus {
+    outline: none;
+}
+
+/* ── 상단바 ── */
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 500;
+    padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+}
+
+.topbar__row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    height: var(--header-h);
+    max-width: 1800px;
+    margin: 0 auto;
+    padding: 0 var(--page-pad);
+}
+
+.brand {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    color: var(--text);
+    text-decoration: none;
+}
+
+.brand__mark rect {
+    fill: var(--accent);
+}
+
+.brand__mark path {
+    fill: var(--on-accent);
+}
+
+.brand__name {
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+}
+
+.topbar__nav,
+.topbar__tabs {
+    display: flex;
+    gap: 4px;
+}
+
+.topbar__tabs {
+    display: none;
+}
+
+.topnav__link {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    height: 36px;
+    padding: 0 14px;
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: var(--text-base);
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 150ms var(--ease-out), color 150ms var(--ease-out);
+}
+
+/* 현재 메뉴는 색이 아니라 한 단계 눌린 회색 면과 글자색으로만 알린다. */
+.topnav__link[aria-current='page'] {
+    background: var(--sunken);
+    color: var(--text);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .topnav__link:hover {
+        background: var(--sunken);
+        color: var(--text);
+    }
+}
+
+/* ── 검색 ── */
+.search {
+    display: flex;
+    flex: 1 1 560px;
+    align-items: center;
+    max-width: 640px;
+    height: 40px;
+    margin-inline: auto;
+    overflow: hidden;
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    background: var(--surface);
+    transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out);
+}
+
+.search:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.search__field {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+}
+
+.search input {
+    width: 100%;
+    height: 38px;
+    min-height: 0;
+    padding: 0 8px 0 18px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    outline: none;
+    box-shadow: none;
+}
+
+.search input:focus-visible {
+    border: 0;
+    outline: none;
+    box-shadow: none;
+}
+
+.search input::-webkit-search-cancel-button {
+    appearance: none;
+}
+
+.search__submit {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 60px;
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-left: 1px solid var(--border);
+    border-radius: 0;
+}
+
+.search .search__back {
+    display: none;
+}
+
+.topbar__actions {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.topbar__actions .topbar__search-toggle {
+    display: none;
+}
+
+.topbar__broadcast {
+    margin: 0 4px;
+}
+
+/* ── 버튼 ── */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 40px;
+    min-height: 0;
+    padding: 0 16px;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    background: var(--sunken);
+    color: var(--text);
+    font: inherit;
+    font-size: var(--text-base);
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background-color 150ms var(--ease-out), transform 120ms var(--ease-out);
+}
+
+.btn:active {
+    transform: scale(0.97);
+}
+
+.btn--primary {
+    background: var(--accent);
+    color: var(--on-accent);
+}
+
+.btn--tonal {
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+}
+
+.btn--outline {
+    border-color: var(--border-strong);
+    background: transparent;
+    color: var(--accent-ink);
+}
+
+.btn--lg {
+    height: 48px;
+    padding: 0 24px;
+    font-size: 16px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .btn:hover:not(:disabled) {
+        background: var(--hover);
+    }
+
+    .btn--primary:hover:not(:disabled) {
+        background: var(--accent-hover);
+    }
+
+    .btn--tonal:hover:not(:disabled) {
+        background: var(--accent-soft-hover);
+    }
+
+    .btn--outline:hover:not(:disabled) {
+        background: var(--accent-soft);
+    }
+}
+
+/* ── 아이콘 버튼 ── */
+.icon-btn {
+    position: relative;
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text);
+    text-decoration: none;
+    transition: background-color 150ms var(--ease-out), transform 120ms var(--ease-out);
+}
+
+.icon-btn:active:not(:disabled) {
+    transform: scale(0.92);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .icon-btn:hover:not(:disabled) {
+        background: var(--sunken);
+    }
+}
+
+.icon-btn__badge {
+    position: absolute;
+    top: 3px;
+    right: 1px;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--danger);
+    color: var(--on-danger);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 17px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── 계정 메뉴 ── */
+.menu {
+    position: relative;
+}
+
+.menu__trigger {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+}
+
+.menu__list {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 600;
+    width: 280px;
+    max-width: calc(100vw - 24px);
+    padding: 8px 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background: var(--surface);
+    box-shadow: var(--shadow-pop);
+    transform-origin: top right;
+    transition: opacity 150ms var(--ease-out), transform 150ms var(--ease-out);
+}
+
+@starting-style {
+    .menu__list {
+        opacity: 0;
+        transform: scale(0.97) translateY(-4px);
+    }
+}
+
+.menu__who {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px 12px;
+}
+
+.menu__who div {
+    display: grid;
+    min-width: 0;
+}
+
+.menu__who strong {
+    font-size: var(--text-base);
+}
+
+.menu__who span {
+    overflow: hidden;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.menu__item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    height: 44px;
+    min-height: 0;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: var(--text-base);
+    font-weight: 500;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.menu__item:focus-visible {
+    background: var(--sunken);
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .menu__item:hover:not(:disabled) {
+        background: var(--sunken);
+    }
+}
+
+.menu__value {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    font-weight: 500;
+}
+
+.menu__rule {
+    height: 1px;
+    margin: 8px 0;
+    background: var(--border);
+}
+
+/* ── 아바타 ── */
+.avatar {
+    --s: 36px;
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: var(--s);
+    height: var(--s);
+    overflow: hidden;
+    border-radius: 50%;
+    background: var(--tint-bg, var(--sunken));
+    color: var(--tint-fg, var(--text));
+    font-size: calc(var(--s) * 0.42);
+    font-weight: 700;
+    line-height: 1;
+    user-select: none;
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar[data-tint='0'] { --tint-bg: var(--tint-0-bg); --tint-fg: var(--tint-0-fg); }
+.avatar[data-tint='1'] { --tint-bg: var(--tint-1-bg); --tint-fg: var(--tint-1-fg); }
+.avatar[data-tint='2'] { --tint-bg: var(--tint-2-bg); --tint-fg: var(--tint-2-fg); }
+.avatar[data-tint='3'] { --tint-bg: var(--tint-3-bg); --tint-fg: var(--tint-3-fg); }
+.avatar[data-tint='4'] { --tint-bg: var(--tint-4-bg); --tint-fg: var(--tint-4-fg); }
+.avatar[data-tint='5'] { --tint-bg: var(--tint-5-bg); --tint-fg: var(--tint-5-fg); }
+.avatar[data-tint='6'] { --tint-bg: var(--tint-6-bg); --tint-fg: var(--tint-6-fg); }
+.avatar[data-tint='7'] { --tint-bg: var(--tint-7-bg); --tint-fg: var(--tint-7-fg); }
+
+/* 방송 중인 채널은 빨간 고리가 둘러싼다. 바탕색 한 겹을 사이에 둬서 사진과 고리가 붙지 않는다. */
+.avatar--live {
+    box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--live);
+}
+
+/* ── 불러오는 중 ── 빠르게 도는 작은 고리 하나. */
+.spinner-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: var(--text-md);
+    font-weight: 600;
+}
+
+.spinner {
+    --s: 22px;
+    width: var(--s);
+    height: var(--s);
+    border: 2px solid var(--border-strong);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 700ms linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* 움직임 줄이기에서도 고리는 돌아야 "불러오는 중"이 전달된다. 느리게만 돈다. */
+@media (prefers-reduced-motion: reduce) {
+    .spinner {
+        animation-duration: 1.6s !important;
+        animation-iteration-count: infinite !important;
+    }
+}
+
+/* ── 화면 효과를 줄였다는 안내 / 기기에서 프레임을 보는 계기판 ── */
+.perf-notice {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    z-index: 2100;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    max-width: 520px;
+    margin-left: auto;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-pop);
+    color: var(--text);
+    font-size: var(--text-md);
+    font-weight: 600;
+}
+
+.perf-notice span {
+    flex: 1 1 220px;
+}
+
+.perf-notice button {
+    min-height: 36px;
+    padding: 0 12px;
+}
+
+.fps-meter {
+    position: fixed;
+    bottom: 8px;
+    left: 8px;
+    z-index: 2200;
+    padding: 6px 9px;
+    border-radius: var(--corner-2xs);
+    background: rgb(0 0 0 / 0.78);
+    color: #d6e6ff;
+    font: 600 11px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+    pointer-events: none;
+}
+
+.fps-meter b {
+    color: #8ab8ff;
+}
+
+/* ── 좁은 화면 ── */
+@media (max-width: 1099px) {
+    .brand__name {
+        display: none;
+    }
+}
+
+/* 태블릿 폭: 영상 올리기는 계정 메뉴에도 있으니 아이콘을 접어 검색창에 자리를 준다. */
+@media (min-width: 721px) and (max-width: 1000px) {
+    .topbar__upload {
+        display: none;
+    }
+
+    .topbar__row {
+        gap: 8px;
+    }
+}
+
+@media (max-width: 720px) {
+    :root {
+        --page-pad: 16px;
+    }
+
+    .topbar__row {
+        gap: 4px;
+    }
+
+    .topbar__nav,
+    .search,
+    .topbar__broadcast,
+    .topbar__upload {
+        display: none;
+    }
+
+    .topbar__actions .topbar__search-toggle {
+        display: inline-grid;
+    }
+
+    /* 메뉴 탭: 한 줄. 영상을 보는 화면에서는 접어 영상에 자리를 준다. */
+    .topbar__tabs {
+        display: flex;
+        height: 44px;
+        padding: 0 calc(var(--page-pad) - 12px);
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .topbar__tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .topbar__tabs .topnav__link:focus-visible {
+        outline-offset: -3px;
+    }
+
+    .topbar__tabs .topnav__link {
+        height: 44px;
+        padding: 0 12px;
+        border-bottom: 2px solid transparent;
+        border-radius: 0;
+        background: transparent;
+    }
+
+    .topbar__tabs .topnav__link[aria-current='page'] {
+        border-bottom-color: var(--accent);
+        background: transparent;
+        color: var(--text);
+    }
+
+    .app:has(.live, .stream, .upload, .broadcast, .auth) .topbar__tabs {
+        display: none;
+    }
+
+    /* 검색을 열면 상단바 전체가 검색창이 된다. */
+    .topbar--searching .brand,
+    .topbar--searching .topbar__actions {
+        display: none;
+    }
+
+    .topbar--searching .topbar__tabs {
+        display: none;
+    }
+
+    .topbar--searching .search {
+        display: flex;
+        flex: 1;
+        max-width: none;
+        margin: 0;
+    }
+
+    .topbar--searching .search .search__back {
+        display: inline-grid;
+    }
+
+    .main {
+        padding-top: 20px;
+    }
+
+    .menu__list {
+        position: fixed;
+        top: calc(var(--header-h) + 4px);
+        right: 8px;
+    }
+}
+
+/* 기기에서 프레임을 줄여야 할 때(data-perf="lite")는 전환과 반짝임을 걷는다. 배치와 색은 그대로다. */
+:root[data-perf='lite'] .topnav__link,
+:root[data-perf='lite'] .btn,
+:root[data-perf='lite'] .icon-btn,
+:root[data-perf='lite'] .search {
+    transition: none;
+}
+
+:root[data-perf='lite'] .menu__list {
+    transition: none;
+}
+
+/* 라이브가 많이 뒤처졌을 때 지금으로 건너뛰는 버튼, 그리고 ?fps=1 일 때의 재생 상태 계기판 */
+.player-box__jump {
+    position: absolute;
+    right: 12px;
+    bottom: 56px;
+    z-index: 3;
+    min-height: 40px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 999px;
+    background: rgb(0 0 0 / 0.72);
+    color: #fff;
+    font: inherit;
+    font-size: var(--text-md);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.player-box__stats {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    bottom: auto;
+    left: auto;
+    z-index: 3;
+}

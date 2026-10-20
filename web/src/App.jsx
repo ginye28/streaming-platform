@@ -4,13 +4,14 @@ import PerfNotice from './components/PerfNotice.jsx'
 import { fpsMeterEnabled } from './perf.js'
 import { AuthProvider } from './auth.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
-import LeafLoader from './components/LeafLoader.jsx'
+import Spinner from './components/Spinner.jsx'
 import Layout from './components/Layout.jsx'
 import HomePage from './pages/HomePage.jsx'
-import LeafCursor from './components/LeafCursor.jsx'
 import { useRoute } from './router.js'
+import './base.css'
 import './app.css'
-import './cinematic.css'
+import './shell.css'
+import './home.css'
 
 /**
  * 첫 화면(홈)만 처음 번들에 넣고 나머지 화면은 열 때 받는다.
@@ -35,7 +36,7 @@ const UploadPage = lazy(() => import('./pages/UploadPage.jsx'))
 function Loading() {
     return (
         <p className="empty">
-            <LeafLoader size={26} label="불러오는 중…" />
+            <Spinner size={26} label="불러오는 중…" />
         </p>
     )
 }
@@ -93,7 +94,6 @@ function App() {
 
     return (
         <AuthProvider>
-            <LeafCursor />
             <PerfNotice />
             {showFps && <FpsMeter />}
             <Layout>
