@@ -85,6 +85,8 @@
 
     --shadow: 0 1px 2px rgb(25 31 40 / 0.06);
     --shadow-pop: 0 8px 24px rgb(25 31 40 / 0.14), 0 1px 3px rgb(25 31 40 / 0.08);
+    /* 카드 위에 마우스를 올려 살짝 떠오를 때만 */
+    --shadow-lift: 0 10px 22px rgb(25 31 40 / 0.16);
 
     /* 움직임: 들어오고 나가는 것은 강한 ease-out, 150~250ms. */
     --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -140,6 +142,7 @@
 
     --shadow: 0 1px 2px rgb(0 0 0 / 0.4);
     --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
+    --shadow-lift: 0 10px 22px rgb(0 0 0 / 0.55);
 }
 
 * {

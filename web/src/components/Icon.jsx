@@ -83,6 +83,7 @@ const PATHS = {
     right: <path d="m9.5 5.5 6.5 6.5-6.5 6.5" />,
     left: <path d="m14.5 5.5-6.5 6.5 6.5 6.5" />,
     check: <path d="m5 12.5 4.5 4.5L19 7.5" />,
+    play: <path d="M8 5.2v13.6a.8.8 0 0 0 1.2.7l11-6.8a.8.8 0 0 0 0-1.4l-11-6.8A.8.8 0 0 0 8 5.2z" />,
 }
 
 export default function Icon({ name, size = 22, filled = false, className, ...rest }) {

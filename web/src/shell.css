@@ -703,3 +703,21 @@
     left: auto;
     z-index: 3;
 }
+
+/* 화면이 바뀔 때 새 화면이 살짝 떠오르며 들어온다. */
+@media (prefers-reduced-motion: no-preference) {
+    .main > * {
+        animation: page-in 260ms var(--ease-out) backwards;
+    }
+
+    @keyframes page-in {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+    }
+}
+
+:root[data-perf='lite'] .main > * {
+    animation: none;
+}
