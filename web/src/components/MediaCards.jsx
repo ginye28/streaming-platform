@@ -11,13 +11,18 @@ import Icon from './Icon.jsx'
 import Link from './Link.jsx'
 
 /** 16:9 썸네일. 사진이 없으면 사람마다 고정된 옅은 색조 위에 이름 첫 글자를 둔다. */
-export function Thumb({ src, name, seed }) {
+export function Thumb({ src, name, seed, play = false }) {
     return (
         <span className="thumb" data-tint={tintOf(seed ?? name)}>
             {src ? (
                 <img src={assetUrl(src)} alt="" loading="lazy" decoding="async" draggable="false" />
             ) : (
                 <span className="thumb__blank">{name?.slice(0, 1)}</span>
+            )}
+            {play && (
+                <span className="thumb__play">
+                    <Icon name="play" size={22} filled />
+                </span>
             )}
         </span>
     )
@@ -49,7 +54,7 @@ export function HeartButton({ liveId, nickname, className = '' }) {
  * 방송 중인 카드. 시청자 수는 WebSocket 으로 밀려 오는 값을 쓰고, 마우스를 올리거나 포커스하면
  * "방송 시간 · 최고 시청"이 썸네일 아래에서 올라온다(터치 화면에서는 글 줄에 같은 내용이 있다).
  */
-export function LiveCard({ live }) {
+export function LiveCard({ live, index = 0 }) {
     const now = useNow()
     const viewers = useLiveViewerCount(live.id, live.viewerCount)
     const peak = Math.max(live.peakViewerCount ?? 0, viewers)
@@ -57,7 +62,7 @@ export function LiveCard({ live }) {
     const note = AUDIENCE_NOTE[live.audience]
 
     return (
-        <li className="vcard">
+        <li className="vcard" style={{ '--i': index }}>
             <div className="vcard__media">
                 <Link
                     to={{ view: 'live', id: live.id }}
@@ -66,7 +71,7 @@ export function LiveCard({ live }) {
                     aria-hidden="true"
                     draggable="false"
                 >
-                    <Thumb src={live.thumbnailUrl} name={live.nickname} seed={live.channelId} />
+                    <Thumb src={live.thumbnailUrl} name={live.nickname} seed={live.channelId} play />
                     <span className="badge badge--live">LIVE</span>
                     <span className="vcard__progress">
                         {uptime} 방송 · 최고 {peak.toLocaleString('ko-KR')}명
@@ -97,11 +102,11 @@ export function LiveCard({ live }) {
 }
 
 /** 올라온 영상 카드. */
-export function VideoCard({ stream }) {
+export function VideoCard({ stream, index = 0 }) {
     return (
-        <li className="vcard">
+        <li className="vcard" style={{ '--i': index }}>
             <Link to={{ view: 'stream', id: stream.id }} className="vcard__thumb" tabIndex={-1} aria-hidden="true" draggable="false">
-                <Thumb src={stream.thumbnailUrl} name={stream.nickname} seed={stream.userId} />
+                <Thumb src={stream.thumbnailUrl} name={stream.nickname} seed={stream.userId} play />
             </Link>
 
             <div className="vcard__meta">
@@ -126,9 +131,9 @@ export function VideoCard({ stream }) {
 }
 
 /** 불러오는 동안 카드가 들어올 자리를 같은 크기로 먼저 잡는다(내용이 오면 밀리지 않는다). */
-export function CardSkeleton() {
+export function CardSkeleton({ index = 0 }) {
     return (
-        <li className="vcard vcard--skeleton" aria-hidden="true">
+        <li className="vcard vcard--skeleton" aria-hidden="true" style={{ '--i': index }}>
             <div className="vcard__thumb skeleton" />
             <div className="vcard__meta">
                 <span className="skeleton skeleton--avatar" />

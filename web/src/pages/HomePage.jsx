@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { getCategories, getLives, getMySubscriptions, getSchedules, getStreams } from '../api.js'
 import Avatar from '../components/Avatar.jsx'
 import { AUDIENCE_NOTE } from '../audience.js'
+import HomeArt from '../components/HomeArt.jsx'
 import Icon from '../components/Icon.jsx'
 import Link from '../components/Link.jsx'
 import { CardSkeleton, HeartButton, LiveCard, Thumb, VideoCard } from '../components/MediaCards.jsx'
@@ -258,14 +259,19 @@ function LiveZone({ lives, loading, error, onRetry }) {
                 </p>
             )}
 
-            {!loading && !error && !featured && <NoLive />}
+            {!loading && !error && !featured && (
+                <>
+                    <NoLive />
+                    <StartGuide />
+                </>
+            )}
 
             {featured && <FeaturedLive live={featured} />}
 
             {rest.length > 0 && (
                 <ul className="vgrid vgrid--live" aria-label="다른 방송">
-                    {rest.map((live) => (
-                        <LiveCard key={live.id} live={live} />
+                    {rest.map((live, i) => (
+                        <LiveCard key={live.id} live={live} index={i} />
                     ))}
                 </ul>
             )}
@@ -279,11 +285,13 @@ function FeaturedLive({ live }) {
     const tournament = TOURNAMENT_CHANNEL_IDS.includes(live.channelId)
     const note = AUDIENCE_NOTE[live.audience]
     const uptime = formatLiveFor(now - toTime(live.startedAt))
+    const peak = Math.max(live.peakViewerCount ?? 0, viewers)
+    const extra = [tournament && '대회 중계', note].filter(Boolean).join(' · ')
 
     return (
         <article className="feature">
             <Link to={{ view: 'live', id: live.id }} className="feature__media" tabIndex={-1} aria-hidden="true" draggable="false">
-                <Thumb src={live.thumbnailUrl} name={live.nickname} seed={live.channelId} />
+                <Thumb src={live.thumbnailUrl} name={live.nickname} seed={live.channelId} play />
                 <span className="badge badge--live">LIVE</span>
                 <span className="badge badge--viewers num">
                     <Icon name="eye" size={14} />
@@ -301,17 +309,29 @@ function FeaturedLive({ live }) {
                     <Link to={{ view: 'live', id: live.id }}>{live.title}</Link>
                 </h3>
 
-                <p className="feature__meta num">
-                    시청 중 {formatViewers(viewers)} · {uptime}
-                    {tournament && ' · 대회 중계'}
-                    {note && ` · ${note}`}
-                </p>
+                {extra && <p className="feature__meta">{extra}</p>}
 
                 {live.description && <p className="feature__desc">{live.description}</p>}
+
+                <dl className="feature__stats num">
+                    <div>
+                        <dt>시청 중</dt>
+                        <dd>{formatViewers(viewers)}</dd>
+                    </div>
+                    <div>
+                        <dt>최고 시청</dt>
+                        <dd>{formatViewers(peak)}</dd>
+                    </div>
+                    <div>
+                        <dt>방송 시간</dt>
+                        <dd>{uptime}</dd>
+                    </div>
+                </dl>
 
                 <div className="feature__actions">
                     <Link to={{ view: 'live', id: live.id }} className="btn btn--primary btn--lg">
                         시청하기
+                        <Icon name="right" size={20} className="btn__arrow" />
                     </Link>
                     <HeartButton liveId={live.id} nickname={live.nickname} className="heart-btn--solid" />
                 </div>
@@ -338,19 +358,66 @@ function NoLive() {
     const { me } = useAuth()
 
     return (
-        <div className="empty-panel">
-            <h3>지금 방송 중인 채널이 없어요</h3>
-            <p>방송이 시작되면 가장 먼저 여기에 올라와요. 곧 시작하는 방송이 있는지 확인해 보세요.</p>
-            <div className="empty-panel__actions">
-                <Link to={{ view: 'lives' }} className="btn">
-                    예정된 방송 보기
-                </Link>
-                <Link to={me ? { view: 'broadcast' } : loginTo()} className="btn btn--tonal">
-                    <Icon name="live" size={20} />
-                    {me ? '방송하기' : '로그인하고 방송하기'}
-                </Link>
+        <div className="hero-empty">
+            <div className="hero-empty__text">
+                <h3>지금 방송 중인 채널이 없어요</h3>
+                <p>방송이 시작되면 가장 먼저 여기에 올라와요. 직접 방송을 켜 보거나, 곧 시작하는 방송이 있는지 확인해 보세요.</p>
+                <div className="hero-empty__actions">
+                    <Link to={me ? { view: 'broadcast' } : loginTo()} className="btn btn--primary btn--lg">
+                        <Icon name="live" size={20} />
+                        {me ? '방송하기' : '로그인하고 방송하기'}
+                    </Link>
+                    <Link to={{ view: 'lives' }} className="btn btn--lg">
+                        예정된 방송 보기
+                    </Link>
+                </div>
             </div>
+            <HomeArt className="hero-empty__art" />
         </div>
+    )
+}
+
+/** 방송이 없는 첫 방문자에게 방송·영상 올리기 길을 세 갈래로 보여 준다. 이 서비스가 하는 일의 설명이다. */
+function StartGuide() {
+    const { me } = useAuth()
+    const steps = [
+        {
+            icon: 'live',
+            title: '브라우저로 바로 방송',
+            text: 'OBS 없이 Chrome·Edge 에서 화면과 소리를 바로 보내요.',
+            to: me ? { view: 'broadcast' } : loginTo(),
+        },
+        {
+            icon: 'gauge',
+            title: 'OBS 로 방송',
+            text: '내 계정에서 스트림 키를 받아 OBS 에 붙여 넣으면 돼요.',
+            to: me ? { view: 'me' } : loginTo(),
+        },
+        {
+            icon: 'upload',
+            title: '영상 올리기',
+            text: '방송이 아니어도 영상 파일을 올려 두고 다시 볼 수 있어요.',
+            to: me ? { view: 'upload' } : loginTo(),
+        },
+    ]
+
+    return (
+        <ul className="steps" aria-label="시작하는 방법">
+            {steps.map((step, i) => (
+                <li key={step.title} style={{ '--i': i }}>
+                    <Link to={step.to} className="step">
+                        <span className="step__icon">
+                            <Icon name={step.icon} size={24} />
+                        </span>
+                        <span className="step__body">
+                            <strong>{step.title}</strong>
+                            <span>{step.text}</span>
+                        </span>
+                        <Icon name="right" size={20} className="step__go" />
+                    </Link>
+                </li>
+            ))}
+        </ul>
     )
 }
 
@@ -428,15 +495,15 @@ function VideoZone({ videos, sortBy, onSort, filtered, onShowAll }) {
             {loading && (
                 <ul className="vgrid" aria-label="영상 목록을 불러오는 중">
                     {Array.from({ length: 8 }, (_, i) => (
-                        <CardSkeleton key={i} />
+                        <CardSkeleton key={i} index={i} />
                     ))}
                 </ul>
             )}
 
             {!loading && items.length > 0 && (
                 <ul className="vgrid">
-                    {items.map((stream) => (
-                        <VideoCard key={stream.id} stream={stream} />
+                    {items.map((stream, i) => (
+                        <VideoCard key={stream.id} stream={stream} index={i} />
                     ))}
                 </ul>
             )}
@@ -474,15 +541,18 @@ function EmptyVideos({ filtered, onShowAll }) {
     }
 
     return (
-        <div className="empty-panel">
-            <h3>아직 올라온 영상이 없어요</h3>
-            <p>첫 영상을 올리면 여기에 가장 먼저 보여요.</p>
-            <div className="empty-panel__actions">
-                <Link to={me ? { view: 'upload' } : loginTo()} className="btn btn--tonal">
-                    <Icon name="upload" size={20} />
-                    {me ? '첫 영상 올리기' : '로그인하고 첫 영상 올리기'}
-                </Link>
+        <div className="hero-empty hero-empty--compact">
+            <div className="hero-empty__text">
+                <h3>아직 올라온 영상이 없어요</h3>
+                <p>첫 영상을 올리면 여기에 가장 먼저 보여요.</p>
+                <div className="hero-empty__actions">
+                    <Link to={me ? { view: 'upload' } : loginTo()} className="btn btn--primary btn--lg">
+                        <Icon name="upload" size={20} />
+                        {me ? '첫 영상 올리기' : '로그인하고 첫 영상 올리기'}
+                    </Link>
+                </div>
             </div>
+            <HomeArt className="hero-empty__art" />
         </div>
     )
 }
