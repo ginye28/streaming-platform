@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { assetUrl } from '../assets.js'
 import { AUDIENCE_NOTE } from '../audience.js'
-import { formatLiveFor, formatViewers, formatViews } from '../format.js'
+import { formatLiveFor, formatViews } from '../format.js'
 import { useLiveViewerCount } from '../liveViewers.js'
 import { tintOf } from '../tint.js'
 import { formatWhen, timeAgo } from '../time.js'
@@ -10,6 +10,8 @@ import Avatar from './Avatar.jsx'
 import { EmptyVideos, NoLive, NoLiveBar, StartGuide, SubscribedChannels } from './HomeParts.jsx'
 import Icon from './Icon.jsx'
 import Link from './Link.jsx'
+import { tileSize } from '../bento.js'
+import { BentoItem } from './Bento.jsx'
 import { DurationBadge, Thumb } from './MediaCards.jsx'
 import Spinner from './Spinner.jsx'
 
@@ -399,14 +401,6 @@ function SchedulePanel({ schedules, loading, liveCount }) {
 
 /* ── 벤토 격자 ── */
 
-/** 앞의 세 칸은 큰 칸(2x2) · 가로형(2x1) · 가로형, 그 뒤는 작은 칸이고 열 칸에 한 번 가로형이 끼어든다. */
-function tileSize(i) {
-    if (i === 0) return 'big'
-    if (i < 3) return 'wide'
-
-    return (i - 3) % 10 === 9 ? 'wide' : 'mini'
-}
-
 function BentoGrid({ items, lives, popular, categories, categoryId, onCategory }) {
     const streamers = topStreamers(lives, items, popular)
     const head = items.slice(0, 3)
@@ -432,82 +426,6 @@ function BentoGrid({ items, lives, popular, categories, categoryId, onCategory }
                 <BentoItem key={item.key} item={item} size={tileSize(i + 3)} index={head.length + 2 + i} />
             ))}
         </ul>
-    )
-}
-
-function BentoItem({ item, size, index }) {
-    return (
-        <li className={`bento__item bento__item--${size}`} style={{ '--i': index }}>
-            {item.kind === 'live' ? <BentoLive live={item.live} size={size} /> : <BentoVideo stream={item.stream} size={size} />}
-        </li>
-    )
-}
-
-function BentoLive({ live, size }) {
-    const now = useNow()
-    const viewers = useLiveViewerCount(live.id, live.viewerCount)
-    const uptime = formatLiveFor(now - toTime(live.startedAt))
-
-    return (
-        <BentoFrame
-            size={size}
-            tone="live"
-            to={{ view: 'live', id: live.id }}
-            image={live.thumbnailUrl}
-            seed={live.channelId}
-            nickname={live.nickname}
-            title={live.title}
-            badge={<span className="cine-tag cine-tag--live">LIVE</span>}
-            channel={{ to: { view: 'channel', id: live.channelId }, nickname: live.nickname, avatar: live.profileImage, seed: live.channelId }}
-            stats={`시청 중 ${formatViewers(viewers)} · ${uptime}`}
-        />
-    )
-}
-
-function BentoVideo({ stream, size }) {
-    return (
-        <BentoFrame
-            size={size}
-            tone="video"
-            to={{ view: 'stream', id: stream.id }}
-            image={stream.thumbnailUrl}
-            seed={stream.userId}
-            nickname={stream.nickname}
-            title={stream.title}
-            duration={stream.durationSeconds}
-            channel={{ to: { view: 'channel', id: stream.userId }, nickname: stream.nickname, seed: stream.userId }}
-            stats={`${formatViews(stream.viewCount)}${stream.createdAt ? ` · ${timeAgo(stream.createdAt)}` : ''}`}
-        />
-    )
-}
-
-/** 큰 칸과 가로형은 글이 썸네일 위에 얹히고, 작은 칸은 썸네일 아래에 놓인다. 제목 링크가 카드 전체를 덮는다. */
-function BentoFrame({ size, tone, to, image, seed, nickname, title, badge, duration, channel, stats }) {
-    return (
-        <article className={`bcard bcard--${size} bcard--${tone}`}>
-            <div className="bcard__media">
-                <Thumb src={image} name={nickname} seed={seed} play />
-                {badge && <span className="bcard__badge">{badge}</span>}
-                <DurationBadge seconds={duration} />
-            </div>
-
-            <div className="bcard__meta">
-                <Link to={channel.to} className="bcard__avatar" tabIndex={-1} aria-hidden="true">
-                    <Avatar name={channel.nickname} src={channel.avatar} size={size === 'mini' ? 28 : 34} seed={channel.seed} />
-                </Link>
-                <div className="bcard__text">
-                    <h3 className="bcard__title">
-                        <Link to={to}>{title}</Link>
-                    </h3>
-                    <p className="bcard__stats num">
-                        <Link to={channel.to} className="bcard__channel">
-                            {channel.nickname}
-                        </Link>
-                        {` · ${stats}`}
-                    </p>
-                </div>
-            </div>
-        </article>
     )
 }
 

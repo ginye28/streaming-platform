@@ -1,0 +1,140 @@
+/*
+ * 홈 밖의 화면에 입히는 시네마 톤: 둥근 면, 옅은 그린·퍼플 선 테두리, 사진 위의 어두운 면.
+ * 구조는 각 화면의 규칙(app.css)이 그대로 맡고, 여기서는 모양만 덮어쓴다. 토큰은 base.css·cinema.css 의 것을 쓴다.
+ */
+
+/* ── 목록 화면의 머리: 제목 + 오른쪽 행동 ── */
+.page-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    margin: 0 0 16px;
+}
+
+.page-head h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+
+.page-head__count {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: var(--violet-soft);
+    color: var(--violet-ink);
+    font-size: var(--text-sm);
+    font-weight: 700;
+}
+
+.listpage > .page-head ~ .page-head {
+    margin-top: 32px;
+}
+
+/* ── 방송 예정 줄 ── */
+.schedule-list__item {
+    border-color: var(--violet-line);
+    border-radius: var(--radius-lg);
+}
+
+.schedule-list__thumb {
+    border-radius: var(--radius);
+}
+
+/* ── 채널: 어두운 배너 머리 ── */
+.channel__head {
+    padding: 24px;
+    border: 1px solid var(--violet-line);
+    border-radius: var(--radius-xl);
+    background: linear-gradient(135deg, #0c2a21 0%, #14142a 55%, #1b1533 100%);
+    color: var(--on-media);
+}
+
+.channel__who h1 {
+    color: var(--on-media);
+}
+
+.channel__head .meta {
+    color: var(--on-media-soft);
+}
+
+.channel__avatar {
+    border: 3px solid var(--violet);
+}
+
+.channel__avatar--live {
+    box-shadow: none;
+    border-color: var(--live);
+}
+
+.live-card {
+    border-radius: var(--radius-lg);
+}
+
+.live-card__thumb {
+    border-radius: var(--radius);
+}
+
+.past__link {
+    border-color: var(--border);
+    border-radius: var(--radius-lg);
+}
+
+.past__link--off {
+    border-style: dashed;
+}
+
+/* ── 시청 화면: 영상 틀 ── */
+.player-box {
+    border: 1px solid var(--violet-line);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+}
+
+.live .player-box {
+    border: 0;
+    border-radius: 0;
+}
+
+.more__thumb {
+    border-radius: var(--radius-lg);
+}
+
+.stream__panel,
+.broadcast__confirm {
+    border-radius: var(--radius-lg);
+}
+
+.stream__panel {
+    border-color: var(--green-line);
+}
+
+/* ── 로그인·가입 카드, 방송·업로드의 선택 칸 ── */
+.auth__card {
+    border-color: var(--green-line);
+    border-radius: var(--radius-xl);
+}
+
+.broadcast__choice,
+.broadcast__mic {
+    border-radius: var(--radius-lg);
+}
+
+.broadcast__choice--on {
+    border-color: var(--accent);
+}
+
+.thumbnail-preview img {
+    border-radius: var(--radius-lg);
+}
+
+/* ── 알림·댓글의 구분선은 옅게 ── */
+.identity__tag--debut {
+    border-color: var(--violet);
+    color: var(--violet-ink);
+}
