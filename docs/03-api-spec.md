@@ -231,12 +231,12 @@ Authorization: Bearer <accessToken>
 
 | 메서드 | 경로 | 인증 | 설명 |
 |---|---|---|---|
-| POST | `/api/streams` | 필요 | 등록 (201) |
+| POST | `/api/streams` | 필요 | 등록 (201). `durationSeconds`(1~86400, 선택)는 업로드 응답에 담겨 온 값을 그대로 보낸다. |
 | GET | `/api/streams?categoryId=&sortBy=` | 공개 | 목록 (페이지). `categoryId` 로 좁히고 `sortBy` 로 정렬한다. 로그인 상태면 내가 차단한 채널의 영상은 빠진다. |
 | GET | `/api/streams/search?keyword=` | 공개 | 제목·설명 검색 (페이지) |
 | GET | `/api/streams/subscribed` | **필요** | 구독 중인 채널들의 영상 피드 (페이지) |
 | GET | `/api/streams/{id}` | 공개 | 상세 (조회수 +1, 같은 시청자는 30분에 한 번만) |
-| PUT | `/api/streams/{id}` | 필요 | 수정 (본인만, 아니면 403) |
+| PUT | `/api/streams/{id}` | 필요 | 수정 (본인만, 아니면 403). `durationSeconds` 를 안 보내면 같은 영상일 때는 그대로 두고, `videoUrl` 이 바뀌었을 때는 비운다. |
 | DELETE | `/api/streams/{id}` | 필요 | 삭제 (본인만, 아니면 403) |
 
 #### 정렬 (`sortBy`)
@@ -387,7 +387,7 @@ Authorization: Bearer <accessToken>
 
 - 허용 확장자: `mp4`, `mov`, `webm`, `m4v`, `jpg`, `jpeg`, `png`, `webp`, `gif`
 - 최대 100MB (초과 시 413)
-- 응답: `{ "success": true, "data": { "url": "/uploads/{uuid}.mp4", "thumbnailUrl": "/uploads/{uuid}.jpg" } }`
+- 응답: `{ "success": true, "data": { "url": "/uploads/{uuid}.mp4", "thumbnailUrl": "/uploads/{uuid}.jpg", "durationSeconds": 225 } }`
 - 저장된 파일은 `GET /uploads/{파일명}` 으로 공개 제공된다.
 
 ### 썸네일 자동 생성
@@ -395,6 +395,7 @@ Authorization: Bearer <accessToken>
 올린 파일이 영상(`mp4`·`mov`·`webm`·`m4v`)이면 서버가 ffmpeg 로 한 장면을 뽑아
 같은 이름의 `.jpg` 로 저장하고 `thumbnailUrl` 에 담아 준다.
 영상이 아니거나 뽑지 못했으면 `thumbnailUrl` 은 없다(`null`).
+영상이면 `ffprobe` 로 길이(초, 반올림)도 읽어 `durationSeconds` 에 담는다. 읽지 못했거나 24시간을 넘으면 `null` 이다(업로드는 성공한다).
 
 - 1초 지점을 먼저 뽑는다. 맨 앞은 검은 화면인 경우가 많아서다.
   영상이 1초보다 짧으면 맨 앞으로 물러선다.

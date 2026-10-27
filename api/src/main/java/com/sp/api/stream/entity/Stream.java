@@ -33,6 +33,9 @@ public class Stream {
     @Column(nullable = false)
     private Long viewCount = 0L;
 
+    /** 영상 길이(초). 모르면 null. 업로드할 때 서버가 읽어 온다. */
+    private Integer durationSeconds;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -53,7 +56,13 @@ public class Stream {
 
     public Stream(String title, String description, String thumbnailUrl, String videoUrl,
                   User user, Category category) {
+        this(title, description, thumbnailUrl, videoUrl, user, category, null);
+    }
+
+    public Stream(String title, String description, String thumbnailUrl, String videoUrl,
+                  User user, Category category, Integer durationSeconds) {
         this.title = title;
+        this.durationSeconds = durationSeconds;
         this.description = description;
         this.thumbnailUrl = thumbnailUrl;
         this.videoUrl = videoUrl;
@@ -62,7 +71,16 @@ public class Stream {
         this.viewCount = 0L;
     }
 
-    public void update(String title, String description, String thumbnailUrl, String videoUrl, Category category) {
+    /**
+     * 영상을 다른 것으로 바꿨는데 새 길이를 안 주면 옛 길이가 남지 않게 비운다.
+     * 같은 영상이면 길이를 안 줘도 그대로 둔다.
+     */
+    public void update(String title, String description, String thumbnailUrl, String videoUrl,
+                       Category category, Integer durationSeconds) {
+        if (!videoUrl.equals(this.videoUrl) || durationSeconds != null) {
+            this.durationSeconds = durationSeconds;
+        }
+
         this.title = title;
         this.description = description;
         this.thumbnailUrl = thumbnailUrl;

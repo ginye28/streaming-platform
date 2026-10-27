@@ -41,7 +41,11 @@ public class VideoThumbnailService {
             List.of("-threads", "1")
     );
 
+    /** 영상 길이로 허용하는 최대(초). 이보다 길게 나오면 잘못 읽은 것으로 보고 길이를 비워 둔다. */
+    public static final int MAX_DURATION_SECONDS = 86_400;
+
     private final String ffmpegPath;
+    private final String ffprobePath;
     private final boolean enabled;
     private final long timeoutSeconds;
 
@@ -52,6 +56,10 @@ public class VideoThumbnailService {
     ) {
         this.enabled = enabled;
         this.ffmpegPath = ffmpegPath;
+        // ffmpeg 와 같은 꾸러미로 깔리는 ffprobe 를 같은 폴더에서 찾는다.
+        this.ffprobePath = ffmpegPath.endsWith("ffmpeg")
+                ? ffmpegPath.substring(0, ffmpegPath.length() - "ffmpeg".length()) + "ffprobe"
+                : "ffprobe";
         this.timeoutSeconds = timeoutSeconds;
     }
 
@@ -84,6 +92,57 @@ public class VideoThumbnailService {
         deleteQuietly(target);
 
         return null;
+    }
+
+    /**
+     * 영상의 길이(초, 반올림)를 읽는다. ffprobe 가 없거나 읽지 못하면 null 이다.
+     * 길이가 없다고 업로드를 막지 않는다. 화면에서 길이 배지만 안 보일 뿐이다.
+     */
+    public Integer probeDurationSeconds(Path video) {
+
+        if (!enabled) {
+            return null;
+        }
+
+        ProcessBuilder builder = new ProcessBuilder(
+                ffprobePath, "-v", "error", "-show_entries", "format=duration",
+                "-of", "default=noprint_wrappers=1:nokey=1", video.toString());
+
+        builder.redirectError(ProcessBuilder.Redirect.DISCARD);
+
+        Process process = null;
+
+        try {
+            process = builder.start();
+
+            if (!process.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
+                log.warn("영상 길이 읽기가 {}초를 넘겨 중단했습니다: {}", timeoutSeconds, video.getFileName());
+                return null;
+            }
+
+            if (process.exitValue() != 0) {
+                return null;
+            }
+
+            String output = new String(process.getInputStream().readAllBytes()).trim();
+            double seconds = Double.parseDouble(output);
+            long rounded = Math.round(seconds);
+
+            return rounded >= 1 && rounded <= MAX_DURATION_SECONDS ? (int) rounded : null;
+
+        } catch (IOException | NumberFormatException e) {
+            log.debug("영상 길이를 읽지 못했습니다: {}", e.getMessage());
+            return null;
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+
+        } finally {
+            if (process != null && process.isAlive()) {
+                process.destroyForcibly();
+            }
+        }
     }
 
     /** 한 장면을 뽑아 본다. 만들어진 파일이 비어 있지 않을 때만 성공으로 친다. */

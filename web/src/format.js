@@ -41,3 +41,17 @@ export function formatLiveFor(ms) {
 
     return rest === 0 ? `${hours}시간째` : `${hours}시간 ${rest}분째`
 }
+
+/** 영상 길이(초): 3분 45초 → "03:45", 1시간 2분 3초 → "1:02:03". 모르면 빈 문자열. */
+export function formatDuration(seconds) {
+    const total = Math.round(Number(seconds))
+
+    if (!Number.isFinite(total) || total < 1) return ''
+
+    const h = Math.floor(total / 3600)
+    const m = Math.floor((total % 3600) / 60)
+    const s = total % 60
+    const two = (n) => String(n).padStart(2, '0')
+
+    return h > 0 ? `${h}:${two(m)}:${two(s)}` : `${two(m)}:${two(s)}`
+}
