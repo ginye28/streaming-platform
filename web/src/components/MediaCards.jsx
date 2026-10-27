@@ -1,6 +1,6 @@
 import { assetUrl } from '../assets.js'
 import { AUDIENCE_NOTE } from '../audience.js'
-import { formatLiveFor, formatViewers, formatViews } from '../format.js'
+import { formatDuration, formatLiveFor, formatViewers, formatViews } from '../format.js'
 import { toggleHeart, useHearts } from '../hearts.js'
 import { useLiveViewerCount } from '../liveViewers.js'
 import { tintOf } from '../tint.js'
@@ -101,12 +101,20 @@ export function LiveCard({ live, index = 0 }) {
     )
 }
 
+/** 썸네일 오른쪽 아래의 영상 길이(03:45). 길이를 모르는 영상에는 붙이지 않는다. */
+export function DurationBadge({ seconds }) {
+    const text = formatDuration(seconds)
+
+    return text ? <span className="badge badge--duration num">{text}</span> : null
+}
+
 /** 올라온 영상 카드. */
 export function VideoCard({ stream, index = 0 }) {
     return (
         <li className="vcard" style={{ '--i': index }}>
             <Link to={{ view: 'stream', id: stream.id }} className="vcard__thumb" tabIndex={-1} aria-hidden="true" draggable="false">
                 <Thumb src={stream.thumbnailUrl} name={stream.nickname} seed={stream.userId} play />
+                <DurationBadge seconds={stream.durationSeconds} />
             </Link>
 
             <div className="vcard__meta">

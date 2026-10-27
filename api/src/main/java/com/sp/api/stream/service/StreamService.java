@@ -53,7 +53,8 @@ public class StreamService {
                 request.getThumbnailUrl(),
                 request.getVideoUrl(),
                 user,
-                findCategoryOrNull(request.getCategoryId())
+                findCategoryOrNull(request.getCategoryId()),
+                request.getDurationSeconds()
         );
 
         return StreamResponse.ofNew(streamRepository.save(stream));
@@ -116,7 +117,8 @@ public class StreamService {
                 request.getDescription(),
                 request.getThumbnailUrl(),
                 request.getVideoUrl(),
-                findCategoryOrNull(request.getCategoryId())
+                findCategoryOrNull(request.getCategoryId()),
+                request.getDurationSeconds()
         );
 
         return assembler.assembleOne(stream, email);

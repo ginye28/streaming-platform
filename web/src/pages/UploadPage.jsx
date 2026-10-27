@@ -178,6 +178,8 @@ function StreamForm({ id, existing, categories }) {
     const [videoUrl, setVideoUrl] = useState(initial.videoUrl)
     // 방금 올린 영상의 이름과 크기. 수정 화면에서 기존 영상을 그대로 둘 때는 없다.
     const [videoFile, setVideoFile] = useState(null)
+    // 방금 올린 영상의 길이(초). 서버가 읽어 준 값이고, 못 읽었으면 null. 새로 올리지 않았으면 보내지 않는다.
+    const [duration, setDuration] = useState(null)
     // auto: 서버가 영상의 첫 장면으로 만들어 준 썸네일인지. 직접 올리면 아니다.
     const [thumb, setThumb] = useState({ url: initial.thumbnailUrl, auto: false })
     const [brokenThumbnail, setBrokenThumbnail] = useState(null)
@@ -193,6 +195,7 @@ function StreamForm({ id, existing, categories }) {
     const video = useUploader('video', (uploaded, file) => {
         setVideoUrl(uploaded.url)
         setVideoFile({ name: file.name, size: file.size })
+        setDuration(uploaded.durationSeconds ?? null)
         // 제목을 아직 안 썼으면 파일 이름으로 채워 준다. 고쳐 쓰면 된다.
         setTitle((current) => current || titleFromName(file.name))
 
@@ -264,6 +267,7 @@ function StreamForm({ id, existing, categories }) {
             videoUrl,
             thumbnailUrl: thumb.url || null,
             categoryId: categoryId ? Number(categoryId) : null,
+            durationSeconds: duration,
         }
 
         try {

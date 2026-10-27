@@ -93,4 +93,27 @@ class VideoThumbnailServiceTest {
         assertThat(service.isVideo("png")).isFalse();
         assertThat(service.isVideo(null)).isFalse();
     }
+
+    @Test
+    @DisplayName("영상 길이를 초 단위로 읽는다")
+    void probesDuration() throws Exception {
+
+        assumeTrue(ffmpegAvailable(), "ffmpeg 가 없어 건너뜁니다");
+
+        // 테스트용 영상은 약 2초짜리다.
+        Integer seconds = service(true, "ffmpeg").probeDurationSeconds(sampleVideo());
+
+        assertThat(seconds).isBetween(1, 3);
+    }
+
+    @Test
+    @DisplayName("ffprobe 가 없거나 꺼 두면 길이는 null 이다")
+    void durationIsNullWithoutFfprobe() throws Exception {
+
+        Path video = sampleVideo();
+
+        // ffprobe 는 ffmpeg 와 같은 폴더에서 찾는다. 그 폴더가 없으면 읽지 못해 null 이다.
+        assertThat(service(true, "/no/such/dir/ffmpeg").probeDurationSeconds(video)).isNull();
+        assertThat(service(false, "ffmpeg").probeDurationSeconds(video)).isNull();
+    }
 }

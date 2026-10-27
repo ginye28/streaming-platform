@@ -2,6 +2,8 @@ package com.sp.api.stream.dto;
 
 import com.sp.api.common.validation.SafeUrl;
 import com.sp.api.common.validation.SafeText;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
@@ -30,4 +32,9 @@ public class CreateStreamRequest {
     private String videoUrl;
 
     private Long categoryId;
+
+    /** 영상 길이(초). 업로드 응답에 담겨 온 값을 그대로 보낸다. 모르면 비운다. */
+    @Min(value = 1, message = "영상 길이는 1초 이상이어야 합니다.")
+    @Max(value = 86_400, message = "영상 길이는 24시간 이하여야 합니다.")
+    private Integer durationSeconds;
 }

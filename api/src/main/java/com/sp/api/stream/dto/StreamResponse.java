@@ -19,6 +19,8 @@ public record StreamResponse(
         String nickname,
         Long categoryId,
         String categoryName,
+        /** 영상 길이(초). 모르면 null. */
+        Integer durationSeconds,
         LocalDateTime createdAt
 ) {
 
@@ -37,6 +39,7 @@ public record StreamResponse(
                 stream.getUser().getNickname(),
                 stream.getCategory() != null ? stream.getCategory().getId() : null,
                 stream.getCategory() != null ? stream.getCategory().getName() : null,
+                stream.getDurationSeconds(),
                 stream.getCreatedAt()
         );
     }

@@ -5,13 +5,13 @@ import { AUDIENCE_NOTE } from '../audience.js'
 import HomeArt from '../components/HomeArt.jsx'
 import Icon from '../components/Icon.jsx'
 import Link from '../components/Link.jsx'
-import { CardSkeleton, HeartButton, LiveCard, Thumb, VideoCard } from '../components/MediaCards.jsx'
+import { CardSkeleton, DurationBadge, HeartButton, LiveCard, Thumb, VideoCard } from '../components/MediaCards.jsx'
 import Spinner from '../components/Spinner.jsx'
 import { formatLiveFor, formatViewers } from '../format.js'
 import { pruneHearts, useHearts } from '../hearts.js'
 import { useLiveViewerCount } from '../liveViewers.js'
 import { loginTo } from '../router.js'
-import { formatWhen } from '../time.js'
+import { formatWhen, timeAgo } from '../time.js'
 import { useAsyncData } from '../useAsyncData.js'
 import { useAuth } from '../useAuth.js'
 import { toTime, useNow } from '../useNow.js'
@@ -46,6 +46,14 @@ export default function HomePage() {
     const { data: schedulePage, loading: scheduleLoading } = useAsyncData(() => getSchedules(0), [])
     const videos = useVideos(categoryId, sortBy)
 
+    // 방송이 하나도 없을 때만 가장 많이 본 영상을 대표 카드로 올린다. 방송이 있으면 요청도 보내지 않는다.
+    const noLive = !livesLoading && !livesError && (lives?.content ?? []).length === 0
+    const { data: popularPage, loading: popularLoading } = useAsyncData(
+        () => (noLive ? getStreams('', 'POPULAR', 0) : Promise.resolve(null)),
+        [noLive]
+    )
+    const topVideo = popularPage?.content?.[0] ?? null
+
     // 무료 서버는 한참 안 쓰면 잠든다. 첫 요청이 오래 걸리면 그 이유를 알려 준다.
     const waking = useSlow(livesLoading || videos.loading)
 
@@ -78,7 +86,14 @@ export default function HomePage() {
             <SubscribedChannels />
 
             {showLives && (
-                <LiveZone lives={ordered} loading={livesLoading} error={livesError} onRetry={reloadLives} />
+                <LiveZone
+                    lives={ordered}
+                    loading={livesLoading}
+                    error={livesError}
+                    onRetry={reloadLives}
+                    topVideo={topVideo}
+                    topLoading={noLive && popularLoading}
+                />
             )}
 
             {showLives && <UpcomingZone schedules={schedulePage?.content ?? []} loading={scheduleLoading} />}
@@ -232,7 +247,7 @@ function SubscribedChannels() {
 }
 
 /* ── 지금 방송 중: 가장 큰 한 칸 + 나머지 카드 ── */
-function LiveZone({ lives, loading, error, onRetry }) {
+function LiveZone({ lives, loading, error, onRetry, topVideo, topLoading }) {
     const featured = lives[0] ?? null
     const rest = lives.slice(1)
 
@@ -259,7 +274,17 @@ function LiveZone({ lives, loading, error, onRetry }) {
                 </p>
             )}
 
-            {!loading && !error && !featured && (
+            {!loading && !error && !featured && topLoading && <FeatureSkeleton />}
+
+            {/* 방송은 없지만 올라온 영상이 있으면: 한 줄 안내 + 가장 많이 본 영상. 둘 다 없으면 처음 오는 사람을 위한 시작 화면. */}
+            {!loading && !error && !featured && !topLoading && topVideo && (
+                <>
+                    <NoLiveBar />
+                    <FeaturedVideo stream={topVideo} />
+                </>
+            )}
+
+            {!loading && !error && !featured && !topLoading && !topVideo && (
                 <>
                     <NoLive />
                     <StartGuide />
@@ -340,6 +365,61 @@ function FeaturedLive({ live }) {
     )
 }
 
+/** 방송이 없을 때 대표 자리에 올리는, 가장 많이 본 영상. 조회수 1위라는 사실만 말한다. */
+function FeaturedVideo({ stream }) {
+    const views = (stream.viewCount ?? 0).toLocaleString('ko-KR')
+    const ago = timeAgo(stream.createdAt)
+
+    return (
+        <article className="feature feature--video">
+            <Link to={{ view: 'stream', id: stream.id }} className="feature__media" tabIndex={-1} aria-hidden="true" draggable="false">
+                <Thumb src={stream.thumbnailUrl} name={stream.nickname} seed={stream.userId} play />
+                <span className="badge badge--pick">가장 많이 본 영상</span>
+                <DurationBadge seconds={stream.durationSeconds} />
+            </Link>
+
+            <div className="feature__body">
+                <Link to={{ view: 'channel', id: stream.userId }} className="feature__channel">
+                    <Avatar name={stream.nickname} size={40} seed={stream.userId} />
+                    <span>{stream.nickname}</span>
+                </Link>
+
+                <h3 className="feature__title">
+                    <Link to={{ view: 'stream', id: stream.id }}>{stream.title}</Link>
+                </h3>
+
+                {stream.description && <p className="feature__desc">{stream.description}</p>}
+
+                <dl className="feature__stats num">
+                    <div>
+                        <dt>조회수</dt>
+                        <dd>{views}회</dd>
+                    </div>
+                    {ago && (
+                        <div>
+                            <dt>올린 때</dt>
+                            <dd>{ago}</dd>
+                        </div>
+                    )}
+                    {stream.categoryName && (
+                        <div>
+                            <dt>카테고리</dt>
+                            <dd>{stream.categoryName}</dd>
+                        </div>
+                    )}
+                </dl>
+
+                <div className="feature__actions">
+                    <Link to={{ view: 'stream', id: stream.id }} className="btn btn--primary btn--lg">
+                        <Icon name="play" size={20} filled />
+                        재생하기
+                    </Link>
+                </div>
+            </div>
+        </article>
+    )
+}
+
 function FeatureSkeleton() {
     return (
         <div className="feature feature--skeleton" aria-hidden="true">
@@ -348,6 +428,28 @@ function FeatureSkeleton() {
                 <span className="skeleton skeleton--line skeleton--short" />
                 <span className="skeleton skeleton--line" />
                 <span className="skeleton skeleton--line skeleton--short" />
+            </div>
+        </div>
+    )
+}
+
+/** 방송은 없지만 볼 영상은 있을 때의 한 줄 안내. 방송 켜기와 예정 방송으로 가는 길만 남긴다. */
+function NoLiveBar() {
+    const { me } = useAuth()
+
+    return (
+        <div className="nolive-bar">
+            <span className="nolive-bar__icon">
+                <Icon name="live" size={22} />
+            </span>
+            <p>지금 방송 중인 채널이 없어요. 방송이 시작되면 가장 먼저 여기에 올라와요.</p>
+            <div className="nolive-bar__actions">
+                <Link to={{ view: 'lives' }} className="btn">
+                    예정된 방송 보기
+                </Link>
+                <Link to={me ? { view: 'broadcast' } : loginTo()} className="btn btn--tonal">
+                    {me ? '방송하기' : '로그인하고 방송하기'}
+                </Link>
             </div>
         </div>
     )

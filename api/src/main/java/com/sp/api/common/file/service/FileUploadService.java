@@ -67,7 +67,11 @@ public class FileUploadService {
 
         log.debug("파일 업로드 완료: {}", fileName);
 
-        return new UploadResponse("/uploads/" + fileName, thumbnailUrl(target, baseName, extension));
+        return new UploadResponse(
+                "/uploads/" + fileName,
+                thumbnailUrl(target, baseName, extension),
+                thumbnailService.isVideo(extension) ? thumbnailService.probeDurationSeconds(target) : null
+        );
     }
 
     /** 영상이면 첫 장면을 뽑아 둔다. 못 뽑아도 업로드 자체는 성공이다. */

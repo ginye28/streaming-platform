@@ -55,6 +55,7 @@ users ─┬─< streams ─┬─< comments ─┐
 | video_url | varchar(255) | | `/uploads/{uuid}.mp4` |
 | thumbnail_url | varchar(255) | null 허용 | 영상을 올리면 자동으로 채워짐 |
 | view_count | bigint | | 같은 시청자 30분 1회 |
+| duration_seconds | int | null 허용 | 영상 길이(초). 업로드할 때 서버가 ffprobe 로 읽는다. 모르면 null (V9) |
 | created_at · updated_at | datetime(6) | | |
 
 ---
