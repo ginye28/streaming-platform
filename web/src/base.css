@@ -103,25 +103,31 @@
 :root[data-theme='dark'] {
     color-scheme: dark;
 
-    --bg: #0f0f0f;
-    --surface: #1a1a1a;
-    --sunken: #272727;
-    --hover: #323232;
-    --border: #303030;
-    --border-strong: #454545;
+    --bg: #0f0f12;
+    --surface: #16161a;
+    --sunken: #1e1e24;
+    --hover: #2a2a32;
+    --border: #26262e;
+    --border-strong: #3a3a45;
     --field-border: #7b8490;
 
-    --text: #f1f1f1;
+    --text: #f1f1f3;
     --muted: #a8b0bb;
     --subtle: #8d96a3;
 
-    /* 어두운 바탕에서는 파랑이 밝아지고, 그 위의 글자는 어둡다(6.7:1). */
-    --accent: #5b9bff;
-    --accent-hover: #7db0ff;
-    --accent-soft: #16233a;
-    --accent-soft-hover: #1e3254;
-    --accent-ink: #8ab8ff;
-    --on-accent: #071226;
+    /* 나이트 모드의 포인트는 차분한 딥 그린이다. 그린 면 위의 글자는 거의 검정(7.9:1). */
+    --accent: #10b981;
+    --accent-hover: #34d399;
+    --accent-soft: #0c2a21;
+    --accent-soft-hover: #10392c;
+    --accent-ink: #6ee7b7;
+    --on-accent: #04130d;
+
+    /* 보조 포인트인 딥 퍼플. 카테고리 칩·보조 버튼·고리에만 쓴다. 칩 위 글자 9:1 이상 */
+    --violet: #a78bfa;
+    --violet-soft: #1b1533;
+    --violet-ink: #c4b5fd;
+    --violet-line: #2c2354;
 
     --live: #d92d46;
     /* 어두운 바탕 위의 LIVE 글자(배경이 아닌 글자색). 4.5:1 이상 */

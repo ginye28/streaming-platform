@@ -16,14 +16,14 @@
       try {
         var dark = localStorage.getItem('theme') === 'dark'
         document.documentElement.dataset.theme = dark ? 'dark' : 'light'
-        document.querySelector('meta[name="theme-color"]').content = dark ? '#0f0f0f' : '#ffffff'
+        document.querySelector('meta[name="theme-color"]').content = dark ? '#0f0f12' : '#ffffff'
       } catch (e) {
         document.documentElement.dataset.theme = 'light'
       }
     </script>
     <style>
       html { --sk-bg: #ffffff; --sk-block: #f2f4f6; --sk-line: #e5e8eb; background: var(--sk-bg); }
-      html[data-theme='dark'] { --sk-bg: #0f0f0f; --sk-block: #272727; --sk-line: #303030; }
+      html[data-theme='dark'] { --sk-bg: #0f0f12; --sk-block: #1e1e24; --sk-line: #26262e; }
       body { margin: 0; background: var(--sk-bg); }
       .sk { min-height: 100vh; }
       .sk i { display: block; background: var(--sk-block); }

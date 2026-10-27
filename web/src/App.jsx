@@ -12,6 +12,7 @@ import './base.css'
 import './app.css'
 import './shell.css'
 import './home.css'
+import './cinema.css'
 
 /**
  * 첫 화면(홈)만 처음 번들에 넣고 나머지 화면은 열 때 받는다.
