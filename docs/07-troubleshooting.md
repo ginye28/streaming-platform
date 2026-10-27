@@ -279,3 +279,19 @@ PC 에서 카드·간편결제를 고르고 폰으로 인증하면, 폰에는 "�
 ### 해결
 일반 한도는 환경변수로 올린다(`RATE_LIMIT_READ_PER_MINUTE`, `RATE_LIMIT_WRITE_PER_MINUTE` …, [06-deployment.md](06-deployment.md)). 급하면 `RATE_LIMIT_ENABLED=false`. 로그인 IP 한도와 계정 실패 잠금(15분에 10번)은 [09-security.md](09-security.md) 의 고정 값이고, 한 계정이 잠시 막히는 것은 의도된 동작이다.
 
+---
+
+## 배포가 계속 실패하고 Render 가 재시작만 되풀이함 — "Detected failed migration" (V8)
+
+### 증상
+- Render 메일 "deploy failed for sp-api", 로그에 `Detected failed migration to version 8` 과 `Validate failed: Migrations have failed validation`, 인스턴스가 계속 restarted.
+- 그 앞쪽 로그(`q=SQL` 로 검색)에 진짜 원인이 있다: `Illegal mix of collations (utf8mb4_unicode_ci,IMPLICIT) and (utf8mb4_0900_ai_ci,IMPLICIT) for operation '='`.
+
+### 원인
+- V8(데모 콘텐츠)이 서브쿼리의 글자와 테이블 열을 `=` 로 비교했다. **TiDB 는 두 쪽 정렬 규칙이 다르면 거절한다.** MySQL 은 같은 SQL 을 통과시켜서 CI(MySQL)와 로컬에서는 드러나지 않았다.
+- 한 번 실패하면 Flyway 가 "V8 실패" 기록을 남기고, 그 뒤로는 SQL 을 고쳐도 기동 자체를 거부한다.
+
+### 해결
+- V8 의 비교에 `COLLATE utf8mb4_unicode_ci` 를 명시하고 "이미 있으면 넣지 않는다" 조건을 달았다(다시 돌려도 중복되지 않는다).
+- `FlywayRepairConfig` 가 **실패 기록이 있을 때만** 그 기록을 정리(repair)하고 다시 마이그레이션한다. 그래서 운영 DB 를 손으로 고치지 않아도 다음 배포에서 풀린다. 실패 기록이 없으면 평소처럼 migrate 만 한다. repair 는 이미 성공한 마이그레이션을 건드리지 않는다.
+- 앞으로 TiDB 에서 서브쿼리와 열을 비교하는 마이그레이션을 쓸 때는 비교하는 쪽에 `COLLATE` 를 명시한다.

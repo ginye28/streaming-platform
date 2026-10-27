@@ -4,18 +4,32 @@
 -- 시청 수·좋아요·댓글·구독자는 지어내지 않는다(0 그대로).
 -- 데모 계정은 비밀번호가 BCrypt 값이 아니라서 로그인할 수 없다. 지우려면 docs/06-deployment.md 의 "데모 콘텐츠 지우기".
 -- MySQL/TiDB 모두 돌아가는 평범한 INSERT 만 쓴다.
+--
+-- 서브쿼리(파생 테이블)의 글자와 테이블 열을 비교할 때 TiDB 는 두 쪽 정렬 규칙이 다르면
+-- "Illegal mix of collations (utf8mb4_unicode_ci,IMPLICIT) and (utf8mb4_0900_ai_ci,IMPLICIT)" 로 거절한다.
+-- (MySQL 은 리터럴 글자를 더 약하게 취급해서 같은 SQL 이 통과한다.) 그래서 비교하는 쪽에 COLLATE 를 명시했다.
+-- 중간에 실패해도 다시 돌려도 중복되지 않게 모든 INSERT 에 "이미 있으면 넣지 않는다" 조건을 달았다.
 
 INSERT INTO `categories` (`created_at`, `name`)
 SELECT NOW(6), v.name FROM (
   SELECT '애니메이션' AS name UNION ALL SELECT '단편 영화' UNION ALL SELECT '자연'
 ) v
-WHERE NOT EXISTS (SELECT 1 FROM `categories` c WHERE c.name = v.name);
+WHERE NOT EXISTS (SELECT 1 FROM `categories` c WHERE c.name = v.name COLLATE utf8mb4_unicode_ci);
 
 INSERT INTO `users` (`created_at`, `updated_at`, `nickname`, `email`, `public_name`, `password`, `provider`, `role`)
-VALUES
-  (NOW(6), NOW(6), '데모 블렌더스튜디오', 'demo-blender@demo.invalid', '데모 블렌더스튜디오', '!demo-no-login', 'LOCAL', 'USER'),
-  (NOW(6), NOW(6), '데모 시네마룸',       'demo-cinema@demo.invalid',  '데모 시네마룸',       '!demo-no-login', 'LOCAL', 'USER'),
-  (NOW(6), NOW(6), '데모 자연기록',       'demo-nature@demo.invalid',  '데모 자연기록',       '!demo-no-login', 'LOCAL', 'USER');
+SELECT NOW(6), NOW(6), '데모 블렌더스튜디오', 'demo-blender@demo.invalid', '데모 블렌더스튜디오', '!demo-no-login', 'LOCAL', 'USER'
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `users` WHERE `email` = 'demo-blender@demo.invalid');
+
+INSERT INTO `users` (`created_at`, `updated_at`, `nickname`, `email`, `public_name`, `password`, `provider`, `role`)
+SELECT NOW(6), NOW(6), '데모 시네마룸', 'demo-cinema@demo.invalid', '데모 시네마룸', '!demo-no-login', 'LOCAL', 'USER'
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `users` WHERE `email` = 'demo-cinema@demo.invalid');
+
+INSERT INTO `users` (`created_at`, `updated_at`, `nickname`, `email`, `public_name`, `password`, `provider`, `role`)
+SELECT NOW(6), NOW(6), '데모 자연기록', 'demo-nature@demo.invalid', '데모 자연기록', '!demo-no-login', 'LOCAL', 'USER'
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `users` WHERE `email` = 'demo-nature@demo.invalid');
 
 INSERT INTO `streams` (`created_at`, `updated_at`, `user_id`, `category_id`, `view_count`, `title`, `description`, `thumbnail_url`, `video_url`)
 SELECT v.created_at, v.created_at, u.id, c.id, 0, v.title, v.description, v.thumbnail_url, v.video_url
@@ -56,5 +70,11 @@ FROM (
          NULL,
          'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4'
 ) v
-JOIN `users` u ON u.email = v.email
-JOIN `categories` c ON c.name = v.category;
+JOIN `users` u ON u.email = v.email COLLATE utf8mb4_unicode_ci
+JOIN `categories` c ON c.name = v.category COLLATE utf8mb4_unicode_ci
+WHERE NOT EXISTS (
+  SELECT 1 FROM `streams` s
+  WHERE s.user_id = u.id
+    AND s.video_url = v.video_url COLLATE utf8mb4_unicode_ci
+    AND s.title = v.title COLLATE utf8mb4_unicode_ci
+);
