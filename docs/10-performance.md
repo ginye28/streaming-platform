@@ -7,7 +7,7 @@
 
 | 구분 | 내용 |
 |---|---|
-| 등급 | `<html data-perf="full\|lite">`. `lite` 는 불러오는 자리의 반짝임·썸네일 확대·호버 전환·들어올 때 떠오르는 움직임·LIVE 점 깜빡임·빈 화면 그림의 둥둥 움직임을 끈다 (`web/src/perf.js`, `home.css`·`shell.css` 의 `data-perf='lite'` 규칙) |
+| 등급 | `<html data-perf="full\|lite">`. `lite` 는 불러오는 자리의 반짝임·썸네일 확대·호버 전환·들어올 때 떠오르는 움직임·LIVE 점 깜빡임·빈 화면 그림의 둥둥 움직임을 끈다 (`web/src/perf.js`, `home.css`·`cinema.css`·`shell.css` 의 `data-perf='lite'` 규칙) |
 | 자동 판정 | ① 브라우저 힌트: 데이터 절약, 메모리 ≤ 2GB, 코어 ≤ 2 → 처음부터 `lite` ② 처음 화면이 가라앉은 뒤 약 90프레임을 재서 **중앙값이 34ms 넘으면(약 30fps 미만)** `lite` 로 내림, 7일간 기억 |
 | 사용자 선택 | 로그인 후 내 메뉴 → **화면 효과**: 자동 → 가볍게 → 전체. 선택은 자동 판정보다 우선. 로그아웃 상태는 주소에 `?perf=lite` / `?perf=full` / `?perf=auto` |
 | 안내 | 자동으로 줄였을 때 한 번 알려 주고 "되돌리기"를 둔다(숨기지 않는다) |
