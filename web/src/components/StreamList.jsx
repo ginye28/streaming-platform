@@ -1,11 +1,16 @@
-import { videoItems } from '../bento.js'
-import { BentoList } from './Bento.jsx'
+import { VideoCard } from './MediaCards.jsx'
 
-/** 영상 카드 목록(벤토 격자). 첫 칸이 크게 나오고, 영상이 적으면 그만큼만 채운다. */
-export default function StreamList({ streams, empty = '영상이 없습니다.', uniform = false }) {
+/** 영상 카드 목록(홈과 같은 카드 격자). */
+export default function StreamList({ streams, empty = '영상이 없습니다.' }) {
     if (!streams || streams.length === 0) {
         return <p className="empty">{empty}</p>
     }
 
-    return <BentoList items={videoItems(streams)} uniform={uniform} />
+    return (
+        <ul className="vgrid">
+            {streams.map((stream, i) => (
+                <VideoCard key={stream.id} stream={stream} index={i} />
+            ))}
+        </ul>
+    )
 }

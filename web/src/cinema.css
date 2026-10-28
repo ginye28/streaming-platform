@@ -1,24 +1,21 @@
 /*
- * 홈: 시네마 슬라이더 + 벤토 격자 (밝은 화면·나이트 모드 모두).
+ * 홈의 시네마 무대: 와이드 슬라이더 + 오른쪽 예정 방송 패널 (밝은 화면·나이트 모드 모두 어둡게).
  * 색은 base.css 의 토큰(딥 그린 --accent, 딥 퍼플 --violet)을 따르고, 번쩍이는 빛·번짐은 쓰지 않는다.
  * 면은 무광이고 테두리는 옅은 색 선이다. 사진 위에 얹히는 글자(--on-media)는 화면 모드와 상관없이 밝다.
  */
 
 :root {
-    --cine-card: var(--surface);
-    --cine-green-line: var(--green-line);
-    --cine-violet-line: var(--violet-line);
-    --cine-text: var(--text);
-    --cine-soft: var(--muted);
     /* 사진·어두운 띠 위에 얹히는 글자 */
     --on-media: #f4f4f5;
     --on-media-soft: #d4d4d8;
-    --bento-row: clamp(176px, 15.5vw, 256px);
-    --bento-gap: 16px;
 }
 
-:root[data-theme='dark'] {
-    --cine-card: rgb(24 24 27 / 0.55);
+/* 어두운 무대: 화면이 밝아도 슬라이더·패널은 나이트 팔레트로 그린다(base.css 의 .night-scope). */
+.cine-stage__dark {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: transparent;
 }
 
 .home--cinema {
@@ -72,26 +69,6 @@
     white-space: nowrap;
 }
 
-.cine-chip--btn {
-    min-height: 34px;
-    padding: 0 14px;
-    font-size: var(--text-sm);
-    cursor: pointer;
-    transition: background-color 150ms var(--ease-out), color 150ms var(--ease-out);
-}
-
-.cine-chip--btn[aria-pressed='true'] {
-    border-color: var(--accent);
-    background: var(--accent);
-    color: var(--on-accent);
-}
-
-@media (hover: hover) and (pointer: fine) {
-    .cine-chip--btn[aria-pressed='false']:hover {
-        background: var(--violet-soft-hover);
-    }
-}
-
 .cine-link {
     color: var(--accent-ink);
     font-size: var(--text-sm);
@@ -131,7 +108,7 @@
 .cine-stage__row {
     display: grid;
     grid-template-columns: minmax(0, 3fr) minmax(280px, 1fr);
-    gap: var(--bento-gap);
+    gap: 16px;
 }
 
 .cine-stage__error {
@@ -143,7 +120,7 @@
     min-width: 0;
     min-height: clamp(380px, 33vw, 520px);
     overflow: hidden;
-    border: 1px solid var(--cine-violet-line);
+    border: 1px solid var(--violet-line);
     border-radius: var(--radius-xl);
     background: var(--surface);
 }
@@ -220,18 +197,7 @@
     -webkit-line-clamp: 2;
 }
 
-/* 사진 위에서는 밝은 그린이 더 또렷하다(화면 모드와 상관없이). */
-.cine-hero .btn--primary {
-    background: #10b981;
-    color: #04130d;
-}
-
-@media (hover: hover) and (pointer: fine) {
-    .cine-hero .btn--primary:hover:not(:disabled) {
-        background: #34d399;
-    }
-}
-
+/* 버튼 줄 */
 .cine-hero__actions {
     display: flex;
     flex-wrap: wrap;
@@ -249,7 +215,7 @@
     gap: 10px;
     width: 264px;
     padding: 10px;
-    border: 1px solid var(--cine-violet-line);
+    border: 1px solid var(--violet-line);
     border-radius: var(--radius-lg);
     background: rgb(15 15 18 / 0.78);
     color: var(--on-media);
@@ -309,7 +275,7 @@
     width: 32px;
     height: 32px;
     padding: 0;
-    border: 1px solid var(--cine-violet-line);
+    border: 1px solid var(--violet-line);
     border-radius: 50%;
     background: rgb(15 15 18 / 0.7);
     color: var(--on-media);
@@ -357,9 +323,9 @@
     gap: 14px;
     min-width: 0;
     padding: 18px;
-    border: 1px solid var(--cine-green-line);
+    border: 1px solid var(--green-line);
     border-radius: var(--radius-xl);
-    background: var(--cine-card);
+    background: var(--surface);
 }
 
 .cine-panel__now {
@@ -369,7 +335,7 @@
     margin: 0;
     padding-bottom: 14px;
     border-bottom: 1px solid var(--border);
-    color: var(--cine-soft);
+    color: var(--muted);
     font-size: var(--text-sm);
     font-weight: 600;
 }
@@ -397,7 +363,7 @@
 
 .cine-panel__empty {
     margin: 0;
-    color: var(--cine-soft);
+    color: var(--muted);
     font-size: var(--text-sm);
     line-height: 1.6;
 }
@@ -422,320 +388,14 @@
 }
 
 .cine-sched span:last-child {
-    color: var(--cine-soft);
+    color: var(--muted);
     font-size: var(--text-xs);
 }
 
 @media (hover: hover) and (pointer: fine) {
     .cine-sched:hover {
-        border-color: var(--cine-violet-line);
+        border-color: var(--violet-line);
     }
-}
-
-/* ── 벤토 격자 ── */
-.bento {
-    display: grid;
-    grid-auto-flow: dense;
-    grid-auto-rows: var(--bento-row);
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: var(--bento-gap);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.bento__item {
-    position: relative;
-    min-width: 0;
-}
-
-.bento__item--big {
-    grid-column: span 2;
-    grid-row: span 2;
-}
-
-.bento__item--wide,
-.bento__item--module {
-    grid-column: span 2;
-}
-
-/* 목록 화면: 칸이 모두 같은 크기인 격자 */
-.bento--even {
-    grid-auto-rows: calc(var(--bento-row) * 1.1);
-}
-
-/* 카드 */
-.bcard {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
-    border: 1px solid var(--cine-violet-line);
-    border-radius: var(--radius-lg);
-    background: var(--cine-card);
-}
-
-.bcard--live {
-    border-color: var(--cine-green-line);
-}
-
-.bcard__media {
-    position: relative;
-    flex: 1 1 0;
-    min-height: 0;
-    overflow: hidden;
-}
-
-/* 썸네일이 칸을 가득 채운다(16:9 고정을 풀어 준다). */
-.bcard__media .thumb {
-    width: 100%;
-    height: 100%;
-    aspect-ratio: auto;
-    border-radius: 0;
-}
-
-.bcard__media .thumb img {
-    transition: transform 280ms var(--ease-out);
-}
-
-@media (hover: hover) and (pointer: fine) {
-    .bcard:hover .bcard__media .thumb img {
-        transform: scale(1.02);
-    }
-}
-
-.bcard__badge {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-}
-
-.bcard .badge--duration {
-    right: 10px;
-    bottom: 10px;
-}
-
-.bcard__meta {
-    display: flex;
-    gap: 10px;
-    padding: 10px 12px 12px;
-}
-
-.bcard__avatar {
-    position: relative;
-    z-index: 1;
-    flex: none;
-    margin-top: 2px;
-}
-
-.bcard__text {
-    min-width: 0;
-}
-
-.bcard .bcard__title {
-    display: -webkit-box;
-    margin: 0;
-    overflow: hidden;
-    font-size: var(--text-md);
-    font-weight: 600;
-    line-height: 1.4;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-}
-
-.bcard__title a {
-    color: var(--cine-text);
-    text-decoration: none;
-}
-
-/* 제목 링크가 카드 전체를 누르는 자리가 된다. 채널 링크는 그 위에 따로 있다. */
-.bcard__title a::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-}
-
-.bcard__stats {
-    display: -webkit-box;
-    margin: 2px 0 0;
-    overflow: hidden;
-    color: var(--cine-soft);
-    font-size: var(--text-xs);
-    line-height: 1.5;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 1;
-}
-
-.bcard__channel {
-    position: relative;
-    z-index: 1;
-    color: inherit;
-    text-decoration: none;
-}
-
-.bcard__channel:hover {
-    color: var(--cine-text);
-    text-decoration: underline;
-}
-
-/* 큰 칸 · 가로형: 글이 썸네일 아래쪽에 얹힌다. */
-.bcard--big .bcard__meta,
-.bcard--wide .bcard__meta {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    align-items: center;
-    padding: 56px 16px 14px;
-    background: linear-gradient(0deg, rgb(10 10 12 / 0.94) 0%, rgb(10 10 12 / 0.55) 60%, transparent 100%);
-}
-
-/* 사진 위에 얹힌 글은 화면 모드와 상관없이 밝다. */
-.bcard--big .bcard__title a,
-.bcard--wide .bcard__title a {
-    color: var(--on-media);
-}
-
-.bcard--big .bcard__stats,
-.bcard--wide .bcard__stats {
-    color: var(--on-media-soft);
-}
-
-.bcard--big .bcard__channel:hover,
-.bcard--wide .bcard__channel:hover {
-    color: var(--on-media);
-}
-
-.bcard--big .bcard__title {
-    font-size: var(--text-2xl);
-    font-weight: 700;
-    letter-spacing: -0.02em;
-}
-
-.bcard--wide .bcard__title {
-    font-size: var(--text-lg);
-    -webkit-line-clamp: 1;
-}
-
-.bcard--big .bcard__media,
-.bcard--wide .bcard__media {
-    position: absolute;
-    inset: 0;
-}
-
-.bcard--big .badge--duration,
-.bcard--wide .badge--duration {
-    top: 10px;
-    right: 10px;
-    bottom: auto;
-}
-
-/* 작은 칸 */
-.bcard--mini .bcard__meta {
-    flex: none;
-}
-
-/* ── 모듈 ── */
-.bmod {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    height: 100%;
-    padding: 18px;
-    overflow: hidden auto;
-    border: 1px solid var(--cine-green-line);
-    border-radius: var(--radius-lg);
-    background: var(--cine-card);
-}
-
-.bmod--violet {
-    border-color: var(--cine-violet-line);
-}
-
-.bmod__head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 4px 12px;
-}
-
-.bmod__head h3 {
-    margin: 0;
-    font-size: var(--text-lg);
-}
-
-.bmod__head span {
-    color: var(--cine-soft);
-    font-size: var(--text-xs);
-}
-
-.streamers {
-    display: flex;
-    flex: 1;
-    align-items: center;
-    justify-content: space-around;
-    gap: 8px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.streamer {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    width: 76px;
-    color: var(--text);
-    text-decoration: none;
-}
-
-/* 프로필을 감싸는 딥 그린 · 딥 퍼플 고리(번짐 없는 평평한 선). */
-.streamer__ring {
-    display: grid;
-    place-items: center;
-    padding: 3px;
-    border: 2px solid var(--accent);
-    border-radius: 50%;
-}
-
-.streamer__ring--violet {
-    border-color: var(--violet);
-}
-
-.streamer__name {
-    max-width: 100%;
-    overflow: hidden;
-    font-size: var(--text-xs);
-    font-weight: 600;
-    text-align: center;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.streamer__live {
-    position: absolute;
-    top: 46px;
-    min-height: 16px;
-    padding: 2px 6px;
-    border-radius: 4px;
-    background: var(--live);
-    color: var(--on-live);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    line-height: 1.2;
-}
-
-.genres {
-    display: flex;
-    flex-wrap: wrap;
-    align-content: flex-start;
-    gap: 8px;
 }
 
 /* ── 불러오는 동안: 격자 그대로의 회색 뼈대 ── */
@@ -747,10 +407,6 @@
 
 .cine-skel--hero {
     border: 0;
-}
-
-.cine-skel--tile {
-    height: 100%;
 }
 
 .cine-skel--line {
@@ -770,11 +426,6 @@
 
     .cine-hero__slide {
         animation: cine-fade 500ms var(--ease-out) backwards;
-    }
-
-    .bento__item {
-        animation: rise 420ms var(--ease-out) backwards;
-        animation-delay: calc(var(--i, 0) * 40ms);
     }
 
     .cine-stage__row {
@@ -804,10 +455,6 @@
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     }
-
-    .bento {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
 }
 
 @media (max-width: 860px) {
@@ -821,11 +468,6 @@
 }
 
 @media (max-width: 720px) {
-    :root {
-        --bento-row: 190px;
-        --bento-gap: 12px;
-    }
-
     .home--cinema {
         padding-top: 12px;
     }
@@ -846,40 +488,16 @@
     .cine-hero__actions .btn {
         flex: 1 1 140px;
     }
-
-    .bcard--big .bcard__title {
-        font-size: var(--text-xl);
-    }
-
-    /* 다섯 명이 한 줄에 다 안 들어가면 모듈 안에서 옆으로 민다. */
-    .streamers {
-        justify-content: flex-start;
-        gap: 12px;
-        overflow-x: auto;
-        scrollbar-width: none;
-    }
-
-    .streamer {
-        flex: none;
-        width: 64px;
-    }
 }
 
 /* 화면 효과 '가볍게': 움직임을 끈다. */
 :root[data-perf='lite'] .cine-skel,
 :root[data-perf='lite'] .cine-hero__slide,
-:root[data-perf='lite'] .cine-stage__row,
-:root[data-perf='lite'] .bento__item {
+:root[data-perf='lite'] .cine-stage__row {
     animation: none;
 }
 
-:root[data-perf='lite'] .bcard__media .thumb img,
 :root[data-perf='lite'] .cine-hero__dot::before,
-:root[data-perf='lite'] .cine-sched,
-:root[data-perf='lite'] .cine-chip--btn {
+:root[data-perf='lite'] .cine-sched {
     transition: none;
-}
-
-:root[data-perf='lite'] .bcard:hover .bcard__media .thumb img {
-    transform: none;
 }

@@ -10,9 +10,7 @@ import Avatar from './Avatar.jsx'
 import { EmptyVideos, NoLive, NoLiveBar, StartGuide, SubscribedChannels } from './HomeParts.jsx'
 import Icon from './Icon.jsx'
 import Link from './Link.jsx'
-import { tileSize } from '../bento.js'
-import { BentoItem } from './Bento.jsx'
-import { DurationBadge, Thumb } from './MediaCards.jsx'
+import { CardSkeleton, DurationBadge, LiveCard, Thumb, VideoCard } from './MediaCards.jsx'
 import Spinner from './Spinner.jsx'
 
 /** 슬라이더가 넘어가는 간격. 마우스를 올리거나 포커스하면 멈춘다. */
@@ -21,9 +19,9 @@ const HERO_LIVES = 5
 const HERO_VIDEOS = 4
 
 /**
- * 나이트 모드의 홈: 와이드 시네마 슬라이더 + 크기가 제각각인 벤토 격자.
- * 보여 주는 것은 모두 서버에 있는 방송·영상·예정·카테고리뿐이다. 시청자 수나 채팅 같은 걸 지어내지 않고,
- * 없으면 빈 상태 안내를 보여 준다. 불러오는 동안은 같은 격자 모양의 뼈대를 먼저 깐다.
+ * 홈. 위쪽은 어두운 시네마 무대(와이드 슬라이더 + 오른쪽 예정 패널), 아래쪽은 칩 줄 + 영상 카드 격자다.
+ * 무대는 화면이 밝아도 어둡게 그린다(night-scope). 보여 주는 것은 모두 서버에 있는 방송·영상·예정·카테고리뿐이고,
+ * 시청자 수나 채팅 같은 걸 지어내지 않는다. 없으면 빈 상태 안내를 보여 준다.
  */
 export default function CinemaHome({
     categories,
@@ -43,19 +41,13 @@ export default function CinemaHome({
     sorts,
     waking,
 }) {
-    // 방송은 "전체"를 보고 있을 때만 앞세운다. 카테고리를 고르면 그 카테고리의 영상만 본다.
-    const showHero = categoryId === ''
+    // 무대는 "전체"를 보고 있을 때만 보인다. 카테고리를 고르면 그 카테고리의 영상만 본다.
+    const showStage = categoryId === ''
     const slides = buildSlides(lives, popular)
-    const heroIds = new Set(slides.map((slide) => slide.key))
-    const heroLoading = livesLoading || popularLoading
-    const noContent = !heroLoading && !livesError && slides.length === 0 && !videos.loading && videos.items.length === 0
-
-    // 슬라이더에 올라간 것은 격자에서 뺀다(방송이 슬라이더에 다 못 오르면 나머지는 격자 맨 앞에 온다).
-    const liveItems = showHero ? lives.slice(HERO_LIVES).map((live) => ({ kind: 'live', key: `l${live.id}`, live })) : []
-    const videoItems = videos.items
-        .map((stream) => ({ kind: 'video', key: `v${stream.id}`, stream }))
-        .filter((item) => !heroIds.has(item.key) || videos.items.length <= slides.length)
-    const items = [...liveItems, ...videoItems]
+    const stageLoading = livesLoading || popularLoading
+    const noContent = !stageLoading && !livesError && slides.length === 0 && !videos.loading && videos.items.length === 0
+    // 슬라이더에 다 못 오른 방송은 아래에 카드로 둔다.
+    const moreLives = showStage ? lives.slice(HERO_LIVES) : []
 
     return (
         <div className="home home--cinema">
@@ -68,11 +60,15 @@ export default function CinemaHome({
                 </p>
             )}
 
-            {showHero && (
+            {showStage && (
                 <section className="cine-stage" aria-label="추천 방송">
-                    {heroLoading && <HeroSkeleton />}
+                    {stageLoading && (
+                        <div className="night-scope">
+                            <HeroSkeleton />
+                        </div>
+                    )}
 
-                    {livesError && !heroLoading && (
+                    {livesError && !stageLoading && (
                         <p className="error cine-stage__error" role="alert">
                             방송 목록을 불러오지 못했어요. {livesError}{' '}
                             <button type="button" onClick={onRetryLives}>
@@ -81,14 +77,14 @@ export default function CinemaHome({
                         </p>
                     )}
 
-                    {!heroLoading && !livesError && slides.length > 0 && (
-                        <>
+                    {!stageLoading && !livesError && slides.length > 0 && (
+                        <div className="night-scope cine-stage__dark">
                             {lives.length === 0 && <NoLiveBar />}
                             <div className="cine-stage__row">
                                 <Hero slides={slides} />
                                 <SchedulePanel schedules={schedules} loading={scheduleLoading} liveCount={lives.length} />
                             </div>
-                        </>
+                        </div>
                     )}
 
                     {noContent && (
@@ -100,67 +96,40 @@ export default function CinemaHome({
                 </section>
             )}
 
-            {showHero && <SubscribedChannels />}
+            {!(noContent && showStage) && (
+                <>
+                    <FilterBar categories={categories} categoryId={categoryId} onCategory={onCategory} />
 
-            {!(noContent && showHero) && (
-            <section className="zone cine-bento" aria-labelledby="bento-title">
-                <div className="shead">
-                    <h2 id="bento-title">{showHero ? '지금 볼 만한 것' : '영상'}</h2>
+                    {showStage && <SubscribedChannels />}
 
-                    <div className="seg" role="group" aria-label="정렬">
-                        {sorts.map((sort) => (
-                            <button
-                                key={sort.value}
-                                type="button"
-                                className="seg__item"
-                                aria-pressed={sortBy === sort.value}
-                                onClick={() => onSort(sort.value)}
-                            >
-                                {sort.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
+                    {moreLives.length > 0 && (
+                        <section className="zone" aria-labelledby="more-live-title">
+                            <div className="shead">
+                                <h2 id="more-live-title">
+                                    다른 방송
+                                    <span className="shead__count num">{moreLives.length}</span>
+                                </h2>
+                                <Link to={{ view: 'lives' }} className="shead__link">
+                                    라이브 전체 보기
+                                </Link>
+                            </div>
+                            <ul className="vgrid vgrid--live" aria-label="다른 방송">
+                                {moreLives.map((live, i) => (
+                                    <LiveCard key={live.id} live={live} index={i} />
+                                ))}
+                            </ul>
+                        </section>
+                    )}
 
-                {videos.error && (
-                    <p className="error" role="alert">
-                        영상 목록을 불러오지 못했어요. {videos.error}{' '}
-                        <button type="button" onClick={videos.retry}>
-                            다시 시도
-                        </button>
-                    </p>
-                )}
-
-                {videos.loading && <BentoSkeleton />}
-
-                {!videos.loading && !videos.error && (items.length > 0 || categoryId !== '') && (
-                    <BentoGrid
-                        items={items}
-                        lives={lives}
-                        popular={popular}
-                        categories={categories}
-                        categoryId={categoryId}
-                        onCategory={onCategory}
+                    <VideoZone
+                        videos={videos}
+                        sortBy={sortBy}
+                        onSort={onSort}
+                        sorts={sorts}
+                        filtered={categoryId !== ''}
+                        onShowAll={() => onCategory('')}
                     />
-                )}
-
-                {!videos.loading && !videos.error && items.length === 0 && categoryId !== '' && (
-                    <EmptyVideos filtered onShowAll={() => onCategory('')} />
-                )}
-
-                {!videos.loading && !videos.error && items.length === 0 && categoryId === '' && (
-                    <EmptyVideos filtered={false} onShowAll={() => onCategory('')} />
-                )}
-
-                {!videos.loading && items.length > 0 && !videos.last && (
-                    <div className="vmore">
-                        {videos.more.error && <p className="error">{videos.more.error}</p>}
-                        <button type="button" className="btn btn--lg" onClick={videos.loadMore} disabled={videos.more.loading}>
-                            {videos.more.loading ? <Spinner size={18} label="불러오는 중…" /> : '영상 더 보기'}
-                        </button>
-                    </div>
-                )}
-            </section>
+                </>
             )}
         </div>
     )
@@ -399,110 +368,6 @@ function SchedulePanel({ schedules, loading, liveCount }) {
     )
 }
 
-/* ── 벤토 격자 ── */
-
-function BentoGrid({ items, lives, popular, categories, categoryId, onCategory }) {
-    const streamers = topStreamers(lives, items, popular)
-    const head = items.slice(0, 3)
-    const tail = items.slice(3)
-
-    return (
-        <ul className="bento">
-            {head.map((item, i) => (
-                <BentoItem key={item.key} item={item} size={tileSize(i)} index={i} />
-            ))}
-
-            {streamers.length > 0 && (
-                <li className="bento__item bento__item--module" style={{ '--i': head.length }}>
-                    <StreamersModule streamers={streamers} />
-                </li>
-            )}
-
-            <li className="bento__item bento__item--module" style={{ '--i': head.length + 1 }}>
-                <GenresModule categories={categories} categoryId={categoryId} onCategory={onCategory} />
-            </li>
-
-            {tail.map((item, i) => (
-                <BentoItem key={item.key} item={item} size={tileSize(i + 3)} index={head.length + 2 + i} />
-            ))}
-        </ul>
-    )
-}
-
-/** 방송 중인 채널 먼저(시청자 많은 순), 그다음 불러온 영상의 조회수 합이 큰 채널. 화면에 있는 것만으로 센다. */
-function topStreamers(lives, items, popular) {
-    const channels = new Map()
-
-    function add(id, nickname, avatar, score, live) {
-        const prev = channels.get(id) ?? { id, nickname, avatar, score: 0, live: false }
-        channels.set(id, { ...prev, avatar: prev.avatar ?? avatar, score: prev.score + score, live: prev.live || live })
-    }
-
-    lives.forEach((live) => add(live.channelId, live.nickname, live.profileImage, live.viewerCount ?? 0, true))
-
-    const seen = new Set()
-    ;[...items.filter((item) => item.kind === 'video').map((item) => item.stream), ...popular].forEach((stream) => {
-        if (seen.has(stream.id)) return
-        seen.add(stream.id)
-        add(stream.userId, stream.nickname, undefined, stream.viewCount ?? 0, false)
-    })
-
-    return [...channels.values()]
-        .sort((a, b) => Number(b.live) - Number(a.live) || b.score - a.score)
-        .slice(0, 5)
-}
-
-function StreamersModule({ streamers }) {
-    return (
-        <section className="bmod bmod--green" aria-labelledby="streamers-title">
-            <header className="bmod__head">
-                <h3 id="streamers-title">주목받는 채널</h3>
-                <span>방송 중 먼저, 그다음 조회수 순</span>
-            </header>
-            <ul className="streamers">
-                {streamers.map((channel, i) => (
-                    <li key={channel.id}>
-                        <Link to={{ view: 'channel', id: channel.id }} className="streamer">
-                            <span className={`streamer__ring${i % 2 === 1 ? ' streamer__ring--violet' : ''}`}>
-                                <Avatar name={channel.nickname} src={channel.avatar} size={52} seed={channel.id} />
-                            </span>
-                            <span className="streamer__name">{channel.nickname}</span>
-                            {channel.live && <span className="streamer__live">LIVE</span>}
-                        </Link>
-                    </li>
-                ))}
-            </ul>
-        </section>
-    )
-}
-
-function GenresModule({ categories, categoryId, onCategory }) {
-    return (
-        <section className="bmod bmod--violet" aria-labelledby="genres-title">
-            <header className="bmod__head">
-                <h3 id="genres-title">장르</h3>
-                <span>골라서 보기</span>
-            </header>
-            <div className="genres" role="group" aria-label="카테고리">
-                <button type="button" className="cine-chip cine-chip--btn" aria-pressed={categoryId === ''} onClick={() => onCategory('')}>
-                    전체
-                </button>
-                {categories?.map((category) => (
-                    <button
-                        key={category.id}
-                        type="button"
-                        className="cine-chip cine-chip--btn"
-                        aria-pressed={categoryId === String(category.id)}
-                        onClick={() => onCategory(String(category.id))}
-                    >
-                        {category.name}
-                    </button>
-                ))}
-            </div>
-        </section>
-    )
-}
-
 /* ── 불러오는 동안: 실제 화면과 같은 모양의 뼈대 ── */
 function HeroSkeleton() {
     return (
@@ -520,16 +385,96 @@ function HeroSkeleton() {
     )
 }
 
-const SKELETON_TILES = ['big', 'wide', 'wide', 'module', 'module', ...Array.from({ length: 8 }, () => 'mini')]
-
-function BentoSkeleton() {
+/* ── 칩 줄: 머리 줄 바로 밑에 붙어 따라온다 ── */
+function FilterBar({ categories, categoryId, onCategory }) {
     return (
-        <ul className="bento" aria-label="목록을 불러오는 중">
-            {SKELETON_TILES.map((size, i) => (
-                <li key={i} className={`bento__item bento__item--${size}`} style={{ '--i': i }} aria-hidden="true">
-                    <div className="cine-skel cine-skel--tile" />
-                </li>
-            ))}
-        </ul>
+        <div className="chips-bar">
+            <div className="chips-bar__row" role="group" aria-label="카테고리">
+                <Chip active={categoryId === ''} onClick={() => onCategory('')}>
+                    전체
+                </Chip>
+                {categories?.map((category) => (
+                    <Chip
+                        key={category.id}
+                        active={categoryId === String(category.id)}
+                        onClick={() => onCategory(String(category.id))}
+                    >
+                        {category.name}
+                    </Chip>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+function Chip({ active, onClick, children }) {
+    return (
+        <button type="button" className="chip" aria-pressed={active} onClick={onClick}>
+            {children}
+        </button>
+    )
+}
+
+/* ── 올라온 영상 ── */
+function VideoZone({ videos, sortBy, onSort, sorts, filtered, onShowAll }) {
+    const { items, loading, error, last, more } = videos
+    const empty = !loading && !error && items.length === 0
+
+    return (
+        <section className="zone" aria-labelledby="video-title">
+            <div className="shead">
+                <h2 id="video-title">영상</h2>
+
+                <div className="seg" role="group" aria-label="정렬">
+                    {sorts.map((sort) => (
+                        <button
+                            key={sort.value}
+                            type="button"
+                            className="seg__item"
+                            aria-pressed={sortBy === sort.value}
+                            onClick={() => onSort(sort.value)}
+                        >
+                            {sort.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {error && (
+                <p className="error" role="alert">
+                    영상 목록을 불러오지 못했어요. {error}{' '}
+                    <button type="button" onClick={videos.retry}>
+                        다시 시도
+                    </button>
+                </p>
+            )}
+
+            {loading && (
+                <ul className="vgrid" aria-label="영상 목록을 불러오는 중">
+                    {Array.from({ length: 8 }, (_, i) => (
+                        <CardSkeleton key={i} index={i} />
+                    ))}
+                </ul>
+            )}
+
+            {!loading && items.length > 0 && (
+                <ul className="vgrid">
+                    {items.map((stream, i) => (
+                        <VideoCard key={stream.id} stream={stream} index={i} />
+                    ))}
+                </ul>
+            )}
+
+            {empty && <EmptyVideos filtered={filtered} onShowAll={onShowAll} />}
+
+            {!loading && items.length > 0 && !last && (
+                <div className="vmore">
+                    {more.error && <p className="error">{more.error}</p>}
+                    <button type="button" className="btn btn--lg" onClick={videos.loadMore} disabled={more.loading}>
+                        {more.loading ? <Spinner size={18} label="불러오는 중…" /> : '영상 더 보기'}
+                    </button>
+                </div>
+            )}
+        </section>
     )
 }

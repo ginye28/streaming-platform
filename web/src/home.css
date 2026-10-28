@@ -112,7 +112,7 @@
 
 .shead__link {
     flex: none;
-    color: var(--accent);
+    color: var(--accent-ink);
     font-size: var(--text-md);
     font-weight: 600;
     text-decoration: none;
@@ -999,7 +999,7 @@
     }
 
     .step:hover .step__go {
-        color: var(--accent);
+        color: var(--accent-ink);
         transform: translateX(3px);
     }
 }

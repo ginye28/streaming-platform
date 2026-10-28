@@ -24,7 +24,7 @@ export default function SearchPage({ keyword }) {
             {loading && <p className="empty">불러오는 중…</p>}
 
             {!loading && (
-                <StreamList streams={page?.content} empty="검색 결과가 없습니다." uniform />
+                <StreamList streams={page?.content} empty="검색 결과가 없습니다." />
             )}
 
             <Pager page={page} onChange={setPageNumber} />

@@ -205,7 +205,6 @@ export default function ChannelPage({ id }) {
                 !streamsError && (
                     <StreamList
                         streams={streams?.content}
-                        uniform
                         empty="아직 올라온 영상이 없어요. 구독해 두면 새 영상이 올라올 때 알려 드려요."
                     />
                 )

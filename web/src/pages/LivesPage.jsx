@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { getLives, getSchedules } from '../api.js'
-import { liveItems } from '../bento.js'
-import { BentoList } from '../components/Bento.jsx'
 import Icon from '../components/Icon.jsx'
 import Link from '../components/Link.jsx'
+import { LiveCard } from '../components/MediaCards.jsx'
 import Pager from '../components/Pager.jsx'
 import ScheduleList from '../components/ScheduleList.jsx'
 import { useAsyncData } from '../useAsyncData.js'
@@ -44,7 +43,13 @@ export default function LivesPage() {
                 <p className="empty">진행 중인 방송이 없습니다. OBS 없이도 화면 공유나 카메라로 바로 방송할 수 있어요.</p>
             )}
 
-            {page?.content.length > 0 && <BentoList items={liveItems(page.content)} label="방송 목록" />}
+            {page?.content.length > 0 && (
+                <ul className="vgrid vgrid--live" aria-label="방송 목록">
+                    {page.content.map((live, i) => (
+                        <LiveCard key={live.id} live={live} index={i} />
+                    ))}
+                </ul>
+            )}
 
             <Pager page={page} onChange={setPageNumber} />
         </section>

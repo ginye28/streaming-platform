@@ -142,7 +142,7 @@ button[type='submit'],
 }
 
 .meta a {
-    color: var(--accent);
+    color: var(--accent-ink);
     text-decoration: none;
     font-weight: 600;
 }
@@ -185,7 +185,7 @@ button[type='submit'],
     padding: 0;
     border: 0;
     background: none;
-    color: var(--accent);
+    color: var(--accent-ink);
     font: inherit;
     text-decoration: underline;
     text-underline-offset: 3px;
@@ -306,7 +306,7 @@ code {
 
 .identity__tag--debut {
     border: 1px solid var(--accent);
-    color: var(--accent);
+    color: var(--accent-ink);
 }
 
 .identity__tag--graduated {
@@ -365,7 +365,7 @@ code {
 /* 유료는 마크 테두리와 같은 색으로 구분한다. */
 .subscribe-bar__paid {
     border-color: var(--accent);
-    color: var(--accent);
+    color: var(--accent-ink);
 }
 
 /* 구독 중인 채널에 대한 내 설정 — 오시마크 달기, 유료 구독 전환 */
@@ -626,7 +626,7 @@ a.card__meta:hover {
 }
 
 .chat__list strong {
-    color: var(--accent);
+    color: var(--accent-ink);
     font-weight: 700;
 }
 
@@ -660,7 +660,7 @@ summary {
 }
 
 summary:hover {
-    color: var(--accent);
+    color: var(--accent-ink);
 }
 
 details[open] {
@@ -899,7 +899,7 @@ details li {
 
 .chat-badge--manager {
     background: var(--accent-soft);
-    color: var(--accent);
+    color: var(--accent-ink);
 }
 
 .chat-line__more {
@@ -1014,7 +1014,7 @@ a.donate__open:hover {
 .waiting-room__clock strong {
     font-size: 36px;
     font-variant-numeric: tabular-nums;
-    color: var(--accent);
+    color: var(--accent-ink);
 }
 
 .schedule-list {
@@ -1395,7 +1395,7 @@ a.donate__open:hover {
     overflow: hidden;
     border-radius: 50%;
     background: var(--accent-soft);
-    color: var(--accent);
+    color: var(--accent-ink);
     font-size: 28px;
     font-weight: 800;
 }
@@ -1537,7 +1537,7 @@ a.past__link:hover {
 
 .past__chip--on {
     background: var(--accent-soft);
-    color: var(--accent);
+    color: var(--accent-ink);
 }
 
 @media (max-width: 640px) {
@@ -1563,13 +1563,13 @@ a.past__link:hover {
 .cta--soft {
     border-color: var(--accent);
     background: var(--accent-soft);
-    color: var(--accent);
+    color: var(--accent-ink);
 }
 
 .cta--soft:hover {
     border-color: var(--accent-hover);
     background: var(--accent-soft);
-    color: var(--accent-hover);
+    color: var(--accent-ink);
 }
 
 /* ── 영상 시청(VOD): 라이브와 같은 영상 상자 · 채널 줄 · 반응 줄 ── */
@@ -1770,7 +1770,7 @@ a.past__link:hover {
 .like[aria-pressed='true'] {
     border-color: var(--accent);
     background: var(--accent-soft);
-    color: var(--accent);
+    color: var(--accent-ink);
 }
 
 .like[aria-pressed='true'] svg {
@@ -1954,7 +1954,7 @@ a.past__link:hover {
     overflow: hidden;
     border-radius: 50%;
     background: var(--accent-soft);
-    color: var(--accent);
+    color: var(--accent-ink);
     font-size: 16px;
     font-weight: 800;
     text-decoration: none;
@@ -2224,7 +2224,7 @@ a.past__link:hover {
     padding: 1px 7px;
     border-radius: var(--corner-2xs);
     background: var(--accent-soft);
-    color: var(--accent);
+    color: var(--accent-ink);
     font-size: 12px;
     font-weight: 600;
 }
@@ -2291,7 +2291,7 @@ a.past__link:hover {
 }
 
 .upload__done > p {
-    color: var(--accent);
+    color: var(--accent-ink);
     font-weight: 600;
 }
 
@@ -2454,7 +2454,7 @@ a.past__link:hover {
     font-style: normal;
     font-size: 12px;
     font-weight: 700;
-    color: var(--accent);
+    color: var(--accent-ink);
 }
 
 .plan-picker__methods {
@@ -2487,7 +2487,7 @@ a.past__link:hover {
 
 .server-waking--ready {
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
 }
 
 .server-waking button {
