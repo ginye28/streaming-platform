@@ -2,7 +2,8 @@
  * 디자인 체계: 평평하고 정확한 대기업 서비스의 톤 (기준: YouTube).
  *
  * - 바탕은 흰색, 글자는 먹색, 면은 차가운 중성 회색 몇 단계로만 나눈다.
- * - 파랑은 행동(버튼)·선택(현재 메뉴, 칩)·링크에만 쓴다. 장식에 쓰지 않는다.
+ * - 포인트는 차분한 그린(#10b981)이고 밤·낮이 같은 색이다. 행동(버튼)·링크에만 쓰고 장식에 쓰지 않는다.
+ * - 퍼플(#a78bfa)은 보조 버튼·칩·프로필 고리 같은 보조 자리에만 쓴다.
  * - 빨강은 "방송 중"과 알림 숫자, 오류라는 신호에만 쓴다.
  * - 그림자는 떠 있는 것(메뉴, 팝오버)에만. 카드와 썸네일에는 없다.
  * - 밝은 화면이 기본이고, 나이트 모드는 사용자가 켤 때만 나온다(OS 설정을 따르지 않는다).
@@ -35,15 +36,25 @@
     /* 더 약한 글자(조회수, 시각, placeholder). 흰 바탕 5.4:1, 칩 바탕 4.9:1 */
     --subtle: #5f6b7a;
 
-    /* 포인트 파랑. 흰 글자와 5.4:1, 흰 바탕 위 글자로도 5.4:1 */
-    --accent: #1b64da;
-    --accent-hover: #1957c2;
-    --accent-soft: #e8f3ff;
-    /* 파랑 면 위에 마우스를 올렸을 때 */
-    --accent-soft-hover: #d6e8ff;
-    /* 파랑 바탕(accent-soft) 위의 글자색 6.7:1 */
-    --accent-ink: #174fb3;
-    --on-accent: #ffffff;
+    /* 포인트 그린. 밤 모드와 같은 색이다. 그린 면 위의 글자는 거의 검정(7.9:1).
+     * 흰 바탕 위의 그린 "글자"는 대비가 모자라서 --accent-ink 를 쓴다(5.5:1). */
+    --accent: #10b981;
+    --accent-hover: #34d399;
+    --accent-soft: #e6f5ee;
+    /* 그린 면 위에 마우스를 올렸을 때 */
+    --accent-soft-hover: #d2eee1;
+    /* 그린 바탕(accent-soft) 위의 글자색, 흰 바탕 위의 그린 글자 */
+    --accent-ink: #047857;
+    --on-accent: #04130d;
+
+    /* 보조 퍼플. 밤 모드와 같은 색이다. 카테고리 칩·보조 버튼·고리에만 쓴다. 칩 바탕 위 글자 8.3:1 */
+    --violet: #a78bfa;
+    --violet-soft: #f1ecfd;
+    --violet-ink: #5b21b6;
+    --violet-line: #ddd3fa;
+    --violet-soft-hover: #e5dcfb;
+    /* 그린 계열 카드 테두리 */
+    --green-line: #cfe6da;
 
     /* 방송 중(LIVE) 표시. 흰 글자 5.4:1 */
     --live: #cf1c3b;
@@ -100,7 +111,8 @@
     --corner-lg: 20px;
 }
 
-:root[data-theme='dark'] {
+:root[data-theme='dark'],
+.night-scope {
     color-scheme: dark;
 
     --bg: #0f0f12;
@@ -128,6 +140,8 @@
     --violet-soft: #1b1533;
     --violet-ink: #c4b5fd;
     --violet-line: #2c2354;
+    --violet-soft-hover: #261d47;
+    --green-line: #17352b;
 
     --live: #d92d46;
     /* 어두운 바탕 위의 LIVE 글자(배경이 아닌 글자색). 4.5:1 이상 */
@@ -150,6 +164,12 @@
     --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
     --shadow-lift: 0 10px 22px rgb(0 0 0 / 0.55);
 }
+
+/* 밝은 화면 안에서 어둡게 그리는 구역(홈의 시네마 무대). 변수가 같은 이름으로 어두운 값을 덮어쓴다. */
+.night-scope {
+    color: var(--text);
+}
+
 
 * {
     box-sizing: border-box;
@@ -211,7 +231,7 @@ h3 {
 }
 
 :focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--accent-ink);
     outline-offset: 2px;
 }
 
