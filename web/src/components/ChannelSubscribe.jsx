@@ -47,20 +47,15 @@ export default function ChannelSubscribe({ channelId, onChanged, identity = fals
                         )}
                     </Link>
 
-                    <div className="channel-row__body">
-                        <p className="meta">
-                            {identity === 'named' && (
-                                <>
-                                    <Link to={{ view: 'channel', id: channel.id }} className="channel-row__name">
-                                        {channel.nickname}
-                                    </Link>
-                                    {' · '}
-                                </>
-                            )}
-                            구독자 {channel.subscriberCount.toLocaleString('ko-KR')}명
-                        </p>
-                        {bar}
+                    <div className="channel-row__who">
+                        {identity === 'named' ? (
+                            <Link to={{ view: 'channel', id: channel.id }} className="channel-row__name">
+                                {channel.nickname}
+                            </Link>
+                        ) : null}
+                        <span className="channel-row__subs">구독자 {channel.subscriberCount.toLocaleString('ko-KR')}명</span>
                     </div>
+                    {bar}
                 </div>
             ) : (
                 bar

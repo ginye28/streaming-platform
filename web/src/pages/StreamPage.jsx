@@ -12,6 +12,7 @@ import { useAuth } from '../useAuth.js'
 import ChannelSubscribe from '../components/ChannelSubscribe.jsx'
 import FilePlayer from '../components/FilePlayer.jsx'
 import MoreStreams from '../components/MoreStreams.jsx'
+import Avatar from '../components/Avatar.jsx'
 import OshiMark from '../components/OshiMark.jsx'
 import Pager from '../components/Pager.jsx'
 import { assetUrl } from '../assets.js'
@@ -216,7 +217,7 @@ export default function StreamPage({ id }) {
             <div className="stream__info">
                 <h1>{stream.title}</h1>
 
-                <p className="meta">
+                <p className="stream__stats">
                     조회 {stream.viewCount?.toLocaleString('ko-KR')}
                     {stream.createdAt && (
                         <>
@@ -323,7 +324,9 @@ export default function StreamPage({ id }) {
           </div>
 
           <div className="stream__comments">
-            <h2 className="comments__title">댓글 {stream.commentCount}</h2>
+            <h2 className="comments__title">
+                댓글 <span className="comments__count num">{stream.commentCount}</span>
+            </h2>
 
             {commentsError && (
                 <p className="error" role="alert">
@@ -357,7 +360,7 @@ export default function StreamPage({ id }) {
                 </p>
             )}
 
-            {comments?.content.length === 0 && <p className="empty">첫 댓글을 남겨보세요.</p>}
+            {comments?.content.length === 0 && <p className="comments__empty">아직 댓글이 없어요. 첫 댓글을 남겨보세요.</p>}
 
             <ul className="comments">
                 {comments?.content.map((comment) => (
@@ -463,43 +466,49 @@ function CommentLine({ comment, me, confirming, onReply, onAskDelete, onCancelDe
     const hasReplies = comment.replies?.length > 0
 
     return (
-        <>
-            <OshiMark url={comment.oshiMarkUrl} tier={comment.oshiTier} />
-            <strong>{comment.nickname}</strong>{' '}
-            <time className="meta" dateTime={comment.createdAt} title={formatDateTime(comment.createdAt)}>
-                {timeAgo(comment.createdAt)}
-            </time>
-            <p>{comment.content}</p>
+        <div className="comment">
+            <Avatar name={comment.nickname} size={36} seed={comment.nickname} />
 
-            {confirming ? (
-                <div className="comment__actions" role="group" aria-label="댓글 삭제 확인">
-                    <span className="meta">
-                        {hasReplies ? `답글 ${comment.replies.length}개도 함께 삭제돼요. 삭제할까요?` : '댓글을 삭제할까요?'}
-                    </span>
-                    <button type="button" className="button--danger" onClick={onDelete}>
-                        삭제
-                    </button>
-                    <button type="button" onClick={onCancelDelete}>
-                        취소
-                    </button>
+            <div className="comment__body">
+                <div className="comment__head">
+                    <OshiMark url={comment.oshiMarkUrl} tier={comment.oshiTier} />
+                    <strong>{comment.nickname}</strong>
+                    <time className="comment__time" dateTime={comment.createdAt} title={formatDateTime(comment.createdAt)}>
+                        {timeAgo(comment.createdAt)}
+                    </time>
                 </div>
-            ) : (
-                (canReply || canDelete) && (
-                    <div className="comment__actions">
-                        {canReply && (
-                            <button type="button" onClick={onReply} aria-label={`${comment.nickname} 님의 댓글에 답글`}>
-                                답글
-                            </button>
-                        )}
-                        {canDelete && (
-                            <button type="button" onClick={onAskDelete} aria-label={`${comment.nickname} 님의 댓글 삭제`}>
-                                삭제
-                            </button>
-                        )}
+                <p>{comment.content}</p>
+
+                {confirming ? (
+                    <div className="comment__actions" role="group" aria-label="댓글 삭제 확인">
+                        <span className="meta">
+                            {hasReplies ? `답글 ${comment.replies.length}개도 함께 삭제돼요. 삭제할까요?` : '댓글을 삭제할까요?'}
+                        </span>
+                        <button type="button" className="button--danger" onClick={onDelete}>
+                            삭제
+                        </button>
+                        <button type="button" onClick={onCancelDelete}>
+                            취소
+                        </button>
                     </div>
-                )
-            )}
-        </>
+                ) : (
+                    (canReply || canDelete) && (
+                        <div className="comment__actions">
+                            {canReply && (
+                                <button type="button" onClick={onReply} aria-label={`${comment.nickname} 님의 댓글에 답글`}>
+                                    답글
+                                </button>
+                            )}
+                            {canDelete && (
+                                <button type="button" onClick={onAskDelete} aria-label={`${comment.nickname} 님의 댓글 삭제`}>
+                                    삭제
+                                </button>
+                            )}
+                        </div>
+                    )
+                )}
+            </div>
+        </div>
     )
 }
 
