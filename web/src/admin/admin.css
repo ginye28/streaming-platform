@@ -29,6 +29,11 @@
     justify-content: space-between;
     gap: 16px;
     margin-bottom: 20px;
+    padding: 18px 22px;
+    border: 1px solid var(--violet-line);
+    border-radius: var(--radius-xl);
+    background: linear-gradient(135deg, #0c2a21 0%, #14142a 55%, #1b1533 100%);
+    color: var(--on-media);
 }
 
 .admin__title {
@@ -43,19 +48,23 @@
     font-size: 14px;
 }
 
+.admin__header .admin__title,
+.admin__header .admin__who {
+    color: var(--on-media);
+}
+
 .admin__tabs {
     display: flex;
-    gap: 8px;
+    flex-wrap: wrap;
+    gap: 6px;
     margin-bottom: 16px;
-    border-bottom: 1px solid var(--border);
 }
 
 .admin__tab {
-    padding: 10px 16px;
-    border: none;
-    border-bottom: 2px solid transparent;
-    border-radius: 0;
-    background: none;
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
     color: var(--muted);
     font-size: 15px;
     cursor: pointer;
@@ -66,15 +75,16 @@
 }
 
 .admin__tab--active {
-    border-bottom-color: var(--accent);
-    color: var(--text);
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent-ink);
     font-weight: 700;
 }
 
 .admin__panel {
     padding: 16px;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--radius-xl);
     background: var(--surface);
     box-shadow: var(--shadow);
 }
@@ -102,6 +112,7 @@
 }
 
 .admin th {
+    background: var(--sunken);
     color: var(--muted);
     font-weight: 600;
     white-space: nowrap;

@@ -40,7 +40,10 @@ export default function MePage() {
 
     return (
         <section className="narrow">
-            <h2>내 계정</h2>
+            <header className="page-banner">
+                <h1>내 계정</h1>
+                <p className="upload__lede">프로필, 방송 설정, 구독과 결제 내역을 한곳에서 관리해요.</p>
+            </header>
 
             <ProfileForm me={me} onSaved={refreshMe} />
             <PasswordForm />

@@ -230,8 +230,10 @@ export default function BroadcastPage() {
     if (!me) {
         return (
             <section className="narrow broadcast">
-                <h1>브라우저로 방송하기</h1>
-                <p className="upload__lede">OBS 없이 화면이나 카메라를 바로 방송할 수 있어요.</p>
+                <header className="page-banner">
+                    <h1>브라우저로 방송하기</h1>
+                    <p className="upload__lede">OBS 없이 화면이나 카메라를 바로 방송할 수 있어요.</p>
+                </header>
                 <p className="meta">방송하려면 로그인이 필요해요.</p>
                 <Link to={loginTo()} className="cta">
                     로그인하고 방송하기
@@ -242,12 +244,14 @@ export default function BroadcastPage() {
 
     return (
         <section className="broadcast">
-            <h1>브라우저로 방송하기</h1>
+            <header className="page-banner">
+                <h1>브라우저로 방송하기</h1>
 
-            <p className="upload__lede">
-                OBS 없이 화면 공유나 카메라를 바로 보내요. 시청자에게는 6~15초쯤 늦게 보이고, 방송이
-                끝나면 다시보기는 남지 않아요. 방송은 동시에 하나만 켤 수 있고, 이 탭을 닫으면 끝나요.
-            </p>
+                <p className="upload__lede">
+                    OBS 없이 화면 공유나 카메라를 바로 보내요. 시청자에게는 6~15초쯤 늦게 보이고, 방송이
+                    끝나면 다시보기는 남지 않아요. 방송은 동시에 하나만 켤 수 있고, 이 탭을 닫으면 끝나요.
+                </p>
+            </header>
 
             {!supported && (
                 <p className="notice" role="status">
@@ -256,78 +260,16 @@ export default function BroadcastPage() {
                 </p>
             )}
 
-            {/* 시작 전에 시청자에게 어떻게 나가는지 보여 준다. 값은 내 계정의 "다음 방송 정보". */}
-            <div className="broadcast__setup">
-                {settingLoading ? (
-                    <p className="meta">방송 정보를 불러오는 중…</p>
-                ) : settingError || !setting ? (
-                    <p className="meta">
-                        방송 정보를 불러오지 못했어요. 서버가 깨어나는 중일 수 있어요.{' '}
-                        <Link to={{ view: 'me' }}>내 계정에서 확인</Link>
+            <div className="broadcast__grid">
+                <div className="broadcast__stage">
+            <div className="broadcast__preview">
+                <video ref={previewRef} autoPlay muted playsInline aria-label="내 방송 미리보기" />
+                {phase === 'idle' && (
+                    <p className="empty">
+                        방송을 시작하면 여기에 시청자가 보는 내 화면이 나와요.
                     </p>
-                ) : (
-                    <>
-                        <p className="broadcast__setup-title">
-                            {setting.title || '제목이 아직 없어요'}
-                        </p>
-                        <p className="meta">
-                            시청 {AUDIENCE_LABEL[setting.audience] ?? '누구나'} · 채팅{' '}
-                            {AUDIENCE_LABEL[setting.chatAudience] ?? '누구나'}
-                            {' · '}
-                            <Link to={{ view: 'me' }}>
-                                {setting.title ? '바꾸기' : '내 계정에서 정하기'}
-                            </Link>
-                        </p>
-                    </>
                 )}
             </div>
-
-            <fieldset className="broadcast__source" disabled={busy}>
-                <legend>방송할 것</legend>
-
-                {SOURCES.map((option) => {
-                    const unavailable = option.value === 'screen' && !canShareScreen
-
-                    return (
-                        <label
-                            key={option.value}
-                            className={`broadcast__choice${source === option.value ? ' broadcast__choice--on' : ''}`}
-                        >
-                            <input
-                                type="radio"
-                                name="source"
-                                value={option.value}
-                                checked={source === option.value}
-                                onChange={() => changeSource(option.value)}
-                                disabled={unavailable}
-                            />
-                            <span>
-                                <strong>{option.label}</strong>
-                                <small>
-                                    {unavailable
-                                        ? '이 기기에서는 화면 공유를 쓸 수 없어요'
-                                        : option.hint}
-                                </small>
-                            </span>
-                        </label>
-                    )
-                })}
-
-                <label className="broadcast__mic">
-                    <input
-                        type="checkbox"
-                        checked={withMic}
-                        onChange={(e) => setWithMic(e.target.checked)}
-                        aria-describedby="broadcast-mic-hint"
-                    />
-                    <span>
-                        <strong>마이크 소리 포함</strong>
-                        <small id="broadcast-mic-hint">
-                            화면 공유에는 보통 소리가 안 들어가요. 켜면 마이크 허용을 물어봐요.
-                        </small>
-                    </span>
-                </label>
-            </fieldset>
 
             {error && (
                 <p className="error" role="alert">
@@ -444,14 +386,82 @@ export default function BroadcastPage() {
                     )}
                 </div>
             )}
+                </div>
 
-            <div className="broadcast__preview">
-                <video ref={previewRef} autoPlay muted playsInline aria-label="내 방송 미리보기" />
-                {phase === 'idle' && (
-                    <p className="empty">
-                        방송을 시작하면 여기에 시청자가 보는 내 화면이 나와요.
+                <aside className="broadcast__side">
+            {/* 시작 전에 시청자에게 어떻게 나가는지 보여 준다. 값은 내 계정의 "다음 방송 정보". */}
+            <div className="broadcast__setup">
+                {settingLoading ? (
+                    <p className="meta">방송 정보를 불러오는 중…</p>
+                ) : settingError || !setting ? (
+                    <p className="meta">
+                        방송 정보를 불러오지 못했어요. 서버가 깨어나는 중일 수 있어요.{' '}
+                        <Link to={{ view: 'me' }}>내 계정에서 확인</Link>
                     </p>
+                ) : (
+                    <>
+                        <p className="broadcast__setup-title">
+                            {setting.title || '제목이 아직 없어요'}
+                        </p>
+                        <p className="meta">
+                            시청 {AUDIENCE_LABEL[setting.audience] ?? '누구나'} · 채팅{' '}
+                            {AUDIENCE_LABEL[setting.chatAudience] ?? '누구나'}
+                            {' · '}
+                            <Link to={{ view: 'me' }}>
+                                {setting.title ? '바꾸기' : '내 계정에서 정하기'}
+                            </Link>
+                        </p>
+                    </>
                 )}
+            </div>
+
+            <fieldset className="broadcast__source" disabled={busy}>
+                <legend>방송할 것</legend>
+
+                {SOURCES.map((option) => {
+                    const unavailable = option.value === 'screen' && !canShareScreen
+
+                    return (
+                        <label
+                            key={option.value}
+                            className={`broadcast__choice${source === option.value ? ' broadcast__choice--on' : ''}`}
+                        >
+                            <input
+                                type="radio"
+                                name="source"
+                                value={option.value}
+                                checked={source === option.value}
+                                onChange={() => changeSource(option.value)}
+                                disabled={unavailable}
+                            />
+                            <span>
+                                <strong>{option.label}</strong>
+                                <small>
+                                    {unavailable
+                                        ? '이 기기에서는 화면 공유를 쓸 수 없어요'
+                                        : option.hint}
+                                </small>
+                            </span>
+                        </label>
+                    )
+                })}
+
+                <label className="broadcast__mic">
+                    <input
+                        type="checkbox"
+                        checked={withMic}
+                        onChange={(e) => setWithMic(e.target.checked)}
+                        aria-describedby="broadcast-mic-hint"
+                    />
+                    <span>
+                        <strong>마이크 소리 포함</strong>
+                        <small id="broadcast-mic-hint">
+                            화면 공유에는 보통 소리가 안 들어가요. 켜면 마이크 허용을 물어봐요.
+                        </small>
+                    </span>
+                </label>
+            </fieldset>
+                </aside>
             </div>
         </section>
     )

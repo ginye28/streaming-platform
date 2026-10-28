@@ -6,6 +6,7 @@ import {
     updateStream,
     uploadFile,
 } from '../api.js'
+import Icon from '../components/Icon.jsx'
 import { assetUrl } from '../assets.js'
 import { setFlash } from '../flash.js'
 import { navigate } from '../router.js'
@@ -295,14 +296,17 @@ function StreamForm({ id, existing, categories }) {
 
     return (
         <section className="narrow upload">
-            <h1>{id ? '영상 수정' : '영상 올리기'}</h1>
-            <p className="upload__lede">
-                {id
-                    ? '제목과 설명, 썸네일을 바꿀 수 있어요. 영상은 바꾸지 않으면 지금 것 그대로예요.'
-                    : '영상을 먼저 고르세요. 제목은 파일 이름으로 채워 드려요.'}
-            </p>
+            <header className="page-banner">
+                <h1>{id ? '영상 수정' : '영상 올리기'}</h1>
+                <p className="upload__lede">
+                    {id
+                        ? '제목과 설명, 썸네일을 바꿀 수 있어요. 영상은 바꾸지 않으면 지금 것 그대로예요.'
+                        : '영상을 먼저 고르세요. 제목은 파일 이름으로 채워 드려요.'}
+                </p>
+            </header>
 
-            <form className="form" onSubmit={handleSubmit}>
+            <form className="form upload__form" onSubmit={handleSubmit}>
+                <div className="upload__col upload__col--media">
                 <div className="upload__slot" role="group" aria-labelledby="upload-video">
                     <p className="upload__label" id="upload-video">
                         영상 <span className="upload__tag">필수</span>
@@ -350,6 +354,7 @@ function StreamForm({ id, existing, categories }) {
                             onDragLeave={() => setDragging(false)}
                             onDrop={handleDrop}
                         >
+                            <Icon name="upload" size={36} />
                             <strong>영상을 끌어다 놓거나, 눌러서 고르기</strong>
                             <span>
                                 {VIDEO_EXTENSIONS.join(' · ')} · {formatSize(MAX_BYTES).replace('.0', '')} 이하
@@ -363,18 +368,6 @@ function StreamForm({ id, existing, categories }) {
                         </p>
                     )}
                 </div>
-
-                <label>
-                    <span>
-                        제목 <span className="upload__tag">필수</span>
-                    </span>
-                    <input
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        maxLength={TITLE_MAX}
-                        required
-                    />
-                </label>
 
                 <div className="upload__slot" role="group" aria-labelledby="upload-thumbnail">
                     <p className="upload__label" id="upload-thumbnail">
@@ -448,6 +441,21 @@ function StreamForm({ id, existing, categories }) {
                     )}
                 </div>
 
+                </div>
+
+                <div className="upload__col upload__col--info">
+                <label>
+                    <span>
+                        제목 <span className="upload__tag">필수</span>
+                    </span>
+                    <input
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        maxLength={TITLE_MAX}
+                        required
+                    />
+                </label>
+
                 <label>
                     <span>
                         설명 <span className="upload__tag upload__tag--soft">선택</span>
@@ -489,6 +497,7 @@ function StreamForm({ id, existing, categories }) {
                         </button>
                     )}
                     {submitHint && <p className="meta upload__hint">{submitHint}</p>}
+                </div>
                 </div>
             </form>
         </section>

@@ -1,0 +1,248 @@
+/*
+ * 입력이 많은 화면(올리기·방송하기·내 계정·로그인·관리자): 어두운 머리 띠 + 카드 칸.
+ * 구조와 동작은 각 화면의 규칙(app.css)이 맡고, 여기서는 모양만 맞춘다. 토큰은 base.css·cinema.css 의 것.
+ */
+
+/* ── 머리 띠: 제목과 한 줄 안내를 어두운 시네마 면에 ── */
+.page-banner {
+    margin: 0 0 20px;
+    padding: 24px 28px;
+    border: 1px solid var(--violet-line);
+    border-radius: var(--radius-xl);
+    background: linear-gradient(135deg, #0c2a21 0%, #14142a 55%, #1b1533 100%);
+    color: var(--on-media);
+}
+
+.page-banner h1,
+.page-banner h2 {
+    margin: 0 0 6px;
+    color: var(--on-media);
+    font-size: var(--text-2xl);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.page-banner .upload__lede,
+.page-banner p {
+    max-width: 720px;
+    margin: 0;
+    color: var(--on-media-soft);
+    font-size: var(--text-md);
+    line-height: 1.6;
+}
+
+@media (max-width: 720px) {
+    .page-banner {
+        padding: 20px;
+    }
+}
+
+/* ── 입력칸: 한 단계 크고 둥글게 ── */
+.form label input,
+.form label select,
+.form label textarea,
+.upload .form label input,
+.upload .form label select,
+.upload .form label textarea {
+    min-height: 44px;
+    border-radius: var(--radius-lg);
+}
+
+.form label textarea {
+    padding-top: 12px;
+}
+
+.form label > span:first-child,
+.form label {
+    color: var(--text);
+    font-weight: 600;
+}
+
+/* ── 올리기: 왼쪽 영상·썸네일, 오른쪽 정보 ── */
+.narrow.upload {
+    max-width: 1040px;
+}
+
+.upload__form {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+    margin: 0;
+}
+
+.upload__col {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+}
+
+.upload__col--info {
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background: var(--surface);
+}
+
+.upload__col--media .upload__slot {
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background: var(--surface);
+}
+
+.upload__drop {
+    gap: 8px;
+    min-height: 220px;
+    border-color: var(--violet);
+    border-radius: var(--radius-lg);
+    background: var(--violet-soft);
+    color: var(--violet-ink);
+}
+
+.upload__drop svg {
+    color: var(--violet);
+}
+
+.upload__drop strong {
+    color: var(--text);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .upload__drop:hover:not(:disabled),
+    .upload__drop--over {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+    }
+}
+
+.upload__done,
+.upload__progress {
+    border-color: var(--green-line);
+    border-radius: var(--radius-lg);
+}
+
+.upload__actions .button--primary {
+    min-height: 48px;
+    padding: 0 28px;
+    border-radius: var(--radius-lg);
+    font-size: var(--text-lg);
+}
+
+.upload__col--info .upload__actions {
+    margin-top: 4px;
+}
+
+@media (max-width: 900px) {
+    .upload__form {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* ── 방송하기: 왼쪽 미리보기와 상태, 오른쪽 설정 ── */
+.broadcast {
+    max-width: 1100px;
+}
+
+.broadcast__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+    gap: 20px;
+    align-items: start;
+}
+
+.broadcast__stage {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+.broadcast__stage > * {
+    margin-top: 0;
+    margin-bottom: 0;
+    max-width: none;
+}
+
+.broadcast__preview {
+    width: 100%;
+    border: 1px solid var(--violet-line);
+    border-radius: var(--radius-xl);
+}
+
+.broadcast__side {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background: var(--surface);
+}
+
+.broadcast__setup {
+    padding: 14px 16px;
+    border-radius: var(--radius-lg);
+    background: var(--sunken);
+}
+
+.broadcast__source {
+    max-width: none;
+    margin: 0;
+}
+
+.broadcast__choice,
+.broadcast__mic {
+    border-color: var(--border);
+    background: var(--surface);
+}
+
+.broadcast__choice--on {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.broadcast__live {
+    padding: 12px 16px;
+    border: 1px solid var(--green-line);
+    border-radius: var(--radius-lg);
+    background: var(--accent-soft);
+}
+
+.broadcast__stage .upload__actions .button--primary {
+    min-height: 48px;
+    padding: 0 28px;
+}
+
+@media (max-width: 960px) {
+    .broadcast__grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* ── 내 계정: 접는 칸은 카드, 제목 띠 아래에 ── */
+.narrow > details {
+    border-color: var(--border);
+    border-radius: var(--radius-xl);
+}
+
+.narrow > details[open] {
+    border-color: var(--green-line);
+}
+
+/* ── 로그인·가입 ── */
+.auth {
+    padding-top: 32px;
+}
+
+.auth__card {
+    padding: 32px;
+    border-color: var(--border);
+    box-shadow: var(--shadow);
+}
+
+.auth__card h1 {
+    margin-top: 16px;
+}
