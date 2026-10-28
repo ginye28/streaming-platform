@@ -67,29 +67,37 @@
     font-size: var(--text-sm);
 }
 
-.channel-row .subscribe-bar {
-    flex: 0 1 auto;
-    justify-content: flex-end;
-    margin: 0;
-}
-
-/* 보조 설명은 버튼 줄 아래에 작게. 버튼과 한 줄에서 경쟁하지 않는다. */
 .subscribe-bar > .meta {
-    flex: 1 1 100%;
     margin: 0;
     color: var(--subtle);
     font-size: var(--text-xs);
-    text-align: right;
+}
+
+.channel-row .subscribe-bar {
+    /* 막대의 자식(버튼들·보조 설명)이 채널 줄에 바로 놓이게 한다: 얼굴 | 이름 | 버튼들 이 한 줄, 설명은 그 아래. */
+    display: contents;
+}
+
+.channel-row .subscribe-bar > :first-child {
+    margin-left: auto;
+}
+
+/* 보조 설명은 버튼 줄 아래에 작게, 이름 글자 위치에 맞춰 왼쪽 정렬. 버튼과 한 줄에서 경쟁하지 않는다. */
+.channel-row .subscribe-bar > .meta {
+    flex: 1 1 100%;
+    margin: -4px 0 0;
+    padding-left: 58px;
+    color: var(--subtle);
+    font-size: var(--text-xs);
 }
 
 @media (max-width: 720px) {
-    .channel-row .subscribe-bar {
-        flex: 1 1 100%;
-        justify-content: flex-start;
+    .channel-row .subscribe-bar > :first-child {
+        margin-left: 0;
     }
 
-    .subscribe-bar > .meta {
-        text-align: left;
+    .channel-row .subscribe-bar > .meta {
+        padding-left: 0;
     }
 }
 
