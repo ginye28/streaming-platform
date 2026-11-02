@@ -43,7 +43,9 @@ const PERMANENT_FAILURES = ['codec', 'source-buffer', 'buffer-error', 'append']
  * label 은 영상의 접근 이름, children 은 영상 위 왼쪽 위에 얹을 표시(LIVE 배지 등)다.
  * children 이 함수면 { waiting } 을 받아, 송출이 오기 전과 후에 다른 표시를 낼 수 있다.
  */
-export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, label, children, live = false, lowLatencyUrl = null }) {
+export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, label, children, live = false, lowLatencyUrl: lowLatencyUrlProp = null }) {
+    // 주소에 ?ll=0 이 있으면 저지연을 쓰지 않고 일반(HLS)으로 본다. 같은 방송을 두 방식으로 나란히 비교할 때 쓴다.
+    const lowLatencyUrl = new URLSearchParams(window.location.search).get('ll') === '0' ? null : lowLatencyUrlProp
     const videoRef = useRef(null)
     const hlsRef = useRef(null)
     const [behind, setBehind] = useState(false)
@@ -118,6 +120,7 @@ export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, lab
                             mbps: hls.bandwidthEstimate ? (hls.bandwidthEstimate / 1e6).toFixed(1) : '?',
                             level: hls.levels?.[hls.currentLevel]?.bitrate ? Math.round(hls.levels[hls.currentLevel].bitrate / 1000) : '?',
                             dropped: quality?.droppedVideoFrames ?? 0,
+                            size: `${video.videoWidth}×${video.videoHeight}`,
                             stalls,
                         })
                     }
@@ -210,7 +213,7 @@ export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, lab
                     }
                 },
                 onStats: (next) => {
-                    if (fpsMeterEnabled()) setLlStats(next)
+                    if (fpsMeterEnabled()) setLlStats({ ...next, size: `${video.videoWidth}×${video.videoHeight}` })
                 },
                 onEnded: () => setWaiting(true),
                 onFail: (failure) => {
@@ -287,7 +290,7 @@ export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, lab
 
                 {mode === 'll' && llStats && (
                     <div className="fps-meter player-box__stats" aria-hidden="true">
-                        <b>저지연 · 지연 {llStats.lag.toFixed(1)}s</b> · 속도 {llStats.rate}x
+                        <b>저지연 · 지연 {llStats.lag.toFixed(1)}s</b> · 영상 {llStats.size} · 속도 {llStats.rate}x
                         <br />
                         받은 조각 {llStats.received} · 대기 {llStats.queued}
                     </div>
@@ -296,7 +299,7 @@ export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, lab
                 {mode === 'hls' && stats && (
                     <div className="fps-meter player-box__stats" aria-hidden="true">
                         {stats.latency != null && <><b>지연 {stats.latency}s</b> · </>}
-                        버퍼 {stats.ahead}s · 대역폭 {stats.mbps}Mbps · 화질 {stats.level}kbps
+                        영상 {stats.size} · 버퍼 {stats.ahead}s · 대역폭 {stats.mbps}Mbps · 화질 {stats.level}kbps
                         <br />
                         끊김 {stats.stalls}회 · 버린 프레임 {stats.dropped}
                     </div>
