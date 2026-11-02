@@ -12,9 +12,16 @@ const MIME_CANDIDATES = [
     'video/x-matroska;codecs=avc1',
 ]
 
-// 시청자 한 명이 이만큼을 받는다. 13명이 보면 최대 약 20Mbps 가 학교 와이파이와 무료 서버(0.1 CPU)를 지나간다.
-// 2.5Mbps 로 보내던 때는 같은 인원에서 32Mbps 까지 올라가 끊김이 컸다. 슬라이드·코드 화면은 1.5Mbps 로도 글자가 읽힌다.
-const VIDEO_BITS_PER_SECOND = 1_500_000
+/**
+ * 화질 두 가지. 서버는 영상을 다시 인코딩하지 않고 그대로 내보내서, 시청자 한 명이 받는 양이 곧 보내는 비트레이트다.
+ *  - 높음: 1080p · 2.5Mbps. 시청자가 적을 때 글자·영상이 또렷하다. 13명이 보면 서버에서 최대 약 33Mbps 가 나간다.
+ *  - 보통: 720p · 1.5Mbps. 학교 와이파이처럼 흔들리는 망이나 시청자가 10명 안팎 이상일 때 끊김이 적다(최대 약 20Mbps).
+ */
+export const QUALITIES = {
+    high: { label: '높음', detail: '1080p · 2.5Mbps — 또렷해요. 시청자가 적을 때', width: 1920, height: 1080, bitsPerSecond: 2_500_000 },
+    normal: { label: '보통', detail: '720p · 1.5Mbps — 시청자가 많거나 망이 느릴 때(수업 등)', width: 1280, height: 720, bitsPerSecond: 1_500_000 },
+}
+
 const AUDIO_BITS_PER_SECOND = 128_000
 
 /** 서버로 못 나간 데이터가 이만큼 쌓이면 네트워크가 못 따라가는 것이므로 멈춘다. */
@@ -33,12 +40,13 @@ export function pickMimeType() {
  * @returns {{ stream: MediaStream, audio: 'screen' | 'mic' | 'none', micError: string | null }}
  *   audio 는 실제로 소리가 들어갔는지. 마이크를 원했는데 못 열었으면 micError 에 이유가 담긴다.
  */
-export async function openCapture({ source, withMic }) {
+export async function openCapture({ source, withMic, quality = 'high' }) {
     let micError = null
+    const { width, height } = QUALITIES[quality] ?? QUALITIES.high
 
     if (source === 'screen') {
         const screen = await navigator.mediaDevices.getDisplayMedia({
-            video: { frameRate: 30, width: { max: 1280 }, height: { max: 720 } },
+            video: { frameRate: 30, width: { max: width }, height: { max: height } },
             audio: true,
         })
 
@@ -60,7 +68,7 @@ export async function openCapture({ source, withMic }) {
 
     try {
         const camera = await navigator.mediaDevices.getUserMedia({
-            video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
+            video: { width: { ideal: width }, height: { ideal: height }, frameRate: { ideal: 30 } },
             audio: withMic,
         })
 
@@ -70,7 +78,7 @@ export async function openCapture({ source, withMic }) {
 
         // 마이크가 막혀 있어도 카메라 영상만으로 방송할 수 있게 한 번 더 시도한다.
         const camera = await navigator.mediaDevices.getUserMedia({
-            video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
+            video: { width: { ideal: width }, height: { ideal: height }, frameRate: { ideal: 30 } },
         })
 
         return {
@@ -90,7 +98,7 @@ export async function openCapture({ source, withMic }) {
  *
  * @returns {{ stop: () => void }}
  */
-export async function startBroadcast(stream, { onStarted, onClosed, onError, onStats }) {
+export async function startBroadcast(stream, { onStarted, onClosed, onError, onStats, quality = 'high' }) {
     const mimeType = pickMimeType()
 
     if (!mimeType) {
@@ -145,7 +153,7 @@ export async function startBroadcast(stream, { onStarted, onClosed, onError, onS
 
         recorder = new MediaRecorder(stream, {
             mimeType,
-            videoBitsPerSecond: VIDEO_BITS_PER_SECOND,
+            videoBitsPerSecond: (QUALITIES[quality] ?? QUALITIES.high).bitsPerSecond,
             audioBitsPerSecond: AUDIO_BITS_PER_SECOND,
         })
 
