@@ -41,7 +41,7 @@ public class IngestProperties {
             @Value("${file.thumbnail.ffmpeg-path:ffmpeg}") String ffmpegPath,
             @Value("${app.ingest.max-sessions:1}") int maxSessions,
             @Value("${app.ingest.max-kbps:6000}") int maxKbps,
-            @Value("${app.ingest.low-latency-enabled:true}") boolean lowLatencyEnabled,
+            @Value("${app.ingest.low-latency-enabled:false}") boolean lowLatencyEnabled,
             @Value("${app.ingest.low-latency-max-viewers:30}") int lowLatencyMaxViewers
     ) {
         this.enabled = enabled;
