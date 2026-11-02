@@ -81,6 +81,11 @@ public class LiveRelay {
         return () -> channel.remove(subscriber);
     }
 
+    /** 지금 저지연으로 붙어 있는 시청자 전체(모든 방송 합계). */
+    public int totalViewerCount() {
+        return channels.values().stream().mapToInt(channel -> channel.subscribers.size()).sum();
+    }
+
     public int viewerCount(Long liveId) {
         Channel channel = channels.get(liveId);
         return channel == null ? 0 : channel.subscribers.size();

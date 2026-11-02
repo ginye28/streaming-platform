@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import Hls from 'hls.js'
-import { getAccessToken } from '../api.js'
+import { getAccessToken, reportPlayback } from '../api.js'
 import { lowLatencySupported, startLowLatency } from '../lowLatency.js'
+import { FALLBACK_COPY, reasonOf } from '../playbackMode.js'
 import { fpsMeterEnabled } from '../perf.js'
 
 /**
@@ -31,6 +32,7 @@ const FAR_BEHIND_SECONDS = 12
  * 연결이 잠깐 안 된 경우(방송 준비 중, 네트워크)는 영구 실패로 치지 않는다.
  */
 let lowLatencyBroken = false
+let lowLatencyBrokenReason = 'OTHER'
 const PERMANENT_FAILURES = ['codec', 'source-buffer', 'buffer-error', 'append']
 
 /**
@@ -48,8 +50,14 @@ export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, lab
     const [stats, setStats] = useState(null)
     const [mode, setMode] = useState('hls')
     const [llStats, setLlStats] = useState(null)
+    // 저지연을 못 쓰고 일반(HLS)으로 보는 이유(서버 Reason 값). 저지연으로 보고 있거나 저지연 대상이 아니면 null.
+    const [fallback, setFallback] = useState(null)
     const [error, setError] = useState(null)
     const [waiting, setWaiting] = useState(true)
+
+    // 저지연 대상 방송인데 처음부터 못 쓰는 경우(미지원 브라우저, 앞서 이 기기에서 안 되는 것으로 확인됨)는 상태를 따로 두지 않고 계산한다.
+    const cannotLowLatency = live && lowLatencyUrl && (!lowLatencySupported() || lowLatencyBroken)
+    const shownFallback = fallback ?? (cannotLowLatency ? (lowLatencyBroken ? lowLatencyBrokenReason : 'UNSUPPORTED') : null)
 
     useEffect(() => {
         const video = videoRef.current
@@ -77,6 +85,7 @@ export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, lab
         setWaiting(true)
         setMode('hls')
         setLlStats(null)
+        setFallback(null)
 
         const play = () => {
             video.play().catch(() => {
@@ -184,6 +193,7 @@ export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, lab
         // 안 되면(미지원 브라우저·연결 실패) 위의 HLS 로 이어서 본다.
         if (live && lowLatencyUrl && lowLatencySupported() && !lowLatencyBroken) {
             let hlsCleanup
+            let reportedLowLatency = false
 
             const lowLatency = startLowLatency(video, {
                 url: lowLatencyUrl,
@@ -192,18 +202,31 @@ export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, lab
                     setWaiting(false)
                     setError(null)
                     setMode('ll')
+
+                    // 끊겼다 이어져 다시 준비돼도 이 재생에서는 한 번만 알린다.
+                    if (!reportedLowLatency) {
+                        reportedLowLatency = true
+                        reportPlayback('LOW_LATENCY')
+                    }
                 },
                 onStats: (next) => {
                     if (fpsMeterEnabled()) setLlStats(next)
                 },
                 onEnded: () => setWaiting(true),
-                onFail: (reason) => {
-                    if (PERMANENT_FAILURES.includes(reason)) lowLatencyBroken = true
+                onFail: (failure) => {
+                    const reason = reasonOf(failure)
+
+                    if (PERMANENT_FAILURES.includes(failure)) {
+                        lowLatencyBroken = true
+                        lowLatencyBrokenReason = reason
+                    }
 
                     video.removeAttribute('src')
                     video.load()
                     setMode('hls')
                     setLlStats(null)
+                    setFallback(reason)
+                    reportPlayback('HLS', reason)
                     hlsCleanup = startHls()
                 },
             })
@@ -212,6 +235,11 @@ export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, lab
                 lowLatency.stop()
                 hlsCleanup?.()
             }
+        }
+
+        // 저지연 대상인 방송인데 이 브라우저가 못 쓰거나, 앞서 이 기기에서 안 되는 것으로 확인된 경우.
+        if (live && lowLatencyUrl) {
+            reportPlayback('HLS', lowLatencyBroken ? lowLatencyBrokenReason : 'UNSUPPORTED')
         }
 
         return startHls()
@@ -249,6 +277,8 @@ export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, lab
                     </div>
                 )}
 
+                {live && <ModeChip mode={mode} fallback={shownFallback} waiting={waiting} browserBroadcast={Boolean(lowLatencyUrl)} />}
+
                 {mode === 'hls' && live && behind && !waiting && (
                     <button type="button" className="player-box__jump" onClick={jumpToLive}>
                         지금 방송으로
@@ -285,7 +315,43 @@ export default function HlsPlayer({ src, poster, onTimeUpdate, waitingLabel, lab
                 )}
             </div>
 
+            {live && shownFallback && !error && (
+                <p className="player-note" role="status">
+                    {FALLBACK_COPY[shownFallback]} 지금은 7~10초쯤 늦게 보여요.
+                </p>
+            )}
+
             {error && <p className="error" role="alert">{error}</p>}
         </>
     )
+}
+
+/** 영상 오른쪽 위의 재생 방식 표시. 저지연이면 초록, 일반 재생이면 회색이고 이유는 마우스를 올리면(또는 영상 아래 안내로) 보인다. */
+function ModeChip({ mode, fallback, waiting, browserBroadcast }) {
+    if (mode === 'll') {
+        return (
+            <span className="player-box__mode player-box__mode--ll" title="저지연 재생: 방송과 1~2초 차이로 보고 있어요.">
+                저지연
+            </span>
+        )
+    }
+
+    if (fallback) {
+        return (
+            <span className="player-box__mode" title={FALLBACK_COPY[fallback]}>
+                일반 지연
+            </span>
+        )
+    }
+
+    // 저지연 대상이 아닌 방송(OBS 등)은 처음부터 일반 방식이다. 영상이 나오기 시작하면 알려 준다.
+    if (!browserBroadcast && !waiting) {
+        return (
+            <span className="player-box__mode" title="OBS 등으로 송출한 방송은 일반 방식(HLS)으로 전달돼 7~10초쯤 늦게 보여요.">
+                일반 지연
+            </span>
+        )
+    }
+
+    return null
 }

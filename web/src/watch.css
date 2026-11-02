@@ -352,3 +352,37 @@
     font-size: var(--text-md);
     line-height: 1.65;
 }
+
+/* ── 재생 방식 표시: 영상 오른쪽 위 칩 + 영상 아래 한 줄 안내 ── */
+.player-box__mode {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: rgb(15 15 18 / 0.72);
+    color: var(--on-media);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    line-height: 1;
+    cursor: help;
+}
+
+.player-box__mode--ll {
+    background: var(--accent);
+    color: var(--on-accent);
+}
+
+.player-note {
+    margin: 8px 0 0;
+    padding: 10px 14px;
+    border-radius: var(--radius-lg);
+    background: var(--sunken);
+    color: var(--muted);
+    font-size: var(--text-sm);
+    line-height: 1.55;
+}

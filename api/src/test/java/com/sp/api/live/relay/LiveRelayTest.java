@@ -165,4 +165,23 @@ class LiveRelayTest {
         // 6MB 한도를 넘어서 비워졌으므로 머리만 받는다
         assertThat(viewer.events.size()).isLessThan(8);
     }
+
+    @Test
+    @DisplayName("전체 시청자 수는 모든 방송에 붙은 시청자를 합하고, 떼면 줄어든다")
+    void totalViewerCountSumsAllChannels() {
+
+        LiveRelay relay = new LiveRelay();
+        relay.open(1L);
+        relay.open(2L);
+
+        Runnable leave = relay.join(1L, new Recorder());
+        relay.join(1L, new Recorder());
+        relay.join(2L, new Recorder());
+
+        assertThat(relay.totalViewerCount()).isEqualTo(3);
+
+        leave.run();
+
+        assertThat(relay.totalViewerCount()).isEqualTo(2);
+    }
 }

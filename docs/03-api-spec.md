@@ -1050,6 +1050,41 @@ POST /api/lives/{liveId}/donations/orders
 
 ---
 
+## 저지연 재생 집계 (`/api/playback/report`, `/api/admin/playback`)
+
+시청 화면이 "저지연으로 보고 있는지, 일반(HLS)으로 넘어갔다면 왜인지"를 알려 오고, 관리자가 모인 숫자를 본다.
+
+| 메서드 | 경로 | 인증 | 설명 |
+|---|---|---|---|
+| POST | `/api/playback/report` | 불필요 | 재생 방식 보고 (204). 비로그인 시청자도 보낸다. 일반 쓰기 요청 제한이 적용된다 |
+| GET | `/api/admin/playback` | **관리자만** | 집계 조회 |
+
+보고
+```json
+{ "mode": "HLS", "reason": "CONNECTION" }
+```
+- `mode`: `LOW_LATENCY`(저지연으로 재생 시작) · `HLS`(저지연을 못 써서 일반 재생). 필수
+- `reason`(HLS 일 때만, 없으면 `OTHER`): `UNSUPPORTED`(브라우저 미지원) · `CODEC` · `BUFFER` · `CONNECTION` · `FULL`(저지연 자리 가득) · `FORBIDDEN` · `UNAVAILABLE` · `OTHER`. 목록에 없는 값은 400
+
+집계 응답
+```json
+{
+  "since": "2026-11-02T00:00:00Z",
+  "lowLatencyViewersNow": 3,
+  "lowLatencyJoined": 42,
+  "slowDisconnects": 2,
+  "fullRejected": 1,
+  "reportedLowLatency": 30,
+  "reportedHls": 12,
+  "hlsReasons": { "UNSUPPORTED": 5, "CODEC": 1, "BUFFER": 0, "CONNECTION": 4, "FULL": 1, "FORBIDDEN": 0, "UNAVAILABLE": 0, "OTHER": 1 }
+}
+```
+- `lowLatencyJoined`·`slowDisconnects`·`fullRejected` 는 서버가 센 값이고, `reported*`·`hlsReasons` 는 시청 화면이 알려 온 값이다(알리기 전에 화면을 닫은 시청자는 빠진다).
+- 서버 메모리에만 있다. 서버를 다시 켜면 0 부터 센다. OBS 방송은 처음부터 일반 재생이라 센 숫자에 들어가지 않는다.
+- 관리자 화면(`/admin`)의 **재생** 탭에서 본다. 시청 화면에는 영상 오른쪽 위에 "저지연"/"일반 지연" 표시가 뜨고, 일반 재생이면 이유와 해결 방법이 영상 아래에 나온다.
+
+---
+
 ## 신고 (`/api/reports`, `/api/admin/reports`)
 
 | 메서드 | 경로 | 인증 | 설명 |
