@@ -559,6 +559,10 @@ docker compose up -d mysql streaming
 
 ![홈 화면](docs/screenshots/home-light.png)
 
+영상 시청 화면은 이렇게 보입니다(운영 사이트의 데모 영상).
+
+![영상 시청 화면](docs/screenshots/watch.png)
+
 > `bootRun` 은 **끝나지 않는 게 정상**입니다. 서버가 계속 떠 있는 겁니다.
 > `docker compose` 는 반드시 프로젝트 루트에서 — 다른 곳에서 치면
 > `no configuration file provided` 가 납니다.
