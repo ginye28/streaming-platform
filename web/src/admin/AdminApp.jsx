@@ -3,6 +3,7 @@ import { getAccessToken, getMe, logout } from '../api.js'
 import CategoriesTab from './CategoriesTab.jsx'
 import LoginForm from './LoginForm.jsx'
 import PaymentsTab from './PaymentsTab.jsx'
+import PlaybackTab from './PlaybackTab.jsx'
 import ReportsTab from './ReportsTab.jsx'
 import SecurityTab from './SecurityTab.jsx'
 import UsersTab from './UsersTab.jsx'
@@ -14,6 +15,7 @@ const TABS = [
     { key: 'categories', label: '카테고리' },
     { key: 'users', label: '사용자' },
     { key: 'payments', label: '결제' },
+    { key: 'playback', label: '재생' },
     { key: 'security', label: '보안' },
 ]
 
@@ -116,6 +118,7 @@ export default function AdminApp() {
             {tab === 'categories' && <CategoriesTab />}
             {tab === 'users' && <UsersTab myId={me.id} />}
             {tab === 'payments' && <PaymentsTab />}
+            {tab === 'playback' && <PlaybackTab />}
             {tab === 'security' && <SecurityTab />}
         </div>
     )

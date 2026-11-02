@@ -289,6 +289,16 @@ export const getAdminPayments = (status, page = 0) =>
 
 export const getAdminSecurityEvents = () => authorized('/api/admin/security/events')
 
+export const getAdminPlayback = () => authorized('/api/admin/playback')
+
+/**
+ * 시청 화면의 재생 방식을 서버 집계에 알린다(저지연으로 시작했는지, 일반 재생으로 넘어갔다면 이유).
+ * 보조 정보라 실패해도 화면에는 아무 영향이 없다.
+ */
+export function reportPlayback(mode, reason) {
+    request('/api/playback/report', { method: 'POST', body: reason ? { mode, reason } : { mode } }).catch(() => {})
+}
+
 export const adminCancelPayment = (id, reason) =>
     authorized(`/api/admin/payments/${id}/cancel`, { method: 'POST', body: { reason } })
 

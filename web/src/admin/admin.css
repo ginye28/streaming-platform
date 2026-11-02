@@ -206,3 +206,39 @@
     flex-direction: column;
     gap: 10px;
 }
+
+/* 집계 숫자 칸: 큰 숫자 + 작은 설명 */
+.admin__stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin: 0 0 20px;
+}
+
+.admin__stats > div {
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--sunken);
+}
+
+.admin__stats dt {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.admin__stats dd {
+    margin: 4px 0 0;
+    font-size: 28px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+}
+
+.admin__stats .admin__stat-sub {
+    margin-top: 2px;
+    color: var(--subtle);
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0;
+}

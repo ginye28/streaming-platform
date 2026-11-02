@@ -49,6 +49,7 @@ public class LiveWatchWebSocketHandler extends AbstractWebSocketHandler {
     private final JwtProvider jwtProvider;
     private final ObjectMapper objectMapper;
     private final IngestProperties ingestProperties;
+    private final PlaybackStats stats;
 
     private final Map<String, Viewer> viewers = new ConcurrentHashMap<>();
 
@@ -83,6 +84,7 @@ public class LiveWatchWebSocketHandler extends AbstractWebSocketHandler {
         }
 
         if (relay.viewerCount(liveId) >= ingestProperties.getLowLatencyMaxViewers()) {
+            stats.recordFullRejected();
             close(session, "{\"type\":\"full\"}");
             return;
         }
@@ -97,6 +99,7 @@ public class LiveWatchWebSocketHandler extends AbstractWebSocketHandler {
         }
 
         viewer.leave = leave;
+        stats.recordJoin();
         viewers.put(session.getId(), viewer);
         viewer.start();
     }
@@ -210,6 +213,7 @@ public class LiveWatchWebSocketHandler extends AbstractWebSocketHandler {
             if (queue.size() >= MAX_QUEUE) {
                 // 이 시청자만 끊는다. 중계 전체와 다른 시청자는 영향이 없다.
                 log.debug("느린 시청자를 끊습니다: {}", session.getId());
+                stats.recordSlowDisconnect();
                 stop();
                 closeAsync();
                 return;
