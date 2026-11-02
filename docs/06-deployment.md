@@ -190,7 +190,7 @@ CSP 에 외부 주소가 들어 있는 곳: 결제(`*.tosspayments.com`, `*.toss
 | `API_PUBLIC_URL` | `RENDER_EXTERNAL_URL`, 없으면 `http://localhost:8080` | API 자신의 바깥 주소. 시청자에게 내려 주는 재생 주소가 이 아래에 놓인다. Render 는 `RENDER_EXTERNAL_URL` 을 자동으로 넣어 준다 |
 | `INGEST_MAX_SESSIONS` | `1` | 동시에 받을 수 있는 방송 수. 무료 서버(메모리 512MB)에서는 자바 약 350MB + 방송 하나당 ffmpeg 약 60MB 라 하나가 한계다. 메모리가 넉넉한 서버에서만 올린다 |
 | `INGEST_MAX_KBPS` | `6000` | 한 방송이 보낼 수 있는 속도(10초 평균의 두 배까지). 넘기면 끊는다. 화면은 방송하기에서 고른 화질로 보낸다(최고 4000kbps·높음 2500kbps·최대 1920×1080, 보통 1500kbps·최대 1280×720) |
-| `INGEST_LOW_LATENCY` | `true` | 브라우저 방송을 HLS 와 함께 0.1초 단위 조각으로도 중계해 시청 지연을 1~2초로 줄인다([10-performance.md](10-performance.md)). 끄면 HLS 만(지연 약 6~8초). 서버가 못 버티면 이걸 끈다 |
+| `INGEST_LOW_LATENCY` | `false` | **꺼 둔다(2026-11-02).** 켜면 브라우저 방송을 HLS 와 함께 0.1초 단위 조각으로도 중계해 시청 지연을 1~2초로 줄이지만([10-performance.md](10-performance.md)), 운영에서 화질 이득이 없었고 무료 서버 부담이 커서 끈 채로 낸다. 꺼진 동안은 HLS 만(지연 약 6~8초). 켜려면 `true` 로 두고 재배포한다 |
 | `INGEST_LOW_LATENCY_MAX_VIEWERS` | `30` | 저지연으로 받는 시청자 수 상한. 넘는 시청자는 HLS 로 본다. 512MB 서버에서 50명은 메모리가 한계였다 |
 | `INGEST_HLS_DIR` | 임시 폴더의 `sp-ingest-hls` | HLS 조각이 놓이는 곳. 켜질 때 비운다 |
 

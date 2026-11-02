@@ -45,6 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.datasource.url=jdbc:h2:mem:lowlatency;MODE=MySQL;DB_CLOSE_DELAY=-1",
         "app.ingest.public-base-url=https://api.example.com/",
         "app.ingest.max-sessions=3",
+        "app.ingest.low-latency-enabled=true",
         "app.ingest.low-latency-max-viewers=2"
 })
 class LowLatencyWatchTest {
