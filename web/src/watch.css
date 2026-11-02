@@ -386,3 +386,9 @@
     font-size: var(--text-sm);
     line-height: 1.55;
 }
+
+/* 저지연 가능 여부를 묻는 동안 영상 자리를 먼저 잡는다(찰나라 깜빡임 없이 16:9 만 비워 둔다). */
+.live__asking {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+}

@@ -1058,6 +1058,9 @@ POST /api/lives/{liveId}/donations/orders
 |---|---|---|---|
 | POST | `/api/playback/report` | 불필요 | 재생 방식 보고 (204). 비로그인 시청자도 보낸다. 일반 쓰기 요청 제한이 적용된다 |
 | GET | `/api/admin/playback` | **관리자만** | 집계 조회 |
+| GET | `/api/playback/low-latency?liveId=` | 불필요 | 이 방송의 저지연 중계가 열려 있는지 `{available}`. 시청 화면이 저지연을 시도하기 전에 묻는다(관리자가 껐거나 껐을 때 시작된 방송이면 false → 바로 일반 재생) |
+| GET | `/api/admin/playback/low-latency` | **관리자만** | 저지연 중계 스위치 상태 `{enabled}` |
+| PUT | `/api/admin/playback/low-latency` | **관리자만** | `{enabled}` 로 켜고 끈다. 서버를 다시 켜지 않아도 되고, 새로 시작하는 방송부터 적용된다(진행 중인 방송은 그대로). 서버를 다시 켜면 `INGEST_LOW_LATENCY` 값으로 돌아간다. `enabled` 가 빠지면 400 |
 
 보고
 ```json

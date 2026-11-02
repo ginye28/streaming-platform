@@ -82,6 +82,11 @@ public class LiveRelay {
     }
 
     /** 지금 저지연으로 붙어 있는 시청자 전체(모든 방송 합계). */
+    /** 이 방송의 저지연 중계가 열려 있는가(방송이 저지연 켜짐 상태로 시작됐다). */
+    public boolean isOpen(Long liveId) {
+        return channels.containsKey(liveId);
+    }
+
     public int totalViewerCount() {
         return channels.values().stream().mapToInt(channel -> channel.subscribers.size()).sum();
     }
