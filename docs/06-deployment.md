@@ -189,7 +189,7 @@ CSP 에 외부 주소가 들어 있는 곳: 결제(`*.tosspayments.com`, `*.toss
 | `BROWSER_INGEST_ENABLED` | `true` | 끄면 `/ingest` 연결을 받지 않는다. ffmpeg 가 없는 서버에서는 끈다 |
 | `API_PUBLIC_URL` | `RENDER_EXTERNAL_URL`, 없으면 `http://localhost:8080` | API 자신의 바깥 주소. 시청자에게 내려 주는 재생 주소가 이 아래에 놓인다. Render 는 `RENDER_EXTERNAL_URL` 을 자동으로 넣어 준다 |
 | `INGEST_MAX_SESSIONS` | `1` | 동시에 받을 수 있는 방송 수. 무료 서버(메모리 512MB)에서는 자바 약 350MB + 방송 하나당 ffmpeg 약 60MB 라 하나가 한계다. 메모리가 넉넉한 서버에서만 올린다 |
-| `INGEST_MAX_KBPS` | `6000` | 한 방송이 보낼 수 있는 속도(10초 평균의 두 배까지). 넘기면 끊는다. 화면은 1500kbps(최대 1280×720)로 보낸다 |
+| `INGEST_MAX_KBPS` | `6000` | 한 방송이 보낼 수 있는 속도(10초 평균의 두 배까지). 넘기면 끊는다. 화면은 방송하기에서 고른 화질로 보낸다(높음 2500kbps·최대 1920×1080, 보통 1500kbps·최대 1280×720) |
 | `INGEST_LOW_LATENCY` | `true` | 브라우저 방송을 HLS 와 함께 0.1초 단위 조각으로도 중계해 시청 지연을 1~2초로 줄인다([10-performance.md](10-performance.md)). 끄면 HLS 만(지연 약 6~8초). 서버가 못 버티면 이걸 끈다 |
 | `INGEST_LOW_LATENCY_MAX_VIEWERS` | `30` | 저지연으로 받는 시청자 수 상한. 넘는 시청자는 HLS 로 본다. 512MB 서버에서 50명은 메모리가 한계였다 |
 | `INGEST_HLS_DIR` | 임시 폴더의 `sp-ingest-hls` | HLS 조각이 놓이는 곳. 켜질 때 비운다 |
@@ -239,7 +239,7 @@ OBS ──RTMP──▶ 내 PC(nginx-rtmp, docker) ──콜백(https, 비밀 �
 | 13명 | 약 20Mbps | 약 33Mbps | 약 52Mbps |
 | 30명 | 약 45Mbps | 약 75Mbps | 약 120Mbps |
 
-- **브라우저 방송**: 영상은 무료 Render(0.1 CPU) 가 모두 내려준다. 화면은 1.5Mbps·최대 720p 로 보낸다.
+- **브라우저 방송**: 영상은 무료 Render(0.1 CPU) 가 모두 내려준다. 화질은 방송하기에서 고른다: 높음 2.5Mbps·최대 1080p(시청자 적을 때), 보통 1.5Mbps·최대 720p(시청자가 많거나 망이 느릴 때). 마지막 선택은 그 브라우저에 기억한다.
 - **OBS 방송**: 영상은 **내 PC 의 집 인터넷 업로드**로 나간다(터널). 집 업로드가 시청자 수 × 비트레이트보다 작으면 끊긴다. OBS 에서
   - 출력 → 비트레이트 **1500 Kbps**, 키프레임 간격 **2초**, 해상도 **1280×720**, 30fps, 인코더 x264 `veryfast` 또는 하드웨어
   - 키프레임 간격을 비워 두면(자동) 조각이 길어져 지연이 커지고 재생목록이 짧아져 끊긴다.

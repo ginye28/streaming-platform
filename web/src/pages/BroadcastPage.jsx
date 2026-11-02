@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { getLiveSetting } from '../api.js'
 import { AUDIENCE_LABEL } from '../audience.js'
 import Link from '../components/Link.jsx'
-import { openCapture, pickMimeType, startBroadcast } from '../broadcast.js'
+import { openCapture, pickMimeType, QUALITIES, startBroadcast } from '../broadcast.js'
 import { loginTo, navigate, setLeaveGuard, toSearch } from '../router.js'
 import { useAsyncData } from '../useAsyncData.js'
 import { useAuth } from '../useAuth.js'
@@ -13,6 +13,19 @@ const SOURCES = [
     { value: 'screen', label: '화면 공유', hint: '컴퓨터 화면이나 창, 탭' },
     { value: 'camera', label: '카메라', hint: '이 기기의 카메라' },
 ]
+
+/** 마지막으로 고른 화질을 이 브라우저에 기억한다. 저장소를 못 쓰면 높음으로 시작한다. */
+const QUALITY_KEY = 'sp.broadcastQuality'
+
+function readQuality() {
+    try {
+        const stored = localStorage.getItem(QUALITY_KEY)
+
+        return stored in QUALITIES ? stored : 'high'
+    } catch {
+        return 'high'
+    }
+}
 
 // 서버가 응답하지 않을 때 영영 기다리지 않게 하는 한도. 무료 서버가 깨어나는 데 최대 1분 반쯤 걸린다.
 const CONNECT_TIMEOUT_MS = 90_000
@@ -51,6 +64,7 @@ export default function BroadcastPage() {
 
     const [source, setSource] = useState(canShareScreen ? 'screen' : 'camera')
     const [withMic, setWithMic] = useState(true)
+    const [quality, setQuality] = useState(readQuality)
     const [phase, setPhase] = useState('idle') // idle | connecting | live
     const [liveId, setLiveId] = useState(null)
     const [error, setError] = useState(null)
@@ -148,6 +162,16 @@ export default function BroadcastPage() {
         setError(null)
     }
 
+    function changeQuality(value) {
+        setQuality(value)
+
+        try {
+            localStorage.setItem(QUALITY_KEY, value)
+        } catch {
+            // 저장하지 못해도 이번 방송에는 적용된다.
+        }
+    }
+
     async function handleStart() {
         setError(null)
         setEnded(null)
@@ -161,7 +185,7 @@ export default function BroadcastPage() {
 
         try {
             // 화면 공유 창은 이 클릭 직후에 열어야 하므로, 서버에 연결하기 전에 먼저 잡는다.
-            const { stream, audio, micError } = await openCapture({ source, withMic })
+            const { stream, audio, micError } = await openCapture({ source, withMic, quality })
 
             setAudioInfo({ audio, micError })
 
@@ -169,6 +193,7 @@ export default function BroadcastPage() {
             previewRef.current.srcObject = stream
 
             controlRef.current = await startBroadcast(stream, {
+                quality,
                 onStarted: (id) => {
                     wasLiveRef.current = true
                     setLiveId(id)
@@ -461,6 +486,29 @@ export default function BroadcastPage() {
                     </span>
                 </label>
             </fieldset>
+
+                    <fieldset className="broadcast__source" disabled={busy}>
+                        <legend>화질</legend>
+
+                        {Object.entries(QUALITIES).map(([value, option]) => (
+                            <label
+                                key={value}
+                                className={`broadcast__choice${quality === value ? ' broadcast__choice--on' : ''}`}
+                            >
+                                <input
+                                    type="radio"
+                                    name="quality"
+                                    value={value}
+                                    checked={quality === value}
+                                    onChange={() => changeQuality(value)}
+                                />
+                                <span>
+                                    <strong>{option.label}</strong>
+                                    <small>{option.detail}</small>
+                                </span>
+                            </label>
+                        ))}
+                    </fieldset>
                 </aside>
             </div>
         </section>
