@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { getChatHistory, getLive, getLiveIntro } from '../api.js'
+import { useEffect, useState } from 'react'
+import { getChatHistory, getLive, getLiveIntro, getLowLatencyAvailable } from '../api.js'
 import { loginTo } from '../router.js'
 import { usePageTitle } from '../usePageTitle.js'
 import { useAuth } from '../useAuth.js'
@@ -68,19 +68,7 @@ export default function LivePage({ id }) {
     return (
         <section className="live">
             <div className="live__main">
-                <HlsPlayer
-                    live
-                    lowLatencyUrl={lowLatencyUrlOf(live)}
-                    src={live.hlsUrl}
-                    poster={live.thumbnailUrl}
-                    label={`${live.title} 라이브 방송`}
-                    waitingLabel="방송 준비 중"
-                >
-                    {/* 송출이 오기 전에는 LIVE 라고 하지 않는다. 방송이 시작된 줄은 알지만 영상은 아직이다. */}
-                    {({ waiting }) =>
-                        waiting ? <span className="pill">곧 시작</span> : <span className="pill pill--live">LIVE</span>
-                    }
-                </HlsPlayer>
+                <LivePlayer live={live} />
 
                 <LiveInfo live={live} onChanged={reload} />
             </div>
@@ -215,4 +203,50 @@ function lowLatencyUrlOf(live) {
     } catch {
         return null
     }
+}
+
+/**
+ * 라이브 영상. 브라우저 방송은 서버에 저지연 중계가 열려 있는지(관리자가 끄지 않았는지) 먼저 묻고,
+ * 열려 있으면 저지연으로, 아니면 바로 일반 재생(HLS)으로 본다. 묻는 동안은 영상 자리만 잡아 둔다.
+ */
+function LivePlayer({ live }) {
+    const lowLatencyUrl = lowLatencyUrlOf(live)
+    // 확인한 방송 번호와 결과. 방송이 바뀌면 다시 묻는다.
+    const [checked, setChecked] = useState(null)
+
+    useEffect(() => {
+        if (!lowLatencyUrl) return undefined
+
+        let alive = true
+
+        getLowLatencyAvailable(live.id).then((available) => {
+            if (alive) setChecked({ liveId: live.id, available })
+        })
+
+        return () => {
+            alive = false
+        }
+    }, [live.id, lowLatencyUrl])
+
+    const asking = lowLatencyUrl && checked?.liveId !== live.id
+
+    if (asking) {
+        return <div className="player-box live__asking" role="status" aria-label="영상을 준비하는 중" />
+    }
+
+    return (
+        <HlsPlayer
+            live
+            lowLatencyUrl={lowLatencyUrl && checked?.available ? lowLatencyUrl : null}
+            src={live.hlsUrl}
+            poster={live.thumbnailUrl}
+            label={`${live.title} 라이브 방송`}
+            waitingLabel="방송 준비 중"
+        >
+            {/* 송출이 오기 전에는 LIVE 라고 하지 않는다. 방송이 시작된 줄은 알지만 영상은 아직이다. */}
+            {({ waiting }) =>
+                waiting ? <span className="pill">곧 시작</span> : <span className="pill pill--live">LIVE</span>
+            }
+        </HlsPlayer>
+    )
 }

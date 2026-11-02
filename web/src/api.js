@@ -291,6 +291,19 @@ export const getAdminSecurityEvents = () => authorized('/api/admin/security/even
 
 export const getAdminPlayback = () => authorized('/api/admin/playback')
 
+/** 저지연 중계 스위치(관리자). 새로 시작하는 방송부터 적용되고, 서버를 다시 켜면 설정값으로 돌아간다. */
+export const getAdminLowLatency = () => authorized('/api/admin/playback/low-latency')
+
+export const setAdminLowLatency = (enabled) =>
+    authorized('/api/admin/playback/low-latency', { method: 'PUT', body: { enabled } })
+
+/** 이 방송을 저지연으로 볼 수 있는가(중계가 열려 있는가). 모르면(실패) false 로 보고 일반 재생으로 간다. */
+export const getLowLatencyAvailable = (liveId) =>
+    request(`/api/playback/low-latency${query({ liveId })}`)
+        .then(unwrap)
+        .then((data) => Boolean(data?.available))
+        .catch(() => false)
+
 /**
  * 시청 화면의 재생 방식을 서버 집계에 알린다(저지연으로 시작했는지, 일반 재생으로 넘어갔다면 이유).
  * 보조 정보라 실패해도 화면에는 아무 영향이 없다.

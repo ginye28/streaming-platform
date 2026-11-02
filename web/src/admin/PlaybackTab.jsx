@@ -1,4 +1,5 @@
-import { getAdminPlayback } from '../api.js'
+import { useState } from 'react'
+import { getAdminLowLatency, getAdminPlayback, setAdminLowLatency } from '../api.js'
 import { REASON_LABEL } from '../playbackMode.js'
 import { formatDate } from '../time.js'
 import { useAsyncData } from '../useAsyncData.js'
@@ -25,6 +26,23 @@ function percent(part, total) {
  */
 export default function PlaybackTab() {
     const { data, error, loading, reload } = useAsyncData(getAdminPlayback, [])
+    const { data: lowLatency, error: switchLoadError, reload: reloadSwitch } = useAsyncData(getAdminLowLatency, [])
+    const [switching, setSwitching] = useState(false)
+    const [switchError, setSwitchError] = useState(null)
+
+    async function toggleLowLatency() {
+        setSwitching(true)
+        setSwitchError(null)
+
+        try {
+            await setAdminLowLatency(!lowLatency.enabled)
+            reloadSwitch()
+        } catch (e) {
+            setSwitchError(e.message)
+        } finally {
+            setSwitching(false)
+        }
+    }
 
     const reported = data ? data.reportedLowLatency + data.reportedHls : 0
 
@@ -38,6 +56,21 @@ export default function PlaybackTab() {
                     새로고침
                 </button>
             </div>
+
+            {lowLatency && (
+                <div className="admin__switch">
+                    <div>
+                        <strong>저지연 중계: {lowLatency.enabled ? '켜짐' : '꺼짐'}</strong>
+                        <p>
+                            새로 시작하는 방송부터 적용돼요. 이미 방송 중인 건 그대로예요. 서버를 다시 켜면 설정값(INGEST_LOW_LATENCY)으로 돌아가요.
+                        </p>
+                    </div>
+                    <button onClick={toggleLowLatency} disabled={switching}>
+                        {lowLatency.enabled ? '끄기' : '켜기'}
+                    </button>
+                </div>
+            )}
+            {(switchError || switchLoadError) && <p className="admin__error">{switchError ?? switchLoadError}</p>}
 
             {error && <p className="admin__error">{error}</p>}
             {loading && !data && <p className="admin__empty">불러오는 중…</p>}

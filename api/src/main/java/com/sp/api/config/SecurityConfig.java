@@ -91,6 +91,7 @@ public class SecurityConfig {
 
                         // 시청 화면이 저지연/HLS 재생 상태를 알려 오는 곳. 비로그인 시청자도 보낸다(값은 정해진 목록만 받는다).
                         .requestMatchers(HttpMethod.POST, "/api/playback/report").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/playback/low-latency").permitAll()
 
                         // 브라우저에서 방송한 영상(HLS 재생목록·조각). 시청자 누구나 받는다.
                         .requestMatchers(HttpMethod.GET, "/live-hls/**").permitAll()
